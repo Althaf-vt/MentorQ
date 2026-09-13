@@ -9,6 +9,7 @@ import { MentorProfilesModule } from './modules/mentor-profiles/mentor-profiles.
 import { TicketsModule } from './modules/tickets/tickets.module.js';
 import { SessionsModule } from './modules/sessions/sessions.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ChatModule } from './modules/chat/chat.module.js';
     TicketsModule,
     SessionsModule,
     ChatModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
