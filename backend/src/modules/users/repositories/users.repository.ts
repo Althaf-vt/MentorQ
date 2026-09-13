@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, FilterQuery, UpdateQuery } from 'mongoose';
+import { Model, UpdateQuery } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema.js';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class UsersRepository {
     return newUser.save();
   }
 
-  async findOne(query: FilterQuery<UserDocument>): Promise<UserDocument | null> {
+  async findOne(query: any): Promise<UserDocument | null> {
     return this.userModel.findOne(query).exec();
   }
 
