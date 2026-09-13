@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MentorQ Post-Session Rating</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Sora & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sora: ['Sora', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+            'space-grotesk': ['Space Grotesk', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#F4F2FD',
+              100: '#E9E5FC',
+              500: '#6C5CE7',
+              600: '#5A49D8',
+              700: '#4D3DC2',
+            },
+            amberStar: '#FDCB6E',
+            modalBg: '#FAFAF8',
+            cardInnerBg: '#F1F0EE',
+          },
+          borderRadius: {
+            '8': '8px',
+            '12': '12px',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #F4F4F1;
+      color: #1E293B;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden bg-[#F2F1EE]">
+
+  <!-- BACKGROUND: Hinted MentorQ Dashboard (Dimmed & Blurred Overlay) -->
+  <div class="fixed inset-0 pointer-events-none select-none overflow-hidden opacity-40 filter blur-[3px]">
+    <!-- Top Nav Mock -->
+    <header class="w-full bg-[#FAFAF8] border-b border-[#E2E1DC] px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-[#6C5CE7] flex items-center justify-center text-white font-bold font-sora">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <span class="font-sora font-bold text-lg text-slate-800">MentorQ</span>
+      </div>
+      <div class="flex items-center gap-6 text-sm font-medium text-slate-600">
+        <span class="text-[#6C5CE7] font-semibold">Dashboard</span>
+        <span>My Tickets</span>
+        <span>History</span>
+        <span>Settings</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold">AK</div>
+        <span class="text-sm font-medium text-slate-700">Arjun K.</span>
+      </div>
+    </header>
+
+    <!-- Dashboard Content Mock -->
+    <main class="max-w-6xl mx-auto px-8 py-8 space-y-6">
+      <div class="bg-[#FAFAF8] rounded-2xl p-8 border border-[#E5E4DE] shadow-sm flex justify-between items-center">
+        <div>
+          <span class="inline-block px-3 py-1 bg-violet-100 text-[#6C5CE7] text-xs font-semibold rounded-full mb-3">Live Mentor Queue Active</span>
+          <h2 class="text-2xl font-bold font-sora text-slate-900">Need help? Request a session</h2>
+          <p class="text-slate-500 text-sm mt-1">Connect with expert mentors in real-time. Get answers, guidance, and support.</p>
+        </div>
+        <div class="w-48 h-28 bg-[#ECEAE4] rounded-xl"></div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-4">
+        <div class="bg-[#FAFAF8] p-5 rounded-xl border border-[#E5E4DE] h-24"></div>
+        <div class="bg-[#FAFAF8] p-5 rounded-xl border border-[#E5E4DE] h-24"></div>
+        <div class="bg-[#FAFAF8] p-5 rounded-xl border border-[#E5E4DE] h-24"></div>
+        <div class="bg-[#FAFAF8] p-5 rounded-xl border border-[#E5E4DE] h-24"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- BACKDROP OVERLAY -->
+  <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-[4px] z-10"></div>
+
+  <!-- MODAL CONTAINER -->
+  <div class="relative z-20 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
+    
+    <!-- MODAL CARD: max-w ~480px, centered, #FAFAF8 background, rounded-12, soft shadow, 40px padding -->
+    <div class="w-full max-w-[480px] bg-[#FAFAF8] rounded-[12px] shadow-[0_20px_48px_-10px_rgba(15,23,42,0.18),0_4px_12px_rgba(15,23,42,0.06)] border border-[#E7E6E0] p-[40px] relative transition-all animate-in fade-in zoom-in duration-200">
+      
+      <!-- Close button (Lucide X icon) -->
+      <button type="button" aria-label="Close modal" class="absolute top-6 right-6 text-slate-400 hover:text-slate-700 transition-colors p-1.5 rounded-lg hover:bg-slate-200/50">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- TOP SECTION -->
+      <div class="flex flex-col items-center text-center">
+        <!-- Celebratory icon area: Large circle (80px) with soft violet gradient background, containing CheckCircle Lucide icon in white -->
+        <div class="w-[80px] h-[80px] rounded-full bg-gradient-to-br from-[#8C7CF0] to-[#5A49D8] flex items-center justify-center shadow-[0_8px_20px_-4px_rgba(108,92,231,0.45)] ring-8 ring-[#6C5CE7]/10 mb-5">
+          <!-- CheckCircle Lucide icon -->
+          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+
+        <!-- Heading: 'Session Complete!' in Sora heading-lg, centered -->
+        <h1 class="font-sora font-bold text-2xl sm:text-[26px] tracking-tight text-slate-900 leading-tight">
+          Session Complete!
+        </h1>
+
+        <!-- Subtitle: 'How was your experience?' in Inter muted, centered -->
+        <p class="font-inter text-slate-500 text-sm mt-1.5 font-normal">
+          How was your experience?
+        </p>
+      </div>
+
+      <!-- SESSION DETAILS CARD (nested card, light gray #F1F0EE background, rounded-8, 16px padding) -->
+      <div class="mt-6 bg-[#F1F0EE] rounded-[8px] p-4 border border-[#E4E3DF] space-y-2.5">
+        <!-- Row: 'Topic' label — 'React Hooks & State Management' value -->
+        <div class="flex items-center justify-between text-xs sm:text-sm gap-2">
+          <span class="font-space-grotesk font-medium text-slate-500 tracking-wide text-xs">Topic</span>
+          <span class="font-inter font-medium text-slate-800 text-right truncate">React Hooks &amp; State Management</span>
+        </div>
+        
+        <div class="w-full h-px bg-[#E3E2DC]"></div>
+
+        <!-- Row: 'Mentor' label — 'Priya Sharma' with small avatar circle -->
+        <div class="flex items-center justify-between text-xs sm:text-sm gap-2">
+          <span class="font-space-grotesk font-medium text-slate-500 tracking-wide text-xs">Mentor</span>
+          <div class="flex items-center gap-2">
+            <div class="w-5 h-5 rounded-full bg-[#6C5CE7]/15 text-[#6C5CE7] font-sora font-semibold text-[10px] flex items-center justify-center">
+              PS
+            </div>
+            <span class="font-inter font-medium text-slate-800">Priya Sharma</span>
+          </div>
+        </div>
+
+        <div class="w-full h-px bg-[#E3E2DC]"></div>
+
+        <!-- Row: 'Duration' label — '28 minutes' -->
+        <div class="flex items-center justify-between text-xs sm:text-sm gap-2">
+          <span class="font-space-grotesk font-medium text-slate-500 tracking-wide text-xs">Duration</span>
+          <div class="flex items-center gap-1.5 text-slate-800 font-inter font-medium">
+            <!-- Clock icon Lucide -->
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>28 minutes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RATING SECTION (centered, 32px top margin) -->
+      <div class="mt-8 text-center">
+        <!-- Label: 'Rate this session' in Space Grotesk label -->
+        <label class="block font-space-grotesk font-semibold text-xs uppercase tracking-wider text-slate-500 mb-3.5">
+          Rate this session
+        </label>
+
+        <!-- 5 large star icons (Star Lucide icon, 32px each) in a horizontal row, centered -->
+        <div class="flex items-center justify-center gap-3" role="radiogroup" aria-label="Rate this session">
+          <!-- Star 1: Filled -->
+          <button type="button" class="group transition-transform active:scale-90 hover:scale-110 focus:outline-none" aria-label="1 star">
+            <svg class="w-8 h-8 text-[#FDCB6E] fill-[#FDCB6E] drop-shadow-[0_2px_4px_rgba(253,203,110,0.4)] transition-colors" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </button>
+          
+          <!-- Star 2: Filled -->
+          <button type="button" class="group transition-transform active:scale-90 hover:scale-110 focus:outline-none" aria-label="2 stars">
+            <svg class="w-8 h-8 text-[#FDCB6E] fill-[#FDCB6E] drop-shadow-[0_2px_4px_rgba(253,203,110,0.4)] transition-colors" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </button>
+          
+          <!-- Star 3: Filled -->
+          <button type="button" class="group transition-transform active:scale-90 hover:scale-110 focus:outline-none" aria-label="3 stars">
+            <svg class="w-8 h-8 text-[#FDCB6E] fill-[#FDCB6E] drop-shadow-[0_2px_4px_rgba(253,203,110,0.4)] transition-colors" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </button>
+          
+          <!-- Star 4: Filled -->
+          <button type="button" class="group transition-transform active:scale-90 hover:scale-110 focus:outline-none" aria-label="4 stars">
+            <svg class="w-8 h-8 text-[#FDCB6E] fill-[#FDCB6E] drop-shadow-[0_2px_4px_rgba(253,203,110,0.4)] transition-colors" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </button>
+          
+          <!-- Star 5: Empty/outline in gray -->
+          <button type="button" class="group transition-transform active:scale-90 hover:scale-110 focus:outline-none" aria-label="5 stars">
+            <svg class="w-8 h-8 text-[#C4C3BE] fill-transparent hover:text-[#FDCB6E] transition-colors" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Below stars: '4 out of 5' text in muted -->
+        <p class="font-inter text-xs text-slate-500 font-medium mt-2">
+          4 out of 5
+        </p>
+      </div>
+
+      <!-- FEEDBACK SECTION (24px top margin) -->
+      <div class="mt-6">
+        <div class="flex items-center justify-between mb-2">
+          <label for="feedback" class="font-space-grotesk text-xs font-semibold text-slate-700">
+            Share your feedback (optional)
+          </label>
+          <span class="font-inter text-[11px] text-slate-400">0 / 300</span>
+        </div>
+        <div class="relative">
+          <textarea
+            id="feedback"
+            rows="3"
+            class="w-full bg-[#F1F0EE] border border-[#DDDCD7] rounded-[8px] p-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#6C5CE7]/30 focus:border-[#6C5CE7] transition-all resize-none"
+            placeholder="What went well? What could be improved?"></textarea>
+        </div>
+      </div>
+
+      <!-- FOOTER BUTTONS (32px top margin) -->
+      <div class="mt-8 flex items-center justify-between pt-1">
+        <!-- Left: 'Skip' text button in muted gray -->
+        <button type="button" class="font-inter text-sm font-medium text-slate-500 hover:text-slate-800 px-3 py-2 rounded-lg hover:bg-slate-200/50 transition-colors">
+          Skip
+        </button>
+
+        <!-- Right: 'Submit Rating' primary violet pill button with Send icon -->
+        <button type="button" class="inline-flex items-center gap-2 bg-[#6C5CE7] hover:bg-[#5A49D8] active:bg-[#4D3DC2] text-white font-inter font-semibold text-sm px-5 py-2.5 rounded-full shadow-[0_4px_12px_rgba(108,92,231,0.3)] transition-all hover:shadow-[0_6px_16px_rgba(108,92,231,0.4)] active:scale-95">
+          <span>Submit Rating</span>
+          <!-- Lucide Send Icon -->
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

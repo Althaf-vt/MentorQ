@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MentorQ - Guidance Interface</title>
+<!-- Typography: Sora, Inter, Space Grotesk -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Sora:wght@600;700&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols for literal transcription support -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration Verbatim -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-fixed-variant": "#080039",
+            "surface-container-high": "#e8e8e6",
+            "surface-container": "#eeeeeb",
+            "outline-variant": "#b0b2b0",
+            "surface-container-highest": "#e1e3e0",
+            "secondary": "#006c56",
+            "tertiary-fixed-dim": "#edbc61",
+            "secondary-dim": "#005f4b",
+            "on-secondary-fixed": "#004939",
+            "surface-bright": "#faf9f7",
+            "tertiary-fixed": "#fcca6d",
+            "surface-tint": "#5948d3",
+            "on-error": "#fff7f7",
+            "on-surface-variant": "#5d605e",
+            "surface-dim": "#d9dad8",
+            "outline": "#797b79",
+            "inverse-primary": "#8c7fff",
+            "on-primary-fixed": "#000000",
+            "primary-fixed": "#8172fe",
+            "on-tertiary": "#fff8f1",
+            "on-tertiary-fixed-variant": "#6a4b00",
+            "secondary-container": "#6dfad2",
+            "inverse-on-surface": "#9d9d9b",
+            "surface-container-lowest": "#ffffff",
+            "inverse-surface": "#0d0e0e",
+            "error-container": "#f97386",
+            "error-dim": "#6b0221",
+            "surface": "#faf9f7",
+            "on-secondary-fixed-variant": "#006853",
+            "surface-container-low": "#f4f4f1",
+            "primary-dim": "#4d39c7",
+            "background": "#faf9f7",
+            "on-surface": "#303331",
+            "on-secondary": "#e4fff3",
+            "on-primary-container": "#000000",
+            "primary-container": "#8172fe",
+            "on-error-container": "#6e0523",
+            "on-tertiary-container": "#5f4200",
+            "on-background": "#303331",
+            "error": "#a8364b",
+            "surface-variant": "#e1e3e0",
+            "secondary-fixed-dim": "#5debc4",
+            "on-primary": "#fcf7ff",
+            "on-tertiary-fixed": "#463000",
+            "tertiary": "#7d5900",
+            "primary-fixed-dim": "#7465f0",
+            "on-secondary-container": "#005d4a",
+            "primary": "#5948d3",
+            "tertiary-container": "#fcca6d",
+            "tertiary-dim": "#6d4d00",
+            "secondary-fixed": "#6dfad2"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {},
+          "fontFamily": {
+            "headline": ["Sora"],
+            "display": ["Sora"],
+            "body": ["Inter"],
+            "label": ["Space Grotesk"]
+          },
+          "fontSize": {}
+        },
+      },
+    }
+  </script>
+<style>
+    /* Clean Lucide-standard stroke styling */
+    .lucide-icon {
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    /* Ambient custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e1e3e0;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #b0b2b0;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-[#F5F4F0] text-on-surface font-body antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container relative overflow-x-hidden">
+<!-- Subtle Aurora Mesh Gradient Backgrounds & Geometric Depth Accent -->
+<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+<div class="absolute -top-36 -left-36 w-96 h-96 rounded-full bg-[#6C5CE7]/10 blur-3xl"></div>
+<div class="absolute top-1/3 -right-24 w-80 h-80 rounded-full bg-[#00B894]/10 blur-3xl"></div>
+<div class="absolute -bottom-24 left-1/4 w-96 h-96 rounded-full bg-[#FDCB6E]/10 blur-3xl"></div>
+<!-- 4% Opacity Dot Grid Overlay for Spatial Texture -->
+<div class="absolute inset-0 bg-[radial-gradient(#797B79_1px,transparent_1px)] [background-size:24px_24px] opacity-5"></div>
+</div>
+<!-- TOP BAR (Height ~68px, background #FAFAF8, border-b border-[#E8E6DF]) -->
+<header class="h-[68px] bg-[#FAFAF8] border-b border-[#E8E6DF] px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+<!-- Left: Return Navigation & Brand Badge -->
+<div class="flex items-center gap-3">
+<button aria-label="Back to dashboard" class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors active:scale-95" type="button">
+<svg class="w-5 h-5 lucide-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="m12 19-7-7 7-7"></path>
+<path d="M19 12H5"></path>
+</svg>
+</button>
+<div class="h-5 w-[1px] bg-[#E8E6DF] hidden sm:block"></div>
+<!-- MentorQ Logo Wordmark with Magnifying Glass Accent -->
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-on-primary font-display font-bold text-xs tracking-wider shadow-sm">
+<svg class="w-4 h-4 lucide-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="7"></circle>
+<path d="m20 20-3.5-3.5"></path>
+</svg>
+</div>
+<span class="font-display font-bold text-lg tracking-tight text-on-surface">MentorQ</span>
+</div>
+</div>
+<!-- Center: Mentor Profile Details -->
+<div class="flex items-center gap-3 text-center sm:text-left">
+<div class="relative">
+<div class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-bold text-sm text-primary">
+          PS
+        </div>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00B894] ring-2 ring-[#FAFAF8]" title="Online"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-display font-semibold text-sm text-on-surface tracking-tight leading-tight">Priya Sharma</span>
+<span class="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-label font-medium bg-[#00B894]/10 text-[#006c56]">Online</span>
+</div>
+<span class="text-xs font-label text-on-surface-variant leading-normal truncate max-w-[170px] sm:max-w-xs">React Hooks &amp; State Management</span>
+</div>
+</div>
+<!-- Right: Contextual Header Actions -->
+<div class="flex items-center gap-2">
+<button aria-label="Start video consultation" class="h-9 px-3 rounded-full border border-[#E8E6DF] bg-[#FAFAF8] hover:border-primary/40 hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all flex items-center gap-2 active:scale-95 text-xs font-label font-medium" title="Start video consultation" type="button">
+<svg class="w-4 h-4 lucide-icon text-primary" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.934a.5.5 0 0 0-.777-.416L16 11"></path>
+<rect height="12" rx="2" width="14" x="2" y="6"></rect>
+</svg>
+<span class="hidden sm:inline">Call</span>
+</button>
+<button aria-label="Session information" class="w-9 h-9 rounded-full border border-[#E8E6DF] bg-[#FAFAF8] hover:border-primary/40 hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all flex items-center justify-center active:scale-95" title="Session information" type="button">
+<svg class="w-4 h-4 lucide-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<path d="M12 16v-4"></path>
+<path d="M12 8h.01"></path>
+</svg>
+</button>
+</div>
+</header>
+<!-- MAIN CHAT AREA (Background #F5F4F0, scrollable, max-w-4xl mx-auto w-full px-6 py-8 flex flex-col space-y-6) -->
+<main class="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 flex flex-col space-y-6 relative z-10">
+<!-- Date Separator Chip -->
+<div class="flex justify-center my-2">
+<span class="px-3.5 py-1 rounded-full bg-[#FAFAF8] border border-[#E8E6DF] text-on-surface-variant font-label text-xs tracking-wide shadow-sm">
+        Today, September 12
+      </span>
+</div>
+<!-- Message 1 (MENTOR, left-aligned) -->
+<div class="flex items-start gap-3 max-w-lg">
+<div class="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex-shrink-0 flex items-center justify-center font-display font-semibold text-xs text-primary mt-4">
+        PS
+      </div>
+<div class="flex flex-col space-y-1">
+<span class="text-xs font-label text-on-surface-variant ml-1">Priya Sharma</span>
+<div class="bg-[#FAFAF8] border border-[#E8E6DF] rounded-2xl rounded-bl-sm p-4 shadow-sm text-on-surface font-body text-sm leading-relaxed">
+<p>Hi Arjun! I can see you're working on React Hooks. Let me help you understand useReducer vs useState.</p>
+<div class="text-right mt-1.5">
+<span class="text-[11px] font-label text-outline tracking-wider">10:15 AM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Message 2 (STUDENT, right-aligned) -->
+<div class="flex flex-col items-end self-end max-w-lg space-y-1">
+<div class="bg-primary text-on-primary rounded-2xl rounded-br-sm p-4 shadow-sm font-body text-sm leading-relaxed">
+<p>Thanks Priya! I'm confused about when to use useReducer instead of useState. My state logic is getting complex.</p>
+<div class="text-right mt-1.5">
+<span class="text-[11px] font-label text-on-primary/75 tracking-wider">10:16 AM</span>
+</div>
+</div>
+</div>
+<!-- Message 3 (MENTOR, left-aligned with structured card) -->
+<div class="flex items-start gap-3 max-w-lg">
+<div class="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex-shrink-0 flex items-center justify-center font-display font-semibold text-xs text-primary mt-4">
+        PS
+      </div>
+<div class="flex flex-col space-y-1">
+<span class="text-xs font-label text-on-surface-variant ml-1">Priya Sharma</span>
+<div class="bg-[#FAFAF8] border border-[#E8E6DF] rounded-2xl rounded-bl-sm p-4 shadow-sm text-on-surface font-body text-sm leading-relaxed">
+<p>Great question! Here's a good rule of thumb:</p>
+<!-- Structured Card Inside Bubble -->
+<div class="bg-[#FAFAF8] border border-[#F0EFEB] rounded-xl p-3.5 mt-2.5 space-y-2.5 shadow-inner">
+<div class="flex items-start gap-2.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
+<span class="text-xs font-body text-on-surface leading-relaxed"><strong class="font-semibold text-primary">useState</strong> — Simple, independent state values</span>
+</div>
+<div class="flex items-start gap-2.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
+<span class="text-xs font-body text-on-surface leading-relaxed"><strong class="font-semibold text-primary">useReducer</strong> — Complex state logic with multiple sub-values</span>
+</div>
+<div class="flex items-start gap-2.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></span>
+<span class="text-xs font-body text-on-surface leading-relaxed"><strong class="font-semibold text-primary">useReducer</strong> — When next state depends on previous state</span>
+</div>
+</div>
+<div class="text-right mt-2">
+<span class="text-[11px] font-label text-outline tracking-wider">10:17 AM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Message 4 (MENTOR, left-aligned with Link Preview Card) -->
+<div class="flex items-start gap-3 max-w-lg">
+<div class="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex-shrink-0 flex items-center justify-center font-display font-semibold text-xs text-primary mt-4">
+        PS
+      </div>
+<div class="flex flex-col space-y-1">
+<span class="text-xs font-label text-on-surface-variant ml-1">Priya Sharma</span>
+<div class="bg-[#FAFAF8] border border-[#E8E6DF] rounded-2xl rounded-bl-sm p-4 shadow-sm text-on-surface font-body text-sm leading-relaxed">
+<p>Check out this resource for more details:</p>
+<!-- Link Preview Card -->
+<a class="bg-[#FAFAF8] border border-[#E2E0D8] rounded-xl p-3.5 mt-2.5 flex items-center justify-between hover:border-primary transition-all duration-200 group text-left block" href="#doc-resource">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors flex-shrink-0">
+<svg class="w-5 h-5 lucide-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+<path d="M6 6h10"></path>
+<path d="M6 10h10"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-display font-semibold text-xs text-on-surface group-hover:text-primary transition-colors truncate">React useReducer Hook Guide</span>
+<span class="text-[11px] font-label text-on-surface-variant tracking-normal truncate">reactjs.org/docs/hooks-reference</span>
+</div>
+</div>
+<div class="text-outline group-hover:text-primary transition-colors ml-2 flex-shrink-0">
+<svg class="w-4 h-4 lucide-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15 3h6v6"></path>
+<path d="M10 14 21 3"></path>
+<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+</svg>
+</div>
+</a>
+<div class="text-right mt-2">
+<span class="text-[11px] font-label text-outline tracking-wider">10:18 AM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Message 5 (STUDENT, right-aligned) -->
+<div class="flex flex-col items-end self-end max-w-lg space-y-1">
+<div class="bg-primary text-on-primary rounded-2xl rounded-br-sm p-4 shadow-sm font-body text-sm leading-relaxed">
+<p>That makes so much sense! Let me try refactoring my code with useReducer.</p>
+<div class="text-right mt-1.5">
+<span class="text-[11px] font-label text-on-primary/75 tracking-wider">10:20 AM</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BOTTOM SECTION: FLOATING QUICK REPLIES + INPUT BAR -->
+<div class="sticky bottom-0 z-20 w-full bg-[#FAFAF8]/95 backdrop-blur-md border-t border-[#E8E6DF] pb-4 pt-2">
+<!-- 3. FLOATING QUICK REPLIES -->
+<div class="max-w-4xl mx-auto w-full px-4 sm:px-6 py-1.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
+<button class="whitespace-nowrap bg-primary/10 text-primary border border-primary/20 rounded-full px-3.5 py-1.5 text-xs font-label font-medium hover:bg-primary/15 transition cursor-pointer active:scale-95" type="button">
+        Review this link
+      </button>
+<button class="whitespace-nowrap bg-primary/10 text-primary border border-primary/20 rounded-full px-3.5 py-1.5 text-xs font-label font-medium hover:bg-primary/15 transition cursor-pointer active:scale-95" type="button">
+        Try this approach
+      </button>
+<button class="whitespace-nowrap bg-primary/10 text-primary border border-primary/20 rounded-full px-3.5 py-1.5 text-xs font-label font-medium hover:bg-primary/15 transition cursor-pointer active:scale-95" type="button">
+        Great progress!
+      </button>
+<button class="whitespace-nowrap bg-primary/10 text-primary border border-primary/20 rounded-full px-3.5 py-1.5 text-xs font-label font-medium hover:bg-primary/15 transition cursor-pointer active:scale-95" type="button">
+        Let me share an example
+      </button>
+<button class="whitespace-nowrap bg-primary/10 text-primary border border-primary/20 rounded-full px-3.5 py-1.5 text-xs font-label font-medium hover:bg-primary/15 transition cursor-pointer active:scale-95" type="button">
+        Any other questions?
+      </button>
+</div>
+<!-- 4. INPUT BAR -->
+<div class="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-2">
+<form class="flex items-center gap-3" onsubmit="event.preventDefault();">
+<!-- Attachment Button -->
+<button aria-label="Attach code or files" class="w-10 h-10 rounded-full border border-[#E8E6DF] bg-[#FAFAF8] text-on-surface-variant hover:bg-[#F5F4F0] hover:text-on-surface flex items-center justify-center transition-colors flex-shrink-0 active:scale-95" type="button">
+<svg class="w-5 h-5 lucide-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+</svg>
+</button>
+<!-- Text Input Field -->
+<div class="relative flex-1">
+<input class="w-full rounded-full bg-[#F5F4F0] border border-[#E0DED7] px-5 py-2.5 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-all font-body" placeholder="Type a message..." type="text"/>
+</div>
+<!-- Send Button -->
+<button aria-label="Send message" class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center hover:opacity-90 transition-transform shadow-sm flex-shrink-0 active:scale-95" type="submit">
+<svg class="w-4 h-4 lucide-icon translate-x-0.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="m22 2-7 20-4-9-9-4Z"></path>
+<path d="M22 2 11 13"></path>
+</svg>
+</button>
+</form>
+</div>
+</div>
+<!-- Shared Component Footnote Execution -->
+<footer class="bg-surface-container-low border-t border-outline-variant/30 text-on-surface-variant">
+<div class="flex flex-col sm:flex-row justify-between items-center w-full px-6 lg:px-12 py-6 max-w-7xl mx-auto gap-4 font-label text-xs tracking-wider">
+<div class="flex items-center gap-3">
+<span class="font-display text-base font-bold text-on-surface">MentorQ</span>
+<span class="text-on-surface-variant">© 2025 MentorQ. Your queue to knowledge. All rights reserved.</span>
+</div>
+<div class="flex items-center gap-6">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150" href="#privacy">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150" href="#terms">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150" href="#help">Help Center</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-150" href="#conduct">Code of Conduct</a>
+</div>
+</div>
+</footer>
+</body></html>

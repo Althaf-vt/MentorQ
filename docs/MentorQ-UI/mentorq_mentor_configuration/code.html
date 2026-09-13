@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MentorQ Mentor Configuration</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#6C5CE7',
+              50: '#F5F3FF',
+              100: '#ECE9FE',
+              200: '#DDD6FE',
+              500: '#6C5CE7',
+              600: '#5B4CD6',
+              700: '#4D3EB9',
+            },
+            page: '#F5F4F0',
+            card: '#FAFAF8',
+            surface: {
+              subtle: '#F0EFEA',
+              border: '#E5E4DE',
+              dark: '#1E293B',
+              muted: '#64748B'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            sora: ['Sora', 'sans-serif'],
+            grotesk: ['"Space Grotesk"', 'sans-serif']
+          },
+          borderRadius: {
+            '12': '12px',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #F5F4F0;
+      color: #1E293B;
+      font-family: 'Inter', sans-serif;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+      background: #E5E4DE;
+      border-radius: 9999px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #6C5CE7;
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -7px;
+      box-shadow: 0 2px 6px rgba(108, 92, 231, 0.4);
+      border: 2px solid #FFFFFF;
+      transition: transform 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-brand-100 selection:text-brand-700">
+
+  <!-- TOP NAV BAR -->
+  <header class="w-full bg-[#FAFAF8]/90 backdrop-blur-md border-b border-[#E5E4DE] sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
+      <!-- Left: Logo & Nav Links -->
+      <div class="flex items-center gap-10">
+        <a href="#" class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-brand flex items-center justify-center text-white shadow-sm shadow-brand/30">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <span class="font-sora text-xl font-bold tracking-tight text-slate-900">Mentor<span class="text-brand">Q</span></span>
+        </a>
+
+        <nav class="hidden md:flex items-center gap-1">
+          <a href="#" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-black/5 transition-colors">Dashboard</a>
+          <a href="#" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-black/5 transition-colors">Queue Tracker</a>
+          <a href="#" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-black/5 transition-colors">History</a>
+          <a href="#" class="px-4 py-2 rounded-lg text-sm font-semibold text-brand bg-brand-50 border border-brand-100/60 transition-colors">Settings</a>
+        </nav>
+      </div>
+
+      <!-- Right: Notifications & User Avatar Profile -->
+      <div class="flex items-center gap-4">
+        <button class="relative p-2 rounded-full hover:bg-black/5 text-slate-600 transition-colors" aria-label="Notifications">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span class="absolute top-1.5 right-1.5 w-4 h-4 bg-brand text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-[#FAFAF8]">3</span>
+        </button>
+
+        <div class="h-6 w-[1px] bg-slate-200"></div>
+
+        <button class="flex items-center gap-2.5 pl-1 pr-2.5 py-1 rounded-full hover:bg-black/5 transition-colors">
+          <div class="w-8 h-8 rounded-full bg-brand text-white font-sora text-xs font-semibold flex items-center justify-center shadow-inner">
+            AK
+          </div>
+          <span class="text-sm font-medium text-slate-800">Arjun K.</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-6 lg:px-12 py-8">
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+      
+      <!-- SETTINGS SIDEBAR -->
+      <aside class="w-full md:w-64 shrink-0">
+        <div class="bg-[#FAFAF8] rounded-12 p-3.5 border border-[#E5E4DE]">
+          <div class="px-3 pt-2 pb-3">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-sans">Account Settings</span>
+          </div>
+
+          <nav class="space-y-1">
+            <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+              <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+              <span>Personal Info</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+              <i data-lucide="shield" class="w-4 h-4 text-slate-400"></i>
+              <span>Security</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+              <i data-lucide="bell" class="w-4 h-4 text-slate-400"></i>
+              <span>Notifications</span>
+            </a>
+
+            <a href="#" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+              <i data-lucide="palette" class="w-4 h-4 text-slate-400"></i>
+              <span>Appearance</span>
+            </a>
+
+            <!-- Active Mentor Config Item -->
+            <a href="#" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold text-brand bg-brand-50 border border-brand-100 shadow-sm transition-colors">
+              <div class="flex items-center gap-3">
+                <i data-lucide="sliders" class="w-4 h-4 text-brand"></i>
+                <span>Mentor Config</span>
+              </div>
+              <span class="text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200">Mentor</span>
+            </a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT AREA (max-w 720px, generous padding) -->
+      <section class="flex-1 w-full max-w-[720px] pb-12">
+        
+        <!-- 1. PAGE HEADER -->
+        <header class="mb-7">
+          <h1 class="font-sora text-2xl lg:text-[28px] font-bold text-slate-900 tracking-tight">Mentor Configuration</h1>
+          <p class="text-sm text-slate-500 mt-1 font-sans">Customize your mentoring availability and expertise</p>
+        </header>
+
+        <div class="space-y-6">
+          
+          <!-- 2. DAILY AVAILABILITY CARD -->
+          <div class="bg-[#FAFAF8] rounded-12 p-6 border border-[#E5E4DE]">
+            <div class="flex items-center gap-3 mb-1.5">
+              <div class="w-8 h-8 rounded-lg bg-brand-50 text-brand flex items-center justify-center border border-brand-100/60">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h2 class="font-sora text-base font-semibold text-slate-900">Daily Availability</h2>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500 mb-6 pl-11">Set how many minutes you can mentor each day</p>
+
+            <div class="pl-0 sm:pl-11 space-y-4">
+              <div class="flex items-center justify-between">
+                <label for="minutes-slider" class="font-grotesk text-sm font-medium text-slate-700">Maximum daily minutes</label>
+                <div class="flex items-center gap-1.5 bg-[#F5F4F0] px-3 py-1.5 rounded-lg border border-[#E5E4DE]">
+                  <span class="font-grotesk font-semibold text-slate-900 text-sm" id="minutes-display">90</span>
+                  <span class="text-xs font-medium text-slate-500">min</span>
+                </div>
+              </div>
+
+              <!-- Slider Track -->
+              <div class="relative pt-1 pb-1">
+                <div class="relative flex items-center">
+                  <input id="minutes-slider" type="range" min="15" max="180" value="90" step="5" class="w-full relative z-10">
+                </div>
+                <div class="flex justify-between text-[11px] font-medium text-slate-400 mt-2 px-1">
+                  <span>15 min</span>
+                  <span>60 min</span>
+                  <span>90 min</span>
+                  <span>120 min</span>
+                  <span>180 min</span>
+                </div>
+              </div>
+
+              <!-- Progress bar & usage status -->
+              <div class="pt-2 bg-[#F5F4F0] p-3.5 rounded-xl border border-[#E5E4DE]/80">
+                <div class="flex justify-between items-center text-xs mb-2">
+                  <span class="text-slate-600 font-medium">You have used <strong class="text-slate-800 font-semibold">45</strong> of <strong class="text-slate-800 font-semibold">90</strong> minutes today</span>
+                  <span class="font-semibold text-brand font-grotesk">50%</span>
+                </div>
+                <div class="w-full bg-[#E5E4DE] rounded-full h-2 overflow-hidden">
+                  <div class="bg-brand h-2 rounded-full" style="width: 50%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. OPERATING HOURS CARD -->
+          <div class="bg-[#FAFAF8] rounded-12 p-6 border border-[#E5E4DE]">
+            <div class="flex items-center gap-3 mb-1.5">
+              <div class="w-8 h-8 rounded-lg bg-brand-50 text-brand flex items-center justify-center border border-brand-100/60">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h2 class="font-sora text-base font-semibold text-slate-900">Operating Hours</h2>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500 mb-6 pl-11">Set your available hours for each day</p>
+
+            <div class="pl-0 sm:pl-11 space-y-5">
+              <!-- Time Range Picker Row -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Active Working Window</label>
+                <div class="flex flex-wrap items-center gap-3">
+                  <!-- Start Time -->
+                  <div class="flex-1 min-w-[150px] relative">
+                    <div class="flex items-center gap-2.5 bg-[#F5F4F0] border border-[#E5E4DE] rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+                      <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                      <input type="text" value="09:00 AM" class="bg-transparent w-full focus:outline-none font-medium text-slate-800 text-sm" readonly>
+                    </div>
+                  </div>
+
+                  <span class="text-slate-400 font-medium text-sm px-1">to</span>
+
+                  <!-- End Time -->
+                  <div class="flex-1 min-w-[150px] relative">
+                    <div class="flex items-center gap-2.5 bg-[#F5F4F0] border border-[#E5E4DE] rounded-lg px-3.5 py-2.5 text-sm text-slate-800 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+                      <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>
+                      <input type="text" value="06:00 PM" class="bg-transparent w-full focus:outline-none font-medium text-slate-800 text-sm" readonly>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Weekday toggles -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2.5">Available Days</label>
+                <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                  <!-- Mon: Active -->
+                  <button type="button" class="w-10 h-10 rounded-full bg-brand text-white font-semibold text-xs flex items-center justify-center shadow-sm shadow-brand/30 transition-transform active:scale-95">Mon</button>
+                  <!-- Tue: Active -->
+                  <button type="button" class="w-10 h-10 rounded-full bg-brand text-white font-semibold text-xs flex items-center justify-center shadow-sm shadow-brand/30 transition-transform active:scale-95">Tue</button>
+                  <!-- Wed: Active -->
+                  <button type="button" class="w-10 h-10 rounded-full bg-brand text-white font-semibold text-xs flex items-center justify-center shadow-sm shadow-brand/30 transition-transform active:scale-95">Wed</button>
+                  <!-- Thu: Active -->
+                  <button type="button" class="w-10 h-10 rounded-full bg-brand text-white font-semibold text-xs flex items-center justify-center shadow-sm shadow-brand/30 transition-transform active:scale-95">Thu</button>
+                  <!-- Fri: Active -->
+                  <button type="button" class="w-10 h-10 rounded-full bg-brand text-white font-semibold text-xs flex items-center justify-center shadow-sm shadow-brand/30 transition-transform active:scale-95">Fri</button>
+                  <!-- Sat: Inactive -->
+                  <button type="button" class="w-10 h-10 rounded-full bg-transparent border border-[#E5E4DE] text-slate-400 font-medium text-xs flex items-center justify-center hover:border-slate-300 transition-colors">Sat</button>
+                  <!-- Sun: Inactive -->
+                  <button type="button" class="w-10 h-10 rounded-full bg-transparent border border-[#E5E4DE] text-slate-400 font-medium text-xs flex items-center justify-center hover:border-slate-300 transition-colors">Sun</button>
+                </div>
+              </div>
+
+              <!-- Timezone -->
+              <div class="pt-1">
+                <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Timezone</label>
+                <div class="relative">
+                  <div class="flex items-center justify-between bg-[#F5F4F0] border border-[#E5E4DE] rounded-lg px-3.5 py-2.5 cursor-pointer hover:border-slate-300 transition-colors">
+                    <div class="flex items-center gap-2.5">
+                      <i data-lucide="globe" class="w-4 h-4 text-slate-500"></i>
+                      <span class="text-sm font-medium text-slate-800">Asia/Kolkata (IST, UTC+5:30)</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. EXPERTISE & SKILLS CARD -->
+          <div class="bg-[#FAFAF8] rounded-12 p-6 border border-[#E5E4DE]">
+            <div class="flex items-center gap-3 mb-1.5">
+              <div class="w-8 h-8 rounded-lg bg-brand-50 text-brand flex items-center justify-center border border-brand-100/60">
+                <i data-lucide="tag" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h2 class="font-sora text-base font-semibold text-slate-900">Expertise & Skills</h2>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500 mb-6 pl-11">Add your areas of expertise so students can find you</p>
+
+            <div class="pl-0 sm:pl-11 space-y-4">
+              <!-- Tag Input Field -->
+              <div class="relative">
+                <div class="flex items-center gap-2.5 bg-[#F5F4F0] border border-[#E5E4DE] rounded-lg px-3.5 py-2.5 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+                  <i data-lucide="plus" class="w-4 h-4 text-slate-400"></i>
+                  <input type="text" placeholder="Type a skill and press Enter..." class="bg-transparent w-full text-sm text-slate-800 placeholder-slate-400 focus:outline-none">
+                </div>
+              </div>
+
+              <!-- Added Tags Pills -->
+              <div class="flex flex-wrap gap-2 pt-1">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand border border-brand-200 text-xs font-medium shadow-sm">
+                  NestJS
+                  <button type="button" class="text-brand hover:text-brand-700 transition-colors" aria-label="Remove NestJS">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </span>
+
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand border border-brand-200 text-xs font-medium shadow-sm">
+                  System Design
+                  <button type="button" class="text-brand hover:text-brand-700 transition-colors" aria-label="Remove System Design">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </span>
+
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand border border-brand-200 text-xs font-medium shadow-sm">
+                  React
+                  <button type="button" class="text-brand hover:text-brand-700 transition-colors" aria-label="Remove React">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </span>
+
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand border border-brand-200 text-xs font-medium shadow-sm">
+                  PostgreSQL
+                  <button type="button" class="text-brand hover:text-brand-700 transition-colors" aria-label="Remove PostgreSQL">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </span>
+
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand border border-brand-200 text-xs font-medium shadow-sm">
+                  API Design
+                  <button type="button" class="text-brand hover:text-brand-700 transition-colors" aria-label="Remove API Design">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </span>
+
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 text-brand border border-brand-200 text-xs font-medium shadow-sm">
+                  TypeScript
+                  <button type="button" class="text-brand hover:text-brand-700 transition-colors" aria-label="Remove TypeScript">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </span>
+              </div>
+
+              <!-- Suggested Tags -->
+              <div class="pt-2 flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-medium text-slate-400">Suggested:</span>
+                <button type="button" class="inline-flex items-center px-2.5 py-1 rounded-full border border-[#E5E4DE] bg-[#F5F4F0] text-xs font-medium text-slate-600 hover:border-brand-200 hover:text-brand hover:bg-brand-50 transition-colors">
+                  + Docker
+                </button>
+                <button type="button" class="inline-flex items-center px-2.5 py-1 rounded-full border border-[#E5E4DE] bg-[#F5F4F0] text-xs font-medium text-slate-600 hover:border-brand-200 hover:text-brand hover:bg-brand-50 transition-colors">
+                  + GraphQL
+                </button>
+                <button type="button" class="inline-flex items-center px-2.5 py-1 rounded-full border border-[#E5E4DE] bg-[#F5F4F0] text-xs font-medium text-slate-600 hover:border-brand-200 hover:text-brand hover:bg-brand-50 transition-colors">
+                  + AWS
+                </button>
+                <button type="button" class="inline-flex items-center px-2.5 py-1 rounded-full border border-[#E5E4DE] bg-[#F5F4F0] text-xs font-medium text-slate-600 hover:border-brand-200 hover:text-brand hover:bg-brand-50 transition-colors">
+                  + MongoDB
+                </button>
+                <button type="button" class="inline-flex items-center px-2.5 py-1 rounded-full border border-[#E5E4DE] bg-[#F5F4F0] text-xs font-medium text-slate-600 hover:border-brand-200 hover:text-brand hover:bg-brand-50 transition-colors">
+                  + Python
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. SESSION PREFERENCES CARD -->
+          <div class="bg-[#FAFAF8] rounded-12 p-6 border border-[#E5E4DE]">
+            <div class="flex items-center gap-3 mb-1.5">
+              <div class="w-8 h-8 rounded-lg bg-brand-50 text-brand flex items-center justify-center border border-brand-100/60">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h2 class="font-sora text-base font-semibold text-slate-900">Session Preferences</h2>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500 mb-6 pl-11">Configure how student mentoring requests are handled</p>
+
+            <div class="pl-0 sm:pl-11 divide-y divide-[#E5E4DE]">
+              <!-- Toggle 1: Auto-approve OFF -->
+              <div class="flex items-center justify-between py-3.5">
+                <div class="pr-4">
+                  <div class="text-sm font-medium text-slate-800">Auto-approve tickets under 15 min</div>
+                  <div class="text-xs text-slate-500">Automatically accept quick questions matching your active topics</div>
+                </div>
+                <!-- Toggle Switch (OFF) -->
+                <button type="button" class="w-11 h-6 bg-slate-300 rounded-full relative transition-colors focus:outline-none" role="switch" aria-checked="false">
+                  <span class="w-4 h-4 bg-white rounded-full absolute left-1 top-1 transition-transform"></span>
+                </button>
+              </div>
+
+              <!-- Toggle 2: Allow extensions ON -->
+              <div class="flex items-center justify-between py-3.5">
+                <div class="pr-4">
+                  <div class="text-sm font-medium text-slate-800">Allow session extensions</div>
+                  <div class="text-xs text-slate-500">Students can request +5 or +10 minute extensions if your daily cap permits</div>
+                </div>
+                <!-- Toggle Switch (ON) -->
+                <button type="button" class="w-11 h-6 bg-brand rounded-full relative transition-colors focus:outline-none" role="switch" aria-checked="true">
+                  <span class="w-4 h-4 bg-white rounded-full absolute right-1 top-1 transition-transform"></span>
+                </button>
+              </div>
+
+              <!-- Toggle 3: Enable chat before session ON -->
+              <div class="flex items-center justify-between py-3.5">
+                <div class="pr-4">
+                  <div class="text-sm font-medium text-slate-800">Enable chat before session</div>
+                  <div class="text-xs text-slate-500">Allow queued students to share code links and context prior to call</div>
+                </div>
+                <!-- Toggle Switch (ON) -->
+                <button type="button" class="w-11 h-6 bg-brand rounded-full relative transition-colors focus:outline-none" role="switch" aria-checked="true">
+                  <span class="w-4 h-4 bg-white rounded-full absolute right-1 top-1 transition-transform"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- FOOTER ACTIONS -->
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" class="px-5 py-2.5 rounded-lg border border-[#E5E4DE] text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-[#FAFAF8] transition-colors">
+              Discard Changes
+            </button>
+            <button type="button" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-brand hover:bg-brand-600 text-white text-sm font-semibold shadow-sm shadow-brand/30 transition-all active:scale-95">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>Save Configuration</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- BOTTOM BRAND FOOTER -->
+  <footer class="w-full border-t border-[#E5E4DE] bg-[#FAFAF8] py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+      <div class="flex items-center gap-2">
+        <span class="font-sora font-bold text-slate-700">MentorQ</span>
+        <span>&copy; 2025 MentorQ. Your queue to knowledge. All rights reserved.</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="#" class="hover:text-slate-800 transition-colors">Privacy Policy</a>
+        <a href="#" class="hover:text-slate-800 transition-colors">Terms of Service</a>
+        <a href="#" class="hover:text-slate-800 transition-colors">Help Center</a>
+        <a href="#" class="hover:text-slate-800 transition-colors">Code of Conduct</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Slider interactive visual sync
+    const slider = document.getElementById('minutes-slider');
+    const display = document.getElementById('minutes-display');
+    if (slider && display) {
+      slider.addEventListener('input', (e) => {
+        display.textContent = e.target.value;
+      });
+    }
+  </script>
+</body>
+</html>
