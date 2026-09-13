@@ -20,6 +20,9 @@ export class MentorProfile {
   @Prop({ required: true, default: true })
   is_online: boolean;
 
+  @Prop({ default: 0 })
+  rating_avg: number;
+
   @Prop({
     type: {
       start: { type: String, required: true },
