@@ -6,6 +6,8 @@ import { DatabaseModule } from './database/database.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { MentorProfilesModule } from './modules/mentor-profiles/mentor-profiles.module.js';
+import { TicketsModule } from './modules/tickets/tickets.module.js';
+import { SessionsModule } from './modules/sessions/sessions.module.js';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { MentorProfilesModule } from './modules/mentor-profiles/mentor-profiles.
     AuthModule,
     UsersModule,
     MentorProfilesModule,
+    TicketsModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -100,4 +100,13 @@ export class AuthService {
     }
     return this.generateToken(user);
   }
+
+  async validateToken(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      return this.usersService.findById(payload.sub);
+    } catch (err) {
+      return null;
+    }
+  }
 }
