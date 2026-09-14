@@ -1,5 +1,6 @@
 import { Controller, Get, Patch, Body, Req, UseGuards } from '@nestjs/common';
 import { MentorProfilesService } from '../services/mentor-profiles.service.js';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 
 @Controller('api/v1/mentors')
 export class MentorProfilesController {
@@ -15,8 +16,10 @@ export class MentorProfilesController {
   }
 
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   async getMyProfile(@Req() req: any) {
-    const profile = await this.mentorProfilesService.findByUserId(req.user.id);
+    const userId = (req.user?.id || req.user?._id)?.toString();
+    const profile = await this.mentorProfilesService.findByUserId(userId);
     return {
       status: 'success',
       data: profile,
@@ -24,8 +27,10 @@ export class MentorProfilesController {
   }
 
   @Patch('me')
+  @UseGuards(JwtAuthGuard)
   async updateMyProfile(@Req() req: any, @Body() updateData: any) {
-    const profile = await this.mentorProfilesService.updateProfile(req.user.id, updateData);
+    const userId = (req.user?.id || req.user?._id)?.toString();
+    const profile = await this.mentorProfilesService.updateProfile(userId, updateData);
     return {
       status: 'success',
       data: profile,
