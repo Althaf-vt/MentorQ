@@ -14,7 +14,7 @@ import { GoogleStrategy } from './strategies/google.strategy.js';
 @Module({
   imports: [
     UsersModule,
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     MongooseModule.forFeature([{ name: Otp.name, schema: OtpSchema }]),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -26,6 +26,6 @@ import { GoogleStrategy } from './strategies/google.strategy.js';
   ],
   controllers: [AuthController],
   providers: [AuthService, MailService, JwtStrategy, GoogleStrategy],
-  exports: [AuthService],
+  exports: [AuthService, PassportModule],
 })
 export class AuthModule {}

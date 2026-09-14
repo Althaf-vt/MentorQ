@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { PassportModule } from '@nestjs/passport';
 import { Session, SessionSchema } from './schemas/session.schema.js';
 import { SessionsRepository } from './repositories/sessions.repository.js';
 import { SessionsService } from './services/sessions.service.js';
@@ -13,6 +14,7 @@ import { AuthModule } from '../auth/auth.module.js';
     MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
     TicketsModule,
     AuthModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [SessionsController],
   providers: [SessionsRepository, SessionsService, SessionsGateway],
