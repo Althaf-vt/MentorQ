@@ -16,15 +16,8 @@ import { Link } from 'react-router-dom'
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string)?.replace('/api/v1', '') || 'http://localhost:3133'
 
 const settingsSchema = z.object({
-  fullName: z.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(50, 'Full name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s'\-]+$/, "Full name can only contain letters, spaces, hyphens, and apostrophes"),
-  bio: z.string()
-    .min(10, 'Bio must be at least 10 characters')
-    .max(500, 'Bio must be less than 500 characters')
-    .regex(/[a-zA-Z]{3,}/, "Bio must contain coherent sentences")
-    .optional().or(z.literal('')),
+  fullName: z.string().min(1, 'Full name is required'),
+  bio: z.string().max(300, 'Bio must be less than 300 characters').optional().or(z.literal('')),
   socialLinks: z.object({
     linkedin: z.string()
       .regex(/^https:\/\/(www\.)?linkedin\.com\/.*/, 'Must be a valid LinkedIn profile URL')
