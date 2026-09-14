@@ -9,7 +9,9 @@ export const StudentDashboardPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user)
   const [modalOpen, setModalOpen] = useState(false)
   const [page, setPage] = useState(1)
-  const { data: tickets = [], isLoading, refetch } = useGetStudentTicketsQuery()
+  const { data: tickets = [], isLoading, refetch } = useGetStudentTicketsQuery(undefined, {
+    pollingInterval: 20000,
+  })
 
   const pendingTickets = tickets.filter((t) => t.status === 'PENDING' || t.status === 'APPROVED' || t.status === 'ACTIVE')
   const completedTickets = tickets.filter((t) => t.status === 'COMPLETED')
@@ -69,9 +71,15 @@ export const StudentDashboardPage: React.FC = () => {
             <h2 className="text-sm font-bold text-slate-900">Recent Requests & Queue Status</h2>
             <p className="text-[10px] text-slate-400">Chronological activity ordered by newest request first.</p>
           </div>
-          <button onClick={() => refetch()} className="text-xs text-[#5948d3] hover:underline font-semibold cursor-pointer">
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Sync (20s)
+            </span>
+            <button onClick={() => refetch()} className="text-xs text-[#5948d3] hover:underline font-semibold cursor-pointer">
+              Refresh
+            </button>
+          </div>
         </div>
 
         {isLoading ? (

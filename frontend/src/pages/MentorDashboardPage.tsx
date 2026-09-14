@@ -22,11 +22,17 @@ import { useStartSessionMutation } from '@/store/api/sessionApi'
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
-  const { data: mentorProfileResp, refetch: refetchProfile } = useGetMyMentorProfileQuery()
+  const { data: mentorProfileResp, refetch: refetchProfile } = useGetMyMentorProfileQuery(undefined, {
+    pollingInterval: 30000,
+  })
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateMyMentorProfileMutation()
   const [startSession] = useStartSessionMutation()
-  const { data: tickets = [], isLoading: isLoadingTickets, refetch: refetchTickets } = useGetMentorTicketsQuery()
-  const { data: pendingPool = [], isLoading: isLoadingPool, refetch: refetchPool } = useGetPendingPoolQuery()
+  const { data: tickets = [], isLoading: isLoadingTickets, refetch: refetchTickets } = useGetMentorTicketsQuery(undefined, {
+    pollingInterval: 15000,
+  })
+  const { data: pendingPool = [], isLoading: isLoadingPool, refetch: refetchPool } = useGetPendingPoolQuery(undefined, {
+    pollingInterval: 15000,
+  })
   const [claimTicket, { isLoading: isClaiming }] = useClaimTicketMutation()
   const [updateTicketStatus] = useUpdateTicketStatusMutation()
 
@@ -162,9 +168,15 @@ export const MentorDashboardPage: React.FC = () => {
               <p className="text-[10px] text-slate-400">FIFO Queue (Oldest first) • Claim unassigned platform tickets.</p>
             </div>
           </div>
-          <button onClick={() => refetchPool()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
-            Refresh Pool
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Sync (15s)
+            </span>
+            <button onClick={() => refetchPool()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
+              Refresh Pool
+            </button>
+          </div>
         </div>
 
         {isLoadingPool ? (
@@ -278,9 +290,15 @@ export const MentorDashboardPage: React.FC = () => {
               <p className="text-[10px] text-slate-400">Chronological queue (Oldest first) • Focus mode live collaboration.</p>
             </div>
           </div>
-          <button onClick={() => refetchTickets()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Sync (15s)
+            </span>
+            <button onClick={() => refetchTickets()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
+              Refresh
+            </button>
+          </div>
         </div>
 
         {isLoadingTickets ? (
