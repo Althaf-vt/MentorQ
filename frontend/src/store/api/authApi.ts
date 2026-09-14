@@ -32,7 +32,7 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
     verifyOtp: builder.mutation<
-      { message: string },
+      AuthResponse & { message: string },
       { email: string; otp: string }
     >({
       query: (body) => ({

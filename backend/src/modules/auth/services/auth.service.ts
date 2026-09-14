@@ -30,9 +30,15 @@ export class AuthService {
       email: userData.email,
       password_hash: hashedPassword,
       role: userData.role || 'STUDENT',
+      is_verified: false,
     });
 
-    return this.generateToken(user);
+    await this.sendOtp(user.email);
+
+    return {
+      message: 'Registration successful. OTP sent to email.',
+      email: user.email,
+    };
   }
 
   async login(credentials: any) {
@@ -46,6 +52,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.is_verified) {
+      await this.sendOtp(user.email);
+      throw new UnauthorizedException('Please verify your email before logging in. A new verification code has been sent.');
+    }
+
     return this.generateToken(user);
   }
 
@@ -56,7 +67,7 @@ export class AuthService {
     await this.otpModel.findOneAndUpdate(
       { email },
       { otp_code: otpCode, expires_at: expiresAt, is_verified: false },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     );
 
     await this.mailService.sendOtp(email, otpCode);
@@ -71,7 +82,20 @@ export class AuthService {
 
     otp.is_verified = true;
     await otp.save();
-    return { message: 'OTP verified successfully' };
+
+    const user = await this.usersService.findByEmail(email);
+    let tokenData = {};
+    if (user) {
+      await this.usersRepository.update(user._id.toString(), { is_verified: true });
+      // Fetch fresh user
+      const updatedUser = await this.usersService.findById(user._id.toString());
+      tokenData = this.generateToken(updatedUser);
+    }
+
+    return {
+      message: 'OTP verified successfully',
+      ...tokenData,
+    };
   }
 
   private generateToken(user: any) {
@@ -96,7 +120,10 @@ export class AuthService {
         password_hash: 'OAUTH_USER', // Placeholder
         avatar_url: profile.photos[0]?.value,
         role: 'STUDENT',
+        is_verified: true,
       });
+    } else if (!user.is_verified) {
+      user = await this.usersRepository.update(user._id.toString(), { is_verified: true });
     }
     return this.generateToken(user);
   }

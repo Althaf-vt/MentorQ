@@ -3,6 +3,7 @@ import { Navbar } from './components/layout/Navbar'
 import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { PasswordResetPage } from './pages/auth/PasswordResetPage'
+import { VerifyOtpPage } from './pages/auth/VerifyOtpPage'
 import { UserSettingsPage } from './pages/UserSettingsPage'
 import { MentorConfigurationPage } from './pages/MentorConfigurationPage'
 import { StudentDashboardPage } from './pages/StudentDashboardPage'
@@ -38,6 +39,7 @@ function App() {
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><PasswordResetPage /></PublicRoute>} />
+            <Route path="/verify-otp" element={<PublicRoute><VerifyOtpPage /></PublicRoute>} />
 
             {/* Protected Student Routes */}
             <Route path="/student" element={<RoleRoute allowedRoles={['STUDENT', 'ADMIN']}><StudentDashboardPage /></RoleRoute>} />
