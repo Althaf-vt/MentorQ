@@ -31,6 +31,19 @@ export const ticketApi = baseApi.injectEndpoints({
       providesTags: ['Ticket'],
     }),
 
+    getPendingPool: builder.query<Ticket[], void>({
+      query: () => '/tickets/pool/pending',
+      providesTags: ['Ticket', 'Queue'],
+    }),
+
+    claimTicket: builder.mutation<Ticket, string>({
+      query: (id) => ({
+        url: `/tickets/${id}/claim`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Ticket', 'Queue'],
+    }),
+
     getTicketById: builder.query<Ticket, string>({
       query: (id) => `/tickets/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Ticket', id }],
@@ -59,7 +72,10 @@ export const {
   useCreateTicketMutation,
   useGetStudentTicketsQuery,
   useGetMentorTicketsQuery,
+  useGetPendingPoolQuery,
+  useClaimTicketMutation,
   useGetTicketByIdQuery,
   useUpdateTicketStatusMutation,
   useGetQueuePositionQuery,
 } = ticketApi
+
