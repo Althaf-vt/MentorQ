@@ -28,8 +28,8 @@ export const SessionFocusModePage: React.FC = () => {
   const navigate = useNavigate()
   const user = useAppSelector((s) => s.auth.user)
 
-  // Media state
-  const [mic, setMic] = useState(true)
+  // Media state - Microphone is MUTED by default on session entry
+  const [mic, setMic] = useState(false)
   const [screen, setScreen] = useState(false)
   const [remoteScreen, setRemoteScreen] = useState(false)
   const [localScreenStream, setLocalScreenStream] = useState<MediaStream | null>(null)
@@ -210,13 +210,13 @@ export const SessionFocusModePage: React.FC = () => {
       await makeOffer()
     }
 
-    // Acquire local microphone audio and attach to peer connection
+    // Acquire local microphone audio muted by default
     navigator.mediaDevices
       ?.getUserMedia({ audio: true })
       .then((stream) => {
         localAudioStreamRef.current = stream
         stream.getAudioTracks().forEach((track) => {
-          track.enabled = mic
+          track.enabled = false // Muted by default
           try {
             pc.addTrack(track, stream)
           } catch (e) {
@@ -741,7 +741,7 @@ export const SessionFocusModePage: React.FC = () => {
             }`}
           >
             {mic ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-            <span className="hidden sm:inline">{mic ? 'Mute' : 'Unmuted'}</span>
+            <span className="hidden sm:inline">{mic ? 'Mute' : 'Unmute'}</span>
           </button>
 
           {/* Screen Share Toggle */}
