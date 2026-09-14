@@ -67,7 +67,7 @@ export class TicketsService {
   }
 
   async getStudentTickets(studentId: string): Promise<TicketDocument[]> {
-    return this.ticketsRepository.find({ student_id: studentId });
+    return this.ticketsRepository.find({ student_id: studentId }, { createdAt: -1 });
   }
 
   async getMentorTickets(mentorId: string): Promise<TicketDocument[]> {

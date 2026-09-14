@@ -22,8 +22,8 @@ export class TicketsRepository {
     return this.ticketModel.findById(id).exec();
   }
 
-  async find(query: any): Promise<TicketDocument[]> {
-    return this.ticketModel.find(query).sort({ createdAt: 1 }).exec();
+  async find(query: any, sort: any = { createdAt: 1 }): Promise<TicketDocument[]> {
+    return this.ticketModel.find(query).sort(sort).exec();
   }
 
   async update(id: string, update: any): Promise<TicketDocument | null> {
