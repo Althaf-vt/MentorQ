@@ -23,7 +23,7 @@ export class SessionsRepository {
   }
 
   async update(id: string, update: any): Promise<SessionDocument | null> {
-    return this.sessionModel.findByIdAndUpdate(id, update, { new: true }).exec();
+    return this.sessionModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
 
   async findActiveByMentor(mentorId: string): Promise<SessionDocument | null> {

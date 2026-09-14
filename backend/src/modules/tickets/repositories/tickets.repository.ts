@@ -27,7 +27,7 @@ export class TicketsRepository {
   }
 
   async update(id: string, update: any): Promise<TicketDocument | null> {
-    return this.ticketModel.findByIdAndUpdate(id, update, { new: true }).exec();
+    return this.ticketModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
 
   async getQueuePosition(ticketId: string): Promise<number> {

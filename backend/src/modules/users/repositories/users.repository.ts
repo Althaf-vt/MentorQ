@@ -23,6 +23,6 @@ export class UsersRepository {
   }
 
   async update(id: string, update: UpdateQuery<UserDocument>): Promise<UserDocument | null> {
-    return this.userModel.findByIdAndUpdate(id, update, { new: true }).exec();
+    return this.userModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
 }

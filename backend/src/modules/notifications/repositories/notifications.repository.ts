@@ -25,7 +25,7 @@ export class NotificationsRepository {
     return this.notificationModel.findOneAndUpdate(
       { _id: notificationId, user_id: userId as any },
       { read_status: true },
-      { new: true },
+      { returnDocument: 'after' },
     );
   }
 
