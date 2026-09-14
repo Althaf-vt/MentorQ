@@ -8,13 +8,15 @@ Built to scale into a premier peer-to-peer mentorship marketplace, the codebase 
 
 ## 🎯 Project Vision & Motivation
 
-Traditional doubt-clearing and academic consulting sessions are often plagued by unstructured communication, unfair time distribution, and manual coordination. Students face long, unpredictable wait times, while mentors struggle to manage their daily capacity or maintain a structured history of past interactions.
+MentorQ was born out of a real-world time management challenge. As a senior engineering student with a broad technical stack (MERN, NestJS, System Design, Python, GenAI), I frequently found myself acting as an ad-hoc mentor for peers needing help with architecture decisions and debugging. While I am deeply passionate about mentoring, the volume of requests became unmanageable, derailing my own daily tasks. Ad-hoc sessions often dragged on without limits.
 
-**MentorQ** introduces a reliable, digitized queue system that enforces fairness, predictability, and high engagement:
-- **Fair Allocation:** Establishes a transparent, First-In-First-Out (FIFO) queue with dynamic waiting time calculation.
-- **Dynamic Capacity Management:** Empowers mentors to pre-determine their daily availability in minutes, which is dynamically deducted as sessions occur.
-- **Real-Time Synergy:** Drives live sessions via synchronized WebSocket countdown timers and immediate notifications.
-- **Future-Proof Blueprint:** Designed to expand into a monetization-ready, multi-resource marketplace featuring peer-to-peer video collaboration, paid premium sessions, and comprehensive skill directories.
+I built MentorQ as a personal utility tool to solve this bottleneck. It is a lightweight ticketing system designed to structure mentorship, protect focus time, and encourage student self-reliance. By enforcing strict daily time budgets, requiring explicit time-slot requests, and utilizing live WebSocket countdown timers, MentorQ ensures sessions hard-stop when the time is up. It also provides workflows to reject easily searchable queries, pushing students to self-learn before consuming a time slot.
+
+### From Personal Utility to P2P Platform: The Long-Term Vision
+While MentorQ excels as a personal productivity shield, its architectural foundation is designed for massive scale. The core vision is to transition this from a single-mentor utility into a decentralized, peer-to-peer (P2P) academic and technical consulting network:
+- **Self-Scaling Ecosystem:** Empowering students who receive high reputation scores and badges to request mentor upgrades, turning mentees into mentors who can pay it forward.
+- **Knowledge Monetization:** Integrating secure billing, premium paid doubt sessions, and earnings ledgers to reward mentors for their specialized focus and deep expertise.
+- **Immersive Interactive Learning:** Implementing WebRTC peer-to-peer video, study rooms, screen sharing, and interactive code whiteboards to make doubt-clearing as seamless as sitting in the same room.
 
 ---
 
