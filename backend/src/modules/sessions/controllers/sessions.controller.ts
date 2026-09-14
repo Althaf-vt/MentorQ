@@ -2,7 +2,7 @@ import { Controller, Post, Body, Param, Get, UseGuards, Request } from '@nestjs/
 import { SessionsService } from '../services/sessions.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 
-@Controller('sessions')
+@Controller('api/v1/sessions')
 @UseGuards(JwtAuthGuard)
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}

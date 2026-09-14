@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/
 import { ReviewsService } from '../services/reviews.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 
-@Controller('reviews')
+@Controller('api/v1/reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 

@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request } from '@
 import { TicketsService } from '../services/tickets.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 
-@Controller('tickets')
+@Controller('api/v1/tickets')
 @UseGuards(JwtAuthGuard)
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
@@ -14,7 +14,8 @@ export class TicketsController {
 
   @Get('pool/pending')
   async getPendingPool() {
-    return this.ticketsService.getPendingPool();
+    const tickets = await this.ticketsService.getPendingPool();
+    return tickets;
   }
 
   @Post(':id/claim')

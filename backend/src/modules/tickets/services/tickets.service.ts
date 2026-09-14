@@ -22,7 +22,7 @@ export class TicketsService {
   }
 
   async getPendingPool(): Promise<TicketDocument[]> {
-    return this.ticketsRepository.find({
+    return await this.ticketsRepository.find({
       status: 'PENDING',
       $or: [{ mentor_id: null }, { mentor_id: { $exists: false } }],
     });
