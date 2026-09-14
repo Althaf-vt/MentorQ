@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { X, Send, Clock, Tag, AlertCircle, Check } from 'lucide-react'
 import { useCreateTicketMutation } from '@/store/api/ticketApi'
+import { useToast } from '@/context/ToastContext'
 
 interface Props {
   isOpen: boolean
@@ -17,6 +18,7 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
   const [requestedMinutes, setRequestedMinutes] = useState(15)
   const [selectedTags, setSelectedTags] = useState<string[]>(['React'])
   const [errorMsg, setErrorMsg] = useState('')
+  const { showToast } = useToast()
   const [createTicket, { isLoading }] = useCreateTicketMutation()
 
   if (!isOpen) return null
@@ -32,12 +34,15 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
     }
     try {
       await createTicket({ topic, description, requested_minutes: requestedMinutes, tags: selectedTags }).unwrap()
+      showToast('Mentorship request submitted successfully!', 'success')
       setTopic('')
       setDescription('')
       if (onSuccess) onSuccess()
       onClose()
     } catch (err: any) {
-      setErrorMsg(err?.data?.message || 'Failed to submit ticket.')
+      const errMsg = err?.data?.message || 'Failed to submit ticket.'
+      setErrorMsg(errMsg)
+      showToast(errMsg, 'error')
     }
   }
 
