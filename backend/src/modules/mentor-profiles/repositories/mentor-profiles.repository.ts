@@ -42,11 +42,11 @@ export class MentorProfilesRepository {
 
     // 3. If no existing document, perform a safe upsert matching user_id
     return this.mentorProfileModel.findOneAndUpdate(
-      { user_id: userId },
+      { user_id: new Types.ObjectId(userId) },
       {
         $set: cleanUpdate,
         $setOnInsert: {
-          user_id: userId,
+          user_id: new Types.ObjectId(userId),
           expertise_tags: cleanUpdate.expertise_tags || [],
           daily_available_minutes: cleanUpdate.daily_available_minutes ?? 90,
           remaining_minutes_today: cleanUpdate.remaining_minutes_today ?? 90,

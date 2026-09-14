@@ -3,7 +3,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../services/auth.service.js';
 import * as express from 'express';
-
 export class GoogleAuthGuardWithState extends AuthGuard('google') {
   getAuthenticateOptions(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest();
