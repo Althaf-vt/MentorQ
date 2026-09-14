@@ -1,29 +1,46 @@
 import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, ChevronLeft, ChevronRight, Inbox } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Inbox, Filter } from 'lucide-react'
 import { useGetStudentTicketsQuery } from '@/store/api/ticketApi'
 import { useAppSelector } from '@/store/hooks'
 import { TicketCreationModal } from '@/components/tickets/TicketCreationModal'
+
+type FilterStatus = 'PENDING' | 'ALL' | 'COMPLETED' | 'CANCELLED'
 
 export const StudentDashboardPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user)
   const [modalOpen, setModalOpen] = useState(false)
   const [page, setPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('PENDING')
+
+  // Auto-refreshing poll every 20 seconds
   const { data: tickets = [], isLoading, refetch } = useGetStudentTicketsQuery(undefined, {
     pollingInterval: 20000,
   })
 
-  const pendingTickets = tickets.filter((t) => t.status === 'PENDING' || t.status === 'APPROVED' || t.status === 'ACTIVE')
-  const completedTickets = tickets.filter((t) => t.status === 'COMPLETED')
+  const pendingTicketsCount = tickets.filter(
+    (t) => t.status === 'PENDING' || t.status === 'APPROVED' || t.status === 'ACTIVE'
+  ).length
+  const completedTicketsCount = tickets.filter((t) => t.status === 'COMPLETED').length
+  const cancelledTicketsCount = tickets.filter((t) => t.status === 'CANCELLED').length
+
+  // Filter student tickets according to active filter
+  const filteredTickets = useMemo(() => {
+    if (statusFilter === 'ALL') return tickets
+    if (statusFilter === 'PENDING') {
+      return tickets.filter((t) => t.status === 'PENDING' || t.status === 'APPROVED' || t.status === 'ACTIVE')
+    }
+    return tickets.filter((t) => t.status === statusFilter)
+  }, [tickets, statusFilter])
 
   // Sort student tickets Newest First
   const sortedTickets = useMemo(() => {
-    return [...tickets].sort((a, b) => {
+    return [...filteredTickets].sort((a, b) => {
       const timeA = new Date(a.createdAt || (a as any).created_at || (a as any).updatedAt || 0).getTime()
       const timeB = new Date(b.createdAt || (b as any).created_at || (b as any).updatedAt || 0).getTime()
       return timeB - timeA
     })
-  }, [tickets])
+  }, [filteredTickets])
 
   const ITEMS_PER_PAGE = 5
   const totalPages = Math.max(1, Math.ceil(sortedTickets.length / ITEMS_PER_PAGE))
@@ -33,6 +50,11 @@ export const StudentDashboardPage: React.FC = () => {
   const startIdx = (currentPage - 1) * ITEMS_PER_PAGE + 1
   const endIdx = Math.min(currentPage * ITEMS_PER_PAGE, sortedTickets.length)
 
+  const handleFilterChange = (filter: FilterStatus) => {
+    setStatusFilter(filter)
+    setPage(1)
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6 font-body">
       <div className="bg-gradient-to-r from-[#5948d3]/10 via-[#8172fe]/5 to-transparent p-6 rounded-3xl border border-[#5948d3]/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -40,7 +62,10 @@ export const StudentDashboardPage: React.FC = () => {
           <h1 className="text-2xl font-black text-slate-900 font-headline">Welcome back, {user?.fullName || 'Scholar'}</h1>
           <p className="text-xs text-slate-500">Get instant 1-on-1 assistance with code issues, algorithms, and design.</p>
         </div>
-        <button onClick={() => setModalOpen(true)} className="px-5 py-2.5 rounded-full bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold text-xs shadow cursor-pointer">
+        <button
+          onClick={() => setModalOpen(true)}
+          className="px-5 py-2.5 rounded-full bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold text-xs shadow cursor-pointer transition-colors"
+        >
           Request Mentorship
         </button>
       </div>
@@ -48,11 +73,11 @@ export const StudentDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border">
           <span className="text-xs text-slate-500 block font-medium">Active Requests</span>
-          <span className="text-xl font-black text-slate-900">{pendingTickets.length}</span>
+          <span className="text-xl font-black text-slate-900">{pendingTicketsCount}</span>
         </div>
         <div className="bg-white p-4 rounded-xl border">
           <span className="text-xs text-slate-500 block font-medium">Completed Sessions</span>
-          <span className="text-xl font-black text-slate-900">{completedTickets.length}</span>
+          <span className="text-xl font-black text-slate-900">{completedTicketsCount}</span>
         </div>
         <div className="bg-white p-4 rounded-xl border flex justify-between items-center">
           <div>
@@ -65,13 +90,13 @@ export const StudentDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border p-5 space-y-4">
-        <div className="flex items-center justify-between border-b pb-3">
+      <div className="bg-white rounded-2xl border p-5 space-y-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Recent Requests & Queue Status</h2>
             <p className="text-[10px] text-slate-400">Chronological activity ordered by newest request first.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 self-end sm:self-auto">
             <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live Sync (20s)
@@ -82,12 +107,80 @@ export const StudentDashboardPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Filter Controls Bar (Pending default, All, Completed, Cancelled) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <div className="flex items-center gap-1 text-slate-400 mr-1 text-[11px]">
+            <Filter className="w-3.5 h-3.5" />
+            <span>Filter:</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleFilterChange('PENDING')}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              statusFilter === 'PENDING'
+                ? 'bg-[#5948d3] text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+            }`}
+          >
+            <span>Pending</span>
+            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${statusFilter === 'PENDING' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {pendingTicketsCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleFilterChange('ALL')}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              statusFilter === 'ALL'
+                ? 'bg-[#5948d3] text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+            }`}
+          >
+            <span>All</span>
+            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${statusFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {tickets.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleFilterChange('COMPLETED')}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              statusFilter === 'COMPLETED'
+                ? 'bg-[#5948d3] text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+            }`}
+          >
+            <span>Completed</span>
+            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${statusFilter === 'COMPLETED' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {completedTicketsCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleFilterChange('CANCELLED')}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              statusFilter === 'CANCELLED'
+                ? 'bg-[#5948d3] text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+            }`}
+          >
+            <span>Cancelled</span>
+            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${statusFilter === 'CANCELLED' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {cancelledTicketsCount}
+            </span>
+          </button>
+        </div>
+
         {isLoading ? (
-          <div className="py-6 text-center text-xs text-slate-400">Loading...</div>
+          <div className="py-8 text-center text-xs text-slate-400">Loading requests...</div>
         ) : sortedTickets.length === 0 ? (
           <div className="py-8 text-center text-xs text-slate-400 flex flex-col items-center gap-2">
             <Inbox className="w-6 h-6 text-slate-300" />
-            <span>No requests found. Create one above to get started!</span>
+            <span>No {statusFilter.toLowerCase()} requests found.</span>
           </div>
         ) : (
           <div className="space-y-3">
@@ -114,6 +207,8 @@ export const StudentDashboardPage: React.FC = () => {
                               ? 'bg-emerald-100 text-emerald-800'
                               : t.status === 'ACTIVE'
                               ? 'bg-[#5948d3]/15 text-[#5948d3]'
+                              : t.status === 'CANCELLED'
+                              ? 'bg-rose-100 text-rose-800'
                               : 'bg-amber-100 text-amber-800'
                           }`}
                         >
