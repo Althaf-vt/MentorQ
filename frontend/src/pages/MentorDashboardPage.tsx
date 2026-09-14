@@ -169,10 +169,6 @@ export const MentorDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Sync (15s)
-            </span>
             <button onClick={() => refetchPool()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
               Refresh Pool
             </button>
@@ -291,10 +287,6 @@ export const MentorDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Sync (15s)
-            </span>
             <button onClick={() => refetchTickets()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
               Refresh
             </button>

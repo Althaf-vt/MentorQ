@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ChevronLeft, ChevronRight, Inbox, Filter } from 'lucide-react'
 import { useGetStudentTicketsQuery } from '@/store/api/ticketApi'
@@ -13,7 +13,7 @@ export const StudentDashboardPage: React.FC = () => {
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('PENDING')
 
-  // Auto-refreshing poll every 20 seconds
+  // Auto-refreshing poll every 20 seconds (stealth)
   const { data: tickets = [], isLoading, refetch } = useGetStudentTicketsQuery(undefined, {
     pollingInterval: 20000,
   })
@@ -23,6 +23,13 @@ export const StudentDashboardPage: React.FC = () => {
   ).length
   const completedTicketsCount = tickets.filter((t) => t.status === 'COMPLETED').length
   const cancelledTicketsCount = tickets.filter((t) => t.status === 'CANCELLED').length
+
+  // Smart Filtering: If 'PENDING' filter is active and pending tickets count is 0, auto switch to 'ALL'
+  useEffect(() => {
+    if (!isLoading && tickets.length > 0 && statusFilter === 'PENDING' && pendingTicketsCount === 0) {
+      setStatusFilter('ALL')
+    }
+  }, [isLoading, tickets.length, statusFilter, pendingTicketsCount])
 
   // Filter student tickets according to active filter
   const filteredTickets = useMemo(() => {
@@ -97,10 +104,6 @@ export const StudentDashboardPage: React.FC = () => {
             <p className="text-[10px] text-slate-400">Chronological activity ordered by newest request first.</p>
           </div>
           <div className="flex items-center gap-3 self-end sm:self-auto">
-            <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Sync (20s)
-            </span>
             <button onClick={() => refetch()} className="text-xs text-[#5948d3] hover:underline font-semibold cursor-pointer">
               Refresh
             </button>
