@@ -1,0 +1,16 @@
+{
+  "name": "mentorq-root",
+  "version": "1.0.0",
+  "description": "MentorQ - On-Demand Mentorship Platform (Root Workspace)",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "start:backend": "npm run start:dev --prefix backend",
+    "start:frontend": "npm run start:dev --prefix frontend",
+    "start:dev": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start": "npm run start:dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
