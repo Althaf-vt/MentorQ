@@ -41,6 +41,7 @@ export const SessionFocusModePage: React.FC = () => {
   // Stream and WebRTC references
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
   const localAudioStreamRef = useRef<MediaStream | null>(null)
+  const remoteAudioStreamRef = useRef<MediaStream | null>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
   const screenSenderRef = useRef<RTCRtpSender | null>(null)
   const screenVideoRef = useRef<HTMLVideoElement | null>(null)
@@ -48,6 +49,7 @@ export const SessionFocusModePage: React.FC = () => {
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
   const makingOfferRef = useRef<boolean>(false)
   const ignoreOfferRef = useRef<boolean>(false)
+  const iceCandidatesQueueRef = useRef<RTCIceCandidateInit[]>([])
 
   // Fetch ticket and session data
   const { data: ticket } = useGetTicketByIdQuery(ticketId || '', { skip: !ticketId })
@@ -111,19 +113,52 @@ export const SessionFocusModePage: React.FC = () => {
     return () => clearInterval(interval)
   }, [activeSess, ticket])
 
-  // WebRTC Perfect Negotiation & Audio/Video Signaling Lifecycle
+  // Unlock browser audio autoplay on user gesture
   useEffect(() => {
+    const unlockAudio = () => {
+      if (remoteAudioRef.current && remoteAudioStreamRef.current) {
+        if (remoteAudioRef.current.paused) {
+          remoteAudioRef.current.play().catch(() => {})
+        }
+      }
+    }
+    window.addEventListener('click', unlockAudio)
+    window.addEventListener('keydown', unlockAudio)
+    return () => {
+      window.removeEventListener('click', unlockAudio)
+      window.removeEventListener('keydown', unlockAudio)
+    }
+  }, [])
+
+  // WebRTC Perfect Negotiation & Audio/Video Signaling Lifecycle
+  // Dependent strictly on ticketId and user role to prevent tear-down when session queries resolve
+  useEffect(() => {
+    if (!ticketId) return
     const isPolite = user?.role !== 'MENTOR'
-    const sessionId = sId || ticketId
-    if (!sessionId) return
+    const sessionId = ticketId
 
     const pc = new RTCPeerConnection(RTC_CONFIG)
     peerConnectionRef.current = pc
+
+    // Helper to process buffered ICE candidates
+    const processPendingCandidates = async () => {
+      while (iceCandidatesQueueRef.current.length > 0) {
+        const cand = iceCandidatesQueueRef.current.shift()
+        if (cand && pc.remoteDescription) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(cand))
+          } catch (e) {
+            console.warn('Error applying queued ICE candidate:', e)
+          }
+        }
+      }
+    }
 
     // ICE candidates dispatch
     pc.onicecandidate = ({ candidate }) => {
       if (candidate) {
         socketService.emit('webrtc_signal', {
+          ticketId,
           sessionId,
           data: { type: 'ice-candidate', candidate },
         })
@@ -134,6 +169,7 @@ export const SessionFocusModePage: React.FC = () => {
     pc.ontrack = (event) => {
       if (event.track.kind === 'audio') {
         const stream = event.streams[0] || new MediaStream([event.track])
+        remoteAudioStreamRef.current = stream
         if (remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = stream
           remoteAudioRef.current.play().catch((err) => console.warn('Remote audio playback error:', err))
@@ -150,20 +186,27 @@ export const SessionFocusModePage: React.FC = () => {
       }
     }
 
-    // Perfect negotiation: offer generation
-    pc.onnegotiationneeded = async () => {
+    // Offer generator helper
+    const makeOffer = async () => {
       try {
         makingOfferRef.current = true
-        await pc.setLocalDescription()
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
         socketService.emit('webrtc_signal', {
+          ticketId,
           sessionId,
           data: { type: 'offer', sdp: pc.localDescription },
         })
       } catch (err) {
-        console.error('WebRTC negotiation error:', err)
+        console.error('WebRTC offer error:', err)
       } finally {
         makingOfferRef.current = false
       }
+    }
+
+    // Perfect negotiation: offer generation
+    pc.onnegotiationneeded = async () => {
+      await makeOffer()
     }
 
     // Acquire local microphone audio and attach to peer connection
@@ -191,25 +234,38 @@ export const SessionFocusModePage: React.FC = () => {
       const currentPc = peerConnectionRef.current
 
       try {
-        if (data.type === 'offer') {
+        if (data.type === 'peer_ready') {
+          // A peer just joined or reconnected - initiate fresh offer if Mentor/initiator
+          if (user?.role === 'MENTOR') {
+            await makeOffer()
+          }
+        } else if (data.type === 'offer') {
           const offerCollision = makingOfferRef.current || currentPc.signalingState !== 'stable'
           ignoreOfferRef.current = !isPolite && offerCollision
           if (ignoreOfferRef.current) {
             return
           }
           await currentPc.setRemoteDescription(new RTCSessionDescription(data.sdp))
-          await currentPc.setLocalDescription()
+          await processPendingCandidates()
+          const answer = await currentPc.createAnswer()
+          await currentPc.setLocalDescription(answer)
           socketService.emit('webrtc_signal', {
+            ticketId,
             sessionId,
             data: { type: 'answer', sdp: currentPc.localDescription },
           })
         } else if (data.type === 'answer') {
           if (currentPc.signalingState === 'have-local-offer') {
             await currentPc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+            await processPendingCandidates()
           }
         } else if (data.type === 'ice-candidate') {
           try {
-            await currentPc.addIceCandidate(new RTCIceCandidate(data.candidate))
+            if (currentPc.remoteDescription && currentPc.remoteDescription.type) {
+              await currentPc.addIceCandidate(new RTCIceCandidate(data.candidate))
+            } else {
+              iceCandidatesQueueRef.current.push(data.candidate)
+            }
           } catch (err) {
             if (!ignoreOfferRef.current) {
               console.warn('Error adding ICE candidate:', err)
@@ -228,6 +284,13 @@ export const SessionFocusModePage: React.FC = () => {
 
     socketService.on('webrtc_signal', onWebRtcSignal)
 
+    // Notify peers that this participant is ready
+    socketService.emit('webrtc_signal', {
+      ticketId,
+      sessionId,
+      data: { type: 'peer_ready' },
+    })
+
     return () => {
       socketService.off('webrtc_signal', onWebRtcSignal)
       if (screenSenderRef.current && pc) {
@@ -245,8 +308,9 @@ export const SessionFocusModePage: React.FC = () => {
         screenStreamRef.current.getTracks().forEach((t) => t.stop())
         screenStreamRef.current = null
       }
+      iceCandidatesQueueRef.current = []
     }
-  }, [sId, ticketId, user?.role])
+  }, [ticketId, user?.role])
 
   // Bind local screen video element to local stream (prevents blank canvas race)
   useEffect(() => {
@@ -268,11 +332,12 @@ export const SessionFocusModePage: React.FC = () => {
   useEffect(() => {
     socketService.connect()
 
-    if (sId) {
-      socketService.emit('joinSession', sId)
-    }
     if (ticketId) {
       socketService.emit('joinTicket', ticketId)
+      socketService.emit('joinSession', ticketId)
+    }
+    if (sId && sId !== ticketId) {
+      socketService.emit('joinSession', sId)
     }
     if (user?.id) {
       socketService.emit('joinUser', user.id)
@@ -321,8 +386,13 @@ export const SessionFocusModePage: React.FC = () => {
     socketService.on('session_ended', onSessionEnded)
 
     return () => {
-      if (sId) socketService.emit('leaveSession', sId)
-      if (ticketId) socketService.emit('leaveTicket', ticketId)
+      if (ticketId) {
+        socketService.emit('leaveTicket', ticketId)
+        socketService.emit('leaveSession', ticketId)
+      }
+      if (sId && sId !== ticketId) {
+        socketService.emit('leaveSession', sId)
+      }
       socketService.off('sessionUpdate', onSessionUpdate)
       socketService.off('timer_sync', onTimerSync)
       socketService.off('receiveMessage', onReceiveMessage)
@@ -379,6 +449,7 @@ export const SessionFocusModePage: React.FC = () => {
     setScreen(false)
 
     socketService.emit('webrtc_signal', {
+      ticketId,
       sessionId: sId || ticketId,
       data: { type: 'screen_stopped' },
     })
@@ -407,6 +478,7 @@ export const SessionFocusModePage: React.FC = () => {
         setScreen(true)
 
         socketService.emit('webrtc_signal', {
+          ticketId,
           sessionId: sId || ticketId,
           data: { type: 'screen_started' },
         })
@@ -542,6 +614,7 @@ export const SessionFocusModePage: React.FC = () => {
                 ref={remoteScreenVideoRef}
                 autoPlay
                 playsInline
+                muted
                 className="w-full h-full object-contain"
               />
               <div className="absolute top-3 left-3 bg-black/70 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5">
