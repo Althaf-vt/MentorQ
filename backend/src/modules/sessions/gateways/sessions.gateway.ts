@@ -94,8 +94,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     @MessageBody() payload: { sessionId: string; message: any },
   ) {
     if (payload?.sessionId && payload?.message) {
-      this.server.to(`session_${payload.sessionId}`).emit('receiveMessage', payload.message);
-      this.server.to(`session_${payload.sessionId}`).emit('newMessage', payload.message);
+      client.to(`session_${payload.sessionId}`).emit('receiveMessage', payload.message);
     }
     return { event: 'messageSent' };
   }
@@ -149,7 +148,6 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   emitNewMessage(sessionId: string, message: any) {
     if (!this.server) return;
     this.server.to(`session_${sessionId}`).emit('receiveMessage', message);
-    this.server.to(`session_${sessionId}`).emit('newMessage', message);
   }
 
   // Method to emit timer sync tick
