@@ -29,6 +29,11 @@ export const sessionApi = baseApi.injectEndpoints({
       query: () => '/sessions/active/student',
       providesTags: ['Ticket'],
     }),
+
+    getSessionByTicketId: builder.query<Session | null, string>({
+      query: (ticketId) => `/sessions/ticket/${ticketId}`,
+      providesTags: ['Ticket'],
+    }),
   }),
 })
 
@@ -37,4 +42,5 @@ export const {
   useEndSessionMutation,
   useGetActiveMentorSessionQuery,
   useGetActiveStudentSessionQuery,
+  useGetSessionByTicketIdQuery,
 } = sessionApi
