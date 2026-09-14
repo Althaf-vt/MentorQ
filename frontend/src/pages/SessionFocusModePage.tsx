@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Mic, MicOff, Monitor, MessageSquare, Square, Clock, Share2, Pin } from 'lucide-react'
+import { Mic, MicOff, Monitor, MessageSquare, Square, Clock, Share2 } from 'lucide-react'
 import { useGetTicketByIdQuery } from '@/store/api/ticketApi'
 import {
   useGetActiveStudentSessionQuery,
@@ -34,13 +34,14 @@ export const SessionFocusModePage: React.FC = () => {
   const [remoteScreen, setRemoteScreen] = useState(false)
   const [localScreenStream, setLocalScreenStream] = useState<MediaStream | null>(null)
   const [remoteScreenStream, setRemoteScreenStream] = useState<MediaStream | null>(null)
-  const [pinnedStream, setPinnedStream] = useState<'local' | 'remote'>('remote')
   const [chatOpen, setChatOpen] = useState(true)
   const [showRating, setShowRating] = useState(false)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
 
   // Stream and WebRTC references
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
+  const audioTransceiverRef = useRef<RTCRtpTransceiver | null>(null)
+  const videoTransceiverRef = useRef<RTCRtpTransceiver | null>(null)
   const localAudioStreamRef = useRef<MediaStream | null>(null)
   const remoteAudioStreamRef = useRef<MediaStream | null>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
@@ -141,6 +142,12 @@ export const SessionFocusModePage: React.FC = () => {
     const pc = new RTCPeerConnection(RTC_CONFIG)
     peerConnectionRef.current = pc
 
+    // Initialize pre-negotiated transceivers for audio and screen video
+    const audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' })
+    const videoTransceiver = pc.addTransceiver('video', { direction: 'sendrecv' })
+    audioTransceiverRef.current = audioTransceiver
+    videoTransceiverRef.current = videoTransceiver
+
     // Helper to process buffered ICE candidates
     const processPendingCandidates = async () => {
       while (iceCandidatesQueueRef.current.length > 0) {
@@ -183,6 +190,10 @@ export const SessionFocusModePage: React.FC = () => {
         event.track.onended = () => {
           setRemoteScreen(false)
           setRemoteScreenStream(null)
+        }
+        event.track.onunmute = () => {
+          setRemoteScreen(true)
+          setRemoteScreenStream(stream)
         }
       }
     }
@@ -228,15 +239,26 @@ export const SessionFocusModePage: React.FC = () => {
         console.warn('Microphone permission not granted yet or unavailable:', err)
       })
 
-    // WebRTC signaling receiver
+    // WebRTC signaling receiver with duplicate suppression
+    let lastSigHash = ''
+    let lastSigTime = 0
+
     const onWebRtcSignal = async (payload: { senderId: string; data: any }) => {
       const data = payload?.data
       if (!data || !peerConnectionRef.current) return
       const currentPc = peerConnectionRef.current
 
+      // Suppress duplicate signals delivered in quick succession
+      const sigHash = `${data.type}_${JSON.stringify(data.sdp || data.candidate || '')}`
+      const now = Date.now()
+      if (sigHash === lastSigHash && now - lastSigTime < 200) {
+        return
+      }
+      lastSigHash = sigHash
+      lastSigTime = now
+
       try {
         if (data.type === 'peer_ready') {
-          // A peer just joined or reconnected - initiate fresh offer if Mentor/initiator
           if (user?.role === 'MENTOR') {
             await makeOffer()
           }
@@ -294,6 +316,8 @@ export const SessionFocusModePage: React.FC = () => {
 
     return () => {
       socketService.off('webrtc_signal', onWebRtcSignal)
+      audioTransceiverRef.current = null
+      videoTransceiverRef.current = null
       if (screenSenderRef.current && pc) {
         try {
           pc.removeTrack(screenSenderRef.current)
@@ -429,8 +453,14 @@ export const SessionFocusModePage: React.FC = () => {
   }
 
   // Stop local screen sharing and cleanup WebRTC track
-  const stopLocalScreenShare = () => {
-    if (screenSenderRef.current && peerConnectionRef.current) {
+  const stopLocalScreenShare = async () => {
+    if (videoTransceiverRef.current?.sender) {
+      try {
+        await videoTransceiverRef.current.sender.replaceTrack(null)
+      } catch (e) {
+        console.warn('Error clearing video transceiver track:', e)
+      }
+    } else if (screenSenderRef.current && peerConnectionRef.current) {
       try {
         peerConnectionRef.current.removeTrack(screenSenderRef.current)
       } catch (e) {
@@ -459,14 +489,20 @@ export const SessionFocusModePage: React.FC = () => {
   // Screen sharing toggle & WebRTC track control
   const handleToggleScreen = async () => {
     if (screen) {
-      stopLocalScreenShare()
+      await stopLocalScreenShare()
     } else {
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
         screenStreamRef.current = stream
         const videoTrack = stream.getVideoTracks()[0]
 
-        if (peerConnectionRef.current && videoTrack) {
+        if (videoTransceiverRef.current?.sender && videoTrack) {
+          try {
+            await videoTransceiverRef.current.sender.replaceTrack(videoTrack)
+          } catch (e) {
+            console.warn('Error setting display track on video transceiver:', e)
+          }
+        } else if (peerConnectionRef.current && videoTrack) {
           try {
             const sender = peerConnectionRef.current.addTrack(videoTrack, stream)
             screenSenderRef.current = sender
@@ -499,12 +535,16 @@ export const SessionFocusModePage: React.FC = () => {
   // Message sending with optimistic local updates & REST persistence
   const handleSendMessage = async (text: string) => {
     const tempId = `temp_${Date.now()}`
+    const nowIso = new Date().toISOString()
     const optimisticMsg: Message = {
       _id: tempId,
       session_id: (sId || ticketId) as any,
       sender_id: (user?.id || 'me') as any,
       message_text: text,
-      sent_at: new Date().toISOString() as any,
+      sent_at: nowIso,
+      read_status: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     }
 
     // Optimistically update chat immediately
@@ -558,11 +598,6 @@ export const SessionFocusModePage: React.FC = () => {
   const hasLocalScreen = Boolean(screen && localScreenStream)
   const hasRemoteScreen = Boolean(remoteScreen && remoteScreenStream)
   const isDualScreen = hasLocalScreen && hasRemoteScreen
-  const effectivePinned = isDualScreen
-    ? pinnedStream
-    : hasLocalScreen
-    ? 'local'
-    : 'remote'
 
   return (
     <div className="relative min-h-[92vh] w-full bg-[#f5f4f0] text-slate-900 flex flex-col justify-between font-body">
@@ -598,82 +633,94 @@ export const SessionFocusModePage: React.FC = () => {
       {/* Main Workspace */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 overflow-y-auto">
-          {/* Active Screen Sharing Viewport (Supports Concurrent Dual Sharing + Stream Pinning) */}
+          {/* Active Screen Sharing Viewport (Supports Concurrent Dual Sharing or Single Sharing) */}
           {(hasLocalScreen || hasRemoteScreen) && (
-            <div className="w-full max-w-3xl flex flex-col items-center gap-3">
-              <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-[#5948d3]/60 aspect-video relative flex items-center justify-center group">
-                {/* Primary Pinned Video Stream */}
-                {effectivePinned === 'local' ? (
-                  <video
-                    ref={screenVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <video
-                    ref={remoteScreenVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-contain"
-                  />
-                )}
-
-                {/* Primary Stream Active Badge */}
-                <div className="absolute top-3 left-3 bg-black/75 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5 shadow">
-                  <Share2 className="w-3 h-3 text-emerald-400 animate-pulse" />
-                  <span>
-                    {effectivePinned === 'local' ? 'Your Screen (Pinned)' : "Peer's Screen (Pinned)"}
-                  </span>
-                </div>
-
-                {/* Dual Screen: Pin Toggle Switch Button */}
-                {isDualScreen && (
-                  <button
-                    onClick={() => setPinnedStream(effectivePinned === 'local' ? 'remote' : 'local')}
-                    className="absolute top-3 right-3 bg-black/75 backdrop-blur hover:bg-black text-white px-2.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
-                    title="Swap primary pinned view"
-                  >
-                    <Pin className="w-3 h-3 text-[#8172fe]" />
-                    <span>Swap Pinned View</span>
-                  </button>
-                )}
-
-                {/* Dual Screen: Floating Secondary Picture-in-Picture Preview Window */}
-                {isDualScreen && (
-                  <div
-                    onClick={() => setPinnedStream(effectivePinned === 'local' ? 'remote' : 'local')}
-                    className="absolute bottom-3 right-3 w-44 sm:w-56 aspect-video bg-slate-950 rounded-xl overflow-hidden shadow-2xl border-2 border-[#8172fe] cursor-pointer group/pip hover:scale-105 transition-transform z-10"
-                    title="Click to Pin as primary view"
-                  >
-                    {effectivePinned === 'local' ? (
-                      <video
-                        ref={remoteScreenVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-contain pointer-events-none"
-                      />
-                    ) : (
-                      <video
-                        ref={screenVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-contain pointer-events-none"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black/30 group-hover/pip:bg-black/10 transition-colors flex items-end p-1.5">
-                      <span className="bg-black/80 backdrop-blur px-2 py-0.5 rounded text-[8px] text-white font-bold flex items-center gap-1 shadow">
-                        <Pin className="w-2.5 h-2.5 text-[#8172fe]" />
-                        <span>{effectivePinned === 'local' ? "Peer's Screen" : 'Your Screen'} • Click to Pin</span>
-                      </span>
+            <div className="w-full max-w-5xl flex flex-col items-center gap-4">
+              {isDualScreen ? (
+                /* Dual Screen: Simultaneous Side-by-Side Multi-Screen Grid */
+                <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Local Screen Tile */}
+                  <div className="w-full bg-black rounded-2xl overflow-hidden shadow-xl border-2 border-[#5948d3]/60 aspect-video relative flex items-center justify-center group">
+                    <video
+                      ref={(el) => {
+                        screenVideoRef.current = el
+                        if (el && localScreenStream && el.srcObject !== localScreenStream) {
+                          el.srcObject = localScreenStream
+                          el.play().catch(() => {})
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute top-3 left-3 bg-black/75 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5 shadow">
+                      <Share2 className="w-3 h-3 text-emerald-400 animate-pulse" />
+                      <span>Your Screen (Sharing)</span>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Remote Screen Tile */}
+                  <div className="w-full bg-black rounded-2xl overflow-hidden shadow-xl border-2 border-[#8172fe]/60 aspect-video relative flex items-center justify-center group">
+                    <video
+                      ref={(el) => {
+                        remoteScreenVideoRef.current = el
+                        if (el && remoteScreenStream && el.srcObject !== remoteScreenStream) {
+                          el.srcObject = remoteScreenStream
+                          el.play().catch(() => {})
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute top-3 left-3 bg-black/75 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5 shadow">
+                      <Share2 className="w-3 h-3 text-[#8172fe] animate-pulse" />
+                      <span>{user?.role === 'MENTOR' ? "Student's Screen" : "Mentor's Screen"}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Single Screen Active (Local OR Remote) */
+                <div className="w-full max-w-3xl bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-[#5948d3]/60 aspect-video relative flex items-center justify-center group">
+                  {hasLocalScreen ? (
+                    <video
+                      ref={(el) => {
+                        screenVideoRef.current = el
+                        if (el && localScreenStream && el.srcObject !== localScreenStream) {
+                          el.srcObject = localScreenStream
+                          el.play().catch(() => {})
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <video
+                      ref={(el) => {
+                        remoteScreenVideoRef.current = el
+                        if (el && remoteScreenStream && el.srcObject !== remoteScreenStream) {
+                          el.srcObject = remoteScreenStream
+                          el.play().catch(() => {})
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                  <div className="absolute top-3 left-3 bg-black/75 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5 shadow">
+                    <Share2 className="w-3 h-3 text-emerald-400 animate-pulse" />
+                    <span>
+                      {hasLocalScreen
+                        ? 'Your Screen (Sharing)'
+                        : `${user?.role === 'MENTOR' ? "Student's" : "Mentor's"} Screen`}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Compact Countdown timer badge while screen is active */}
               <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white border shadow-xs text-xs">

@@ -104,13 +104,13 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { sessionId?: string; ticketId?: string; data: any },
   ) {
-    const targetId = payload?.sessionId || payload?.ticketId;
-    if (targetId) {
-      client.to(`session_${targetId}`).emit('webrtc_signal', {
+    if (payload?.sessionId) {
+      client.to(`session_${payload.sessionId}`).emit('webrtc_signal', {
         senderId: client.id,
         data: payload.data,
       });
-      client.to(`ticket_${targetId}`).emit('webrtc_signal', {
+    } else if (payload?.ticketId) {
+      client.to(`ticket_${payload.ticketId}`).emit('webrtc_signal', {
         senderId: client.id,
         data: payload.data,
       });
