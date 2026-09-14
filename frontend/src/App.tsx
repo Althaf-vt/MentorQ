@@ -1,39 +1,75 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Navbar } from './components/layout/Navbar'
+import { LoginPage } from './pages/auth/LoginPage'
+import { RegisterPage } from './pages/auth/RegisterPage'
+import { PasswordResetPage } from './pages/auth/PasswordResetPage'
+import { UserSettingsPage } from './pages/UserSettingsPage'
+import { MentorConfigurationPage } from './pages/MentorConfigurationPage'
+import { ProtectedRoute } from './routes/ProtectedRoute'
+import { PublicRoute } from './routes/PublicRoute'
+import { RoleRoute } from './routes/RoleRoute'
 import './App.css'
 
 function App() {
   return (
-    <main className="app-shell">
-      <section className="hero-panel">
-        <p className="eyebrow">MentorQ</p>
-        <h1>Workspace initialization is ready.</h1>
-        <p className="lead">
-          Phase 0 sets up the React + Vite frontend on port <code>5180</code>{' '}
-          and prepares the backend connection target at{' '}
-          <code>3133/api/v1</code>.
-        </p>
-      </section>
+    <BrowserRouter>
+      <div className="min-h-screen bg-[#faf9f7] flex flex-col">
+        <Navbar />
+        <div className="flex-grow">
+          <Routes>
+            {/* Public Routes */}
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <RegisterPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <PasswordResetPage />
+                </PublicRoute>
+              }
+            />
 
-      <section className="status-grid" aria-label="Phase 0 status">
-        <article className="status-card">
-          <h2>Frontend</h2>
-          <p>React + Vite scaffold created.</p>
-          <p>
-            Dev server is locked to <code>5180</code> with strict port
-            enforcement.
-          </p>
-        </article>
+            {/* Protected Routes */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <UserSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mentor/configuration"
+              element={
+                <RoleRoute allowedRoles={['MENTOR']}>
+                  <MentorConfigurationPage />
+                </RoleRoute>
+              }
+            />
 
-        <article className="status-card">
-          <h2>Backend</h2>
-          <p>NestJS scaffold created.</p>
-          <p>
-            Bootstrap listens on <code>process.env.PORT</code> and allows CORS
-            only from <code>FRONTEND_URL</code>.
-          </p>
-        </article>
-      </section>
-    </main>
+            {/* Fallbacks */}
+            <Route path="/" element={<Navigate to="/settings" replace />} />
+            <Route path="*" element={<Navigate to="/settings" replace />} />
+          </Routes>
+        </div>
+      </div>
+    </BrowserRouter>
   )
 }
 
 export default App
+
