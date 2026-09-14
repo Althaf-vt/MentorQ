@@ -49,11 +49,18 @@ export const authApi = baseApi.injectEndpoints({
       { status: string; data: User },
       Partial<User> & Record<string, unknown>
     >({
-      query: (updateData) => ({
-        url: '/users/me',
-        method: 'PATCH',
-        body: updateData,
-      }),
+      query: (updateData) => {
+        const { fullName, avatarUrl, ...rest } = updateData
+        return {
+          url: '/users/me',
+          method: 'PATCH',
+          body: {
+            ...rest,
+            ...(fullName ? { full_name: fullName } : {}),
+            ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+          },
+        }
+      },
       invalidatesTags: ['User'],
     }),
   }),

@@ -38,10 +38,20 @@ export interface AuthResponse {
 export interface MentorProfile {
   _id?: string
   user_id: string
-  expertise: string[]
+  expertise_tags: string[]
+  daily_available_minutes: number
+  remaining_minutes_today: number
+  is_online: boolean
+  rating_avg: number
+  operating_hours: {
+    start: string
+    end: string
+    timezone: string
+  }
+  expertise?: string[]
   hourly_rate?: number
   bio?: string
-  is_available: boolean
+  is_available?: boolean
   max_session_duration?: number
   daily_cap_minutes?: number
   instant_queue_enabled?: boolean
