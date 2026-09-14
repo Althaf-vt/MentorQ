@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Send, X } from 'lucide-react'
-import { Message } from '@/types/operational.types'
+import type { Message } from '@/types/operational.types'
 
 interface SessionChatDrawerProps {
   messages: Message[]

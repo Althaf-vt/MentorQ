@@ -1,24 +1,36 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Sparkles, User as UserIcon, LogOut, Settings, Sliders } from 'lucide-react'
+import { Sparkles, User as UserIcon, LogOut, Settings, Sliders, Bell, LayoutDashboard, ListCollapse } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
+import { NotificationDrawer } from './NotificationDrawer'
+import { useGetUserNotificationsQuery } from '@/store/api/notificationApi'
+import type { Notification } from '@/types/operational.types'
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const [notifOpen, setNotifOpen] = useState(false)
+  const { data: notifications = [] } = useGetUserNotificationsQuery(undefined, { skip: !isAuthenticated })
+  const unreadCount = notifications.filter((n: Notification) => !n.read_status).length
 
   const handleLogout = () => {
     dispatch(logout())
     navigate('/login')
   }
 
+  const getDashboardPath = () => {
+    if (user?.role === 'ADMIN') return '/admin'
+    if (user?.role === 'MENTOR') return '/mentor'
+    return '/student'
+  }
+
   return (
-    <header className="w-full bg-[#FAFAF8]/90 backdrop-blur-md border-b border-[#E5E4DE] sticky top-0 z-30">
+    <header className="w-full bg-[#FAFAF8]/90 backdrop-blur-md border-b border-[#E5E4DE] sticky top-0 z-30 font-body">
       <div className="max-w-7xl mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
         <div className="flex items-center gap-10">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to={isAuthenticated ? getDashboardPath() : '/'} className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm shadow-primary/30">
               <Sparkles className="w-5 h-5" />
             </div>
@@ -30,12 +42,21 @@ export const Navbar: React.FC = () => {
           {isAuthenticated && (
             <nav className="hidden md:flex items-center gap-1">
               <Link
-                to="/settings"
+                to={getDashboardPath()}
                 className="px-3.5 py-2 text-sm font-medium text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb] rounded-lg transition-colors flex items-center gap-1.5"
               >
-                <Settings className="w-4 h-4" />
-                <span>Account Settings</span>
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Dashboard</span>
               </Link>
+              {user?.role === 'STUDENT' && (
+                <Link
+                  to="/history"
+                  className="px-3.5 py-2 text-sm font-medium text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb] rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <ListCollapse className="w-4 h-4" />
+                  <span>History Archive</span>
+                </Link>
+              )}
               {user?.role === 'MENTOR' && (
                 <Link
                   to="/mentor/configuration"
@@ -45,6 +66,13 @@ export const Navbar: React.FC = () => {
                   <span>Mentor Config</span>
                 </Link>
               )}
+              <Link
+                to="/settings"
+                className="px-3.5 py-2 text-sm font-medium text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb] rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Account Settings</span>
+              </Link>
             </nav>
           )}
         </div>
@@ -52,6 +80,18 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-4">
           {isAuthenticated && user ? (
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="relative p-2 text-[#797b79] hover:text-primary hover:bg-[#eeeeeb] rounded-lg transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white font-sora font-bold text-[9px] flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
                   {user.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon className="w-4 h-4" />}
@@ -82,6 +122,9 @@ export const Navbar: React.FC = () => {
           )}
         </div>
       </div>
+      {notifOpen && <NotificationDrawer onClose={() => setNotifOpen(false)} />}
     </header>
   )
 }
+
+
