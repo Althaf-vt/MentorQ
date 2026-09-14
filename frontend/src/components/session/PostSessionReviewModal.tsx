@@ -5,12 +5,16 @@ interface PostSessionReviewModalProps {
   onSubmit: (rating: number, feedbackText: string) => void
   onCancel?: () => void
   isSubmitting: boolean
+  isForcedEnd?: boolean
+  endedByRole?: string
 }
 
 export const PostSessionReviewModal: React.FC<PostSessionReviewModalProps> = ({
   onSubmit,
   onCancel,
   isSubmitting,
+  isForcedEnd = false,
+  endedByRole,
 }) => {
   const [rating, setRating] = useState(5)
   const [feedback, setFeedback] = useState('')
@@ -20,10 +24,12 @@ export const PostSessionReviewModal: React.FC<PostSessionReviewModalProps> = ({
     onSubmit(rating, feedback)
   }
 
+  const roleDisplay = endedByRole === 'MENTOR' ? 'Mentor' : endedByRole === 'STUDENT' ? 'Student' : endedByRole
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
       <div className="w-full max-w-sm bg-white rounded-2xl p-5 shadow-2xl space-y-4 relative animate-in fade-in zoom-in-95 duration-150">
-        {onCancel && (
+        {!isForcedEnd && onCancel && (
           <button
             type="button"
             onClick={onCancel}
@@ -36,8 +42,14 @@ export const PostSessionReviewModal: React.FC<PostSessionReviewModalProps> = ({
         )}
 
         <div className="text-center pr-6 pl-6">
-          <h3 className="text-base font-bold text-slate-900 font-headline">Rate Your Experience</h3>
-          <p className="text-[11px] text-slate-500 mt-0.5">Please rate the session and leave your feedback before exiting</p>
+          <h3 className="text-base font-bold text-slate-900 font-headline">
+            {isForcedEnd ? `Session Concluded${roleDisplay ? ` by ${roleDisplay}` : ''}` : 'Rate Your Experience'}
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            {isForcedEnd
+              ? 'The session has been completed. Please rate your experience and provide feedback before returning to your dashboard.'
+              : 'Please rate the session and leave your feedback before exiting'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3 text-xs">
@@ -72,9 +84,13 @@ export const PostSessionReviewModal: React.FC<PostSessionReviewModalProps> = ({
               disabled={isSubmitting}
               className="w-full py-2.5 bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold rounded-full disabled:opacity-50 transition-colors cursor-pointer shadow-sm"
             >
-              {isSubmitting ? 'Ending Session...' : 'Submit & Exit'}
+              {isSubmitting
+                ? 'Submitting...'
+                : isForcedEnd
+                ? 'Submit & Go to Dashboard'
+                : 'Submit & Exit'}
             </button>
-            {onCancel && (
+            {!isForcedEnd && onCancel && (
               <button
                 type="button"
                 onClick={onCancel}

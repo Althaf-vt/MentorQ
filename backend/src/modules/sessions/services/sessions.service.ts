@@ -64,7 +64,7 @@ export class SessionsService {
     return session;
   }
 
-  async endSession(sessionId: string, resolutionNotes?: string): Promise<SessionDocument> {
+  async endSession(sessionId: string, resolutionNotes?: string, userId?: string): Promise<SessionDocument> {
     const session = await this.sessionsRepository.findById(sessionId);
     if (!session) throw new NotFoundException('Session not found');
 
@@ -88,8 +88,15 @@ export class SessionsService {
       resolutionNotes,
     );
 
+    // Determine who initiated session completion
+    let endedByRole: 'MENTOR' | 'STUDENT' | undefined;
+    if (userId) {
+      const mentorIdStr = (session.mentor_id as any)?._id?.toString?.() || session.mentor_id?.toString();
+      endedByRole = mentorIdStr === userId ? 'MENTOR' : 'STUDENT';
+    }
+
     // Notify session participants that session ended
-    this.sessionsGateway.emitSessionEnded(sessionId, resolutionNotes);
+    this.sessionsGateway.emitSessionEnded(sessionId, resolutionNotes, userId, endedByRole);
 
     return updatedSession;
   }

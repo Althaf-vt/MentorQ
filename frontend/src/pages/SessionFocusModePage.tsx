@@ -36,6 +36,7 @@ export const SessionFocusModePage: React.FC = () => {
   const [remoteScreenStream, setRemoteScreenStream] = useState<MediaStream | null>(null)
   const [chatOpen, setChatOpen] = useState(true)
   const [showRating, setShowRating] = useState(false)
+  const [peerEndedInfo, setPeerEndedInfo] = useState<{ endedByRole?: string; endedByUserId?: string } | null>(null)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
 
   // Stream and WebRTC references
@@ -383,7 +384,14 @@ export const SessionFocusModePage: React.FC = () => {
       })
     }
 
-    const onSessionEnded = () => {
+    const onSessionEnded = (data?: any) => {
+      if (data?.endedByUserId && data.endedByUserId === user?.id) {
+        return
+      }
+      setPeerEndedInfo({
+        endedByRole: data?.endedByRole || (user?.role === 'MENTOR' ? 'Student' : 'Mentor'),
+        endedByUserId: data?.endedByUserId,
+      })
       setShowRating(true)
     }
 
@@ -391,6 +399,7 @@ export const SessionFocusModePage: React.FC = () => {
     socketService.on('timer_sync', onTimerSync)
     socketService.on('receiveMessage', onReceiveMessage)
     socketService.on('session_ended', onSessionEnded)
+    socketService.on('session_ended_by_peer', onSessionEnded)
 
     return () => {
       if (ticketId) {
@@ -404,8 +413,9 @@ export const SessionFocusModePage: React.FC = () => {
       socketService.off('timer_sync', onTimerSync)
       socketService.off('receiveMessage', onReceiveMessage)
       socketService.off('session_ended', onSessionEnded)
+      socketService.off('session_ended_by_peer', onSessionEnded)
     }
-  }, [sId, ticketId, user?.id, refTicketSess, refStd, refMtr, refMsg])
+  }, [sId, ticketId, user?.id, user?.role, refTicketSess, refStd, refMtr, refMsg])
 
   // Microphone toggle & WebRTC audio track control (hardware access deferred until explicit unmute)
   const handleToggleMic = async () => {
@@ -567,10 +577,12 @@ export const SessionFocusModePage: React.FC = () => {
       } catch (e) {
         console.error('Failed to submit review:', e)
       }
-      try {
-        await endSess({ id: sId }).unwrap()
-      } catch (e) {
-        console.error('Failed to end session:', e)
+      if (!peerEndedInfo) {
+        try {
+          await endSess({ id: sId }).unwrap()
+        } catch (e) {
+          console.error('Failed to end session:', e)
+        }
       }
     }
     setShowRating(false)
@@ -804,8 +816,10 @@ export const SessionFocusModePage: React.FC = () => {
       {showRating && (
         <PostSessionReviewModal
           onSubmit={handleReviewSubmit}
-          onCancel={() => setShowRating(false)}
+          onCancel={peerEndedInfo ? undefined : () => setShowRating(false)}
           isSubmitting={isEnding || isReviewing}
+          isForcedEnd={Boolean(peerEndedInfo)}
+          endedByRole={peerEndedInfo?.endedByRole}
         />
       )}
     </div>

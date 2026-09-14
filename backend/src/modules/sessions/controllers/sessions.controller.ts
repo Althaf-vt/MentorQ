@@ -25,8 +25,9 @@ export class SessionsController {
   }
 
   @Post(':id/end')
-  async endSession(@Param('id') id: string, @Body('resolution_notes') resolutionNotes?: string) {
-    return this.sessionsService.endSession(id, resolutionNotes);
+  async endSession(@Param('id') id: string, @Body('resolution_notes') resolutionNotes?: string, @Request() req?: any) {
+    const userId = (req?.user?.id || req?.user?._id)?.toString();
+    return this.sessionsService.endSession(id, resolutionNotes, userId);
   }
 
   @Get('active/mentor')

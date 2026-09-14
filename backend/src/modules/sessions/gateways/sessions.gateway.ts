@@ -162,10 +162,12 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   // Method to emit session completion
-  emitSessionEnded(sessionId: string, resolutionNotes?: string) {
+  emitSessionEnded(sessionId: string, resolutionNotes?: string, endedByUserId?: string, endedByRole?: string) {
     if (!this.server) return;
-    this.server.to(`session_${sessionId}`).emit('session_ended', { sessionId, resolutionNotes });
-    this.emitSessionUpdate(sessionId, { type: 'SESSION_COMPLETED', sessionId, resolutionNotes });
+    const endData = { sessionId, resolutionNotes, endedByUserId, endedByRole };
+    this.server.to(`session_${sessionId}`).emit('session_ended', endData);
+    this.server.to(`session_${sessionId}`).emit('session_ended_by_peer', endData);
+    this.emitSessionUpdate(sessionId, { type: 'SESSION_COMPLETED', ...endData });
   }
 
   // Method to emit queue updates
