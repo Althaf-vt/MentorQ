@@ -9,7 +9,19 @@ export class SessionsController {
 
   @Post('start/:ticketId')
   async startSession(@Param('ticketId') ticketId: string, @Request() req: any) {
-    return this.sessionsService.startSession(ticketId, req.user.id);
+    const userId = (req.user?.id || req.user?._id)?.toString();
+    return this.sessionsService.startSession(ticketId, userId);
+  }
+
+  @Post(':ticketId/start')
+  async startSessionAlt(@Param('ticketId') ticketId: string, @Request() req: any) {
+    const userId = (req.user?.id || req.user?._id)?.toString();
+    return this.sessionsService.startSession(ticketId, userId);
+  }
+
+  @Get('ticket/:ticketId')
+  async getSessionByTicketId(@Param('ticketId') ticketId: string) {
+    return this.sessionsService.getSessionByTicketId(ticketId);
   }
 
   @Post(':id/end')

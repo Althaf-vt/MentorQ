@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Radio, Video, Sliders, CheckCircle2, Clock, Zap, Inbox } from 'lucide-react'
 import { useGetMyMentorProfileQuery, useUpdateMyMentorProfileMutation } from '@/store/api/mentorApi'
 import { useGetMentorTicketsQuery, useUpdateTicketStatusMutation, useGetPendingPoolQuery, useClaimTicketMutation } from '@/store/api/ticketApi'
+import { useStartSessionMutation } from '@/store/api/sessionApi'
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
   const { data: mentorProfileResp, refetch: refetchProfile } = useGetMyMentorProfileQuery()
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateMyMentorProfileMutation()
+  const [startSession, { isLoading: isStartingSession }] = useStartSessionMutation()
   const { data: tickets = [], isLoading: isLoadingTickets, refetch: refetchTickets } = useGetMentorTicketsQuery()
   const { data: pendingPool = [], isLoading: isLoadingPool, refetch: refetchPool } = useGetPendingPoolQuery()
   const [claimTicket, { isLoading: isClaiming }] = useClaimTicketMutation()
@@ -28,9 +30,14 @@ export const MentorDashboardPage: React.FC = () => {
 
   const handleStartFocusSession = async (ticketId: string) => {
     try {
-      await updateTicketStatus({ id: ticketId, status: 'ACTIVE' }).unwrap()
+      await startSession(ticketId).unwrap()
     } catch (err) {
-      console.error(err)
+      console.warn('Start session warning, attempting status update fallback:', err)
+      try {
+        await updateTicketStatus({ id: ticketId, status: 'ACTIVE' }).unwrap()
+      } catch (e) {
+        console.error(e)
+      }
     } finally {
       navigate(`/focus/${ticketId}`)
     }

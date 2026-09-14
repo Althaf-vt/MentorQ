@@ -4,23 +4,43 @@ import { Clock, ArrowLeft, AlertCircle, CheckCircle2, Loader2, PlayCircle, XCirc
 import { useGetTicketByIdQuery, useGetQueuePositionQuery, useUpdateTicketStatusMutation } from '@/store/api/ticketApi'
 import { socketService } from '@/services/socket.service'
 
+import { useAppSelector } from '@/store/hooks'
+
 export const QueueTrackerPage: React.FC = () => {
   const { ticketId } = useParams<{ ticketId: string }>()
   const navigate = useNavigate()
+  const user = useAppSelector((s) => s.auth.user)
   const { data: ticket, isLoading, refetch } = useGetTicketByIdQuery(ticketId || '', { skip: !ticketId })
   const { data: posData, refetch: refetchPos } = useGetQueuePositionQuery(ticketId || '', { skip: !ticketId || ticket?.status !== 'PENDING' })
   const [updateStatus, { isLoading: isCancelling }] = useUpdateTicketStatusMutation()
 
   useEffect(() => {
     socketService.connect()
+    if (ticketId) {
+      socketService.emit('joinTicket', ticketId)
+    }
+    if (user?.id) {
+      socketService.emit('joinUser', user.id)
+    }
+
     const onUp = () => { refetch(); refetchPos() }
+    const onFocusStarted = (data: any) => {
+      console.log('Focus mode started event received:', data)
+      refetch()
+      refetchPos()
+    }
+
+    socketService.on('focus_mode_started', onFocusStarted)
     socketService.on('queueUpdate', onUp)
     socketService.on('sessionUpdate', onUp)
+
     return () => {
+      if (ticketId) socketService.emit('leaveTicket', ticketId)
+      socketService.off('focus_mode_started', onFocusStarted)
       socketService.off('queueUpdate', onUp)
       socketService.off('sessionUpdate', onUp)
     }
-  }, [refetch, refetchPos])
+  }, [ticketId, user?.id, refetch, refetchPos])
 
   if (isLoading) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-2"><Loader2 className="animate-spin text-[#5948d3]" /><p className="text-xs text-slate-500">Loading...</p></div>
   if (!ticket) return <div className="max-w-md mx-auto my-12 p-6 bg-white rounded-xl border text-center space-y-3"><AlertCircle className="mx-auto text-red-500" /><p className="text-sm">Ticket not found.</p><Link to="/student" className="inline-block px-4 py-2 bg-[#5948d3] text-white text-xs rounded-full">Back to Dashboard</Link></div>
