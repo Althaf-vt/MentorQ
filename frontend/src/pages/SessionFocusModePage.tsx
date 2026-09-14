@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Mic, MicOff, Monitor, MessageSquare, Square, Clock, Share2 } from 'lucide-react'
+import { Mic, MicOff, Monitor, MessageSquare, Square, Clock, Share2, Pin } from 'lucide-react'
 import { useGetTicketByIdQuery } from '@/store/api/ticketApi'
 import {
   useGetActiveStudentSessionQuery,
@@ -34,6 +34,7 @@ export const SessionFocusModePage: React.FC = () => {
   const [remoteScreen, setRemoteScreen] = useState(false)
   const [localScreenStream, setLocalScreenStream] = useState<MediaStream | null>(null)
   const [remoteScreenStream, setRemoteScreenStream] = useState<MediaStream | null>(null)
+  const [pinnedStream, setPinnedStream] = useState<'local' | 'remote'>('remote')
   const [chatOpen, setChatOpen] = useState(true)
   const [showRating, setShowRating] = useState(false)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
@@ -556,6 +557,15 @@ export const SessionFocusModePage: React.FC = () => {
   const format = (s: number) =>
     `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 
+  const hasLocalScreen = Boolean(screen && localScreenStream)
+  const hasRemoteScreen = Boolean(remoteScreen && remoteScreenStream)
+  const isDualScreen = hasLocalScreen && hasRemoteScreen
+  const effectivePinned = isDualScreen
+    ? pinnedStream
+    : hasLocalScreen
+    ? 'local'
+    : 'remote'
+
   return (
     <div className="relative min-h-[92vh] w-full bg-[#f5f4f0] text-slate-900 flex flex-col justify-between font-body">
       {/* Hidden audio element for receiving peer audio */}
@@ -590,62 +600,120 @@ export const SessionFocusModePage: React.FC = () => {
       {/* Main Workspace */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6 overflow-y-auto">
-          {/* Active Local Screen Share Video Container */}
-          {screen && (
-            <div className="w-full max-w-2xl bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-[#5948d3]/50 aspect-video relative flex items-center justify-center">
-              <video
-                ref={screenVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-contain"
-              />
-              <div className="absolute top-3 left-3 bg-black/70 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5">
-                <Share2 className="w-3 h-3 text-emerald-400 animate-pulse" />
-                <span>You are sharing your screen</span>
+          {/* Active Screen Sharing Viewport (Supports Concurrent Dual Sharing + Stream Pinning) */}
+          {(hasLocalScreen || hasRemoteScreen) && (
+            <div className="w-full max-w-3xl flex flex-col items-center gap-3">
+              <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-[#5948d3]/60 aspect-video relative flex items-center justify-center group">
+                {/* Primary Pinned Video Stream */}
+                {effectivePinned === 'local' ? (
+                  <video
+                    ref={screenVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <video
+                    ref={remoteScreenVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-contain"
+                  />
+                )}
+
+                {/* Primary Stream Active Badge */}
+                <div className="absolute top-3 left-3 bg-black/75 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5 shadow">
+                  <Share2 className="w-3 h-3 text-emerald-400 animate-pulse" />
+                  <span>
+                    {effectivePinned === 'local' ? 'Your Screen (Pinned)' : "Peer's Screen (Pinned)"}
+                  </span>
+                </div>
+
+                {/* Dual Screen: Pin Toggle Switch Button */}
+                {isDualScreen && (
+                  <button
+                    onClick={() => setPinnedStream(effectivePinned === 'local' ? 'remote' : 'local')}
+                    className="absolute top-3 right-3 bg-black/75 backdrop-blur hover:bg-black text-white px-2.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+                    title="Swap primary pinned view"
+                  >
+                    <Pin className="w-3 h-3 text-[#8172fe]" />
+                    <span>Swap Pinned View</span>
+                  </button>
+                )}
+
+                {/* Dual Screen: Floating Secondary Picture-in-Picture Preview Window */}
+                {isDualScreen && (
+                  <div
+                    onClick={() => setPinnedStream(effectivePinned === 'local' ? 'remote' : 'local')}
+                    className="absolute bottom-3 right-3 w-44 sm:w-56 aspect-video bg-slate-950 rounded-xl overflow-hidden shadow-2xl border-2 border-[#8172fe] cursor-pointer group/pip hover:scale-105 transition-transform z-10"
+                    title="Click to Pin as primary view"
+                  >
+                    {effectivePinned === 'local' ? (
+                      <video
+                        ref={remoteScreenVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-contain pointer-events-none"
+                      />
+                    ) : (
+                      <video
+                        ref={screenVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-contain pointer-events-none"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/30 group-hover/pip:bg-black/10 transition-colors flex items-end p-1.5">
+                      <span className="bg-black/80 backdrop-blur px-2 py-0.5 rounded text-[8px] text-white font-bold flex items-center gap-1 shadow">
+                        <Pin className="w-2.5 h-2.5 text-[#8172fe]" />
+                        <span>{effectivePinned === 'local' ? "Peer's Screen" : 'Your Screen'} • Click to Pin</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Compact Countdown timer badge while screen is active */}
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white border shadow-xs text-xs">
+                <Clock className="w-3.5 h-3.5 text-[#5948d3] animate-pulse" />
+                <span className={`font-mono font-bold ${timeLeft < 180 ? 'text-rose-600' : 'text-slate-800'}`}>
+                  {format(timeLeft)}
+                </span>
+                <span className="text-[10px] uppercase font-semibold text-slate-400">Remaining</span>
               </div>
             </div>
           )}
 
-          {/* Active Remote Screen Share Video Container */}
-          {!screen && remoteScreen && (
-            <div className="w-full max-w-2xl bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-emerald-500/50 aspect-video relative flex items-center justify-center">
-              <video
-                ref={remoteScreenVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-contain"
-              />
-              <div className="absolute top-3 left-3 bg-black/70 backdrop-blur px-3 py-1 rounded-full text-[10px] text-white font-medium flex items-center gap-1.5">
-                <Share2 className="w-3 h-3 text-emerald-400 animate-pulse" />
-                <span>Screen Sharing Active</span>
+          {/* Synchronized Countdown Timer (shown when no screen is being shared) */}
+          {!hasLocalScreen && !hasRemoteScreen && (
+            <>
+              <div className="relative flex flex-col items-center justify-center w-60 h-60 rounded-full border-4 border-[#5948d3]/20 bg-white shadow-xl">
+                <Clock className="w-7 h-7 text-[#5948d3] mb-1 animate-pulse" />
+                <span
+                  className={`font-mono text-4xl font-extrabold tracking-tight ${
+                    timeLeft < 180 ? 'text-rose-600' : 'text-slate-900'
+                  }`}
+                >
+                  {format(timeLeft)}
+                </span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">Remaining Time</span>
+                {timeLeft === 0 && (
+                  <span className="text-[10px] font-bold text-rose-500 mt-1">Time Expired</span>
+                )}
               </div>
-            </div>
+
+              <div className="max-w-md bg-white p-4 rounded-xl border shadow-sm text-left">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">Doubt Scope</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {ticket?.description || 'Active live collaboration session between mentor and student.'}
+                </p>
+              </div>
+            </>
           )}
-
-          {/* Synchronized Countdown Timer */}
-          <div className="relative flex flex-col items-center justify-center w-60 h-60 rounded-full border-4 border-[#5948d3]/20 bg-white shadow-xl">
-            <Clock className="w-7 h-7 text-[#5948d3] mb-1 animate-pulse" />
-            <span
-              className={`font-mono text-4xl font-extrabold tracking-tight ${
-                timeLeft < 180 ? 'text-rose-600' : 'text-slate-900'
-              }`}
-            >
-              {format(timeLeft)}
-            </span>
-            <span className="text-[10px] uppercase font-bold text-slate-400 mt-1">Remaining Time</span>
-            {timeLeft === 0 && (
-              <span className="text-[10px] font-bold text-rose-500 mt-1">Time Expired</span>
-            )}
-          </div>
-
-          <div className="max-w-md bg-white p-4 rounded-xl border shadow-sm text-left">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">Doubt Scope</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {ticket?.description || 'Active live collaboration session between mentor and student.'}
-            </p>
-          </div>
         </div>
 
         {/* Chat Drawer with Optimistic Updates */}
