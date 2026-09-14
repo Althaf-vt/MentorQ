@@ -1,0 +1,50 @@
+export type UserRole = 'STUDENT' | 'MENTOR' | 'ADMIN'
+
+export interface User {
+  id: string
+  fullName: string
+  email: string
+  role: UserRole
+  avatarUrl?: string
+  headline?: string
+  bio?: string
+  timezone?: string
+}
+
+export interface AuthState {
+  token: string | null
+  user: User | null
+  isAuthenticated: boolean
+  isLoading: boolean
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface RegisterRequest {
+  fullName: string
+  email: string
+  password: string
+  role: UserRole
+}
+
+export interface AuthResponse {
+  access_token: string
+  user: User
+}
+
+export interface MentorProfile {
+  _id?: string
+  user_id: string
+  expertise: string[]
+  hourly_rate?: number
+  bio?: string
+  is_available: boolean
+  max_session_duration?: number
+  daily_cap_minutes?: number
+  instant_queue_enabled?: boolean
+  allow_extensions?: boolean
+  enable_pre_chat?: boolean
+}
