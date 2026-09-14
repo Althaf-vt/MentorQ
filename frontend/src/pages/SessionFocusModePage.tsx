@@ -528,26 +528,24 @@ export const SessionFocusModePage: React.FC = () => {
     }
   }
 
-  // Session completion & ratings
-  const handleEndSession = async () => {
-    if (sId) {
-      try {
-        await endSess({ id: sId }).unwrap()
-        setShowRating(true)
-      } catch {
-        setShowRating(true)
-      }
-    } else {
-      setShowRating(true)
-    }
+  // Session completion & ratings:
+  // "End Session" triggers the confirmation/rating dialog without prematurely killing the session.
+  const handleEndSession = () => {
+    setShowRating(true)
   }
 
+  // The actual session termination and review creation dispatch only upon explicit confirmation.
   const handleReviewSubmit = async (rating: number, feedbackText: string) => {
     if (sId) {
       try {
         await createReview({ sessionId: sId, rating, feedbackText }).unwrap()
       } catch (e) {
-        console.error(e)
+        console.error('Failed to submit review:', e)
+      }
+      try {
+        await endSess({ id: sId }).unwrap()
+      } catch (e) {
+        console.error('Failed to end session:', e)
       }
     }
     setShowRating(false)
@@ -759,20 +757,24 @@ export const SessionFocusModePage: React.FC = () => {
           </button>
         </div>
 
-        {/* End Session Button */}
+        {/* End Session Button (Opens confirmation dialog without terminating session) */}
         <button
           onClick={handleEndSession}
-          disabled={isEnding}
+          disabled={isEnding || isReviewing}
           className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-full shadow flex items-center gap-2 disabled:opacity-50 transition-colors cursor-pointer"
         >
           <Square className="w-3.5 h-3.5 fill-white" />
-          <span>{isEnding ? 'Ending...' : 'End Session'}</span>
+          <span>End Session</span>
         </button>
       </footer>
 
-      {/* Post Session Review Modal */}
+      {/* Post Session Review & Confirmation Modal */}
       {showRating && (
-        <PostSessionReviewModal onSubmit={handleReviewSubmit} isSubmitting={isReviewing} />
+        <PostSessionReviewModal
+          onSubmit={handleReviewSubmit}
+          onCancel={() => setShowRating(false)}
+          isSubmitting={isEnding || isReviewing}
+        />
       )}
     </div>
   )
