@@ -75,7 +75,7 @@ export const QueueTrackerPage: React.FC = () => {
         {ticket.status === 'ACTIVE' && (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2"><CheckCircle2 className="text-emerald-600" /><p className="text-xs font-bold text-emerald-900">Your session is active!</p></div>
-            <button onClick={() => navigate(`/session/${ticket._id}`)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-full font-bold flex items-center gap-1"><PlayCircle className="w-4 h-4" /> Enter Focus Mode</button>
+            <button onClick={() => navigate(`/focus/${ticket._id}`)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-full font-bold flex items-center gap-1 shadow-md shadow-emerald-500/20 animate-pulse"><PlayCircle className="w-4 h-4" /> Enter Focus Mode</button>
           </div>
         )}
 

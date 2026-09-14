@@ -52,6 +52,8 @@ function App() {
 
             {/* Live Focus Session Mode */}
             <Route path="/focus/:ticketId" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
+            <Route path="/session/:ticketId" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
+            <Route path="/sessions/:ticketId/focus" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
 
             {/* Shared Settings */}
             <Route path="/settings" element={<ProtectedRoute><UserSettingsPage /></ProtectedRoute>} />
