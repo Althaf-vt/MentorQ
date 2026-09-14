@@ -16,6 +16,13 @@ import { SessionChatDrawer } from '@/components/session/SessionChatDrawer'
 import { PostSessionReviewModal } from '@/components/session/PostSessionReviewModal'
 import type { Message } from '@/types/operational.types'
 
+const RTC_CONFIG: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
+  ],
+}
+
 export const SessionFocusModePage: React.FC = () => {
   const { ticketId } = useParams<{ ticketId: string }>()
   const navigate = useNavigate()
@@ -28,10 +35,14 @@ export const SessionFocusModePage: React.FC = () => {
   const [showRating, setShowRating] = useState(false)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
 
-  // Stream references
+  // Stream and WebRTC references
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
   const localAudioStreamRef = useRef<MediaStream | null>(null)
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
   const screenVideoRef = useRef<HTMLVideoElement | null>(null)
+  const makingOfferRef = useRef<boolean>(false)
+  const ignoreOfferRef = useRef<boolean>(false)
 
   // Fetch ticket and session data
   const { data: ticket } = useGetTicketByIdQuery(ticketId || '', { skip: !ticketId })
@@ -86,6 +97,120 @@ export const SessionFocusModePage: React.FC = () => {
 
     return () => clearInterval(interval)
   }, [activeSess, ticket])
+
+  // WebRTC Perfect Negotiation & Audio Signaling Lifecycle
+  useEffect(() => {
+    const isPolite = user?.role !== 'MENTOR'
+    const sessionId = sId || ticketId
+    if (!sessionId) return
+
+    const pc = new RTCPeerConnection(RTC_CONFIG)
+    peerConnectionRef.current = pc
+
+    // ICE candidates dispatch
+    pc.onicecandidate = ({ candidate }) => {
+      if (candidate) {
+        socketService.emit('webrtc_signal', {
+          sessionId,
+          data: { type: 'ice-candidate', candidate },
+        })
+      }
+    }
+
+    // Remote audio track handling
+    pc.ontrack = (event) => {
+      if (event.track.kind === 'audio') {
+        const stream = event.streams[0] || new MediaStream([event.track])
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = stream
+          remoteAudioRef.current.play().catch((err) => console.warn('Remote audio playback error:', err))
+        }
+      }
+    }
+
+    // Perfect negotiation: offer generation
+    pc.onnegotiationneeded = async () => {
+      try {
+        makingOfferRef.current = true
+        await pc.setLocalDescription()
+        socketService.emit('webrtc_signal', {
+          sessionId,
+          data: { type: 'offer', sdp: pc.localDescription },
+        })
+      } catch (err) {
+        console.error('WebRTC negotiation error:', err)
+      } finally {
+        makingOfferRef.current = false
+      }
+    }
+
+    // Acquire local microphone audio and attach to peer connection
+    navigator.mediaDevices
+      ?.getUserMedia({ audio: true })
+      .then((stream) => {
+        localAudioStreamRef.current = stream
+        stream.getAudioTracks().forEach((track) => {
+          track.enabled = mic
+          try {
+            pc.addTrack(track, stream)
+          } catch (e) {
+            console.warn('Error adding audio track to pc:', e)
+          }
+        })
+      })
+      .catch((err) => {
+        console.warn('Microphone permission not granted yet or unavailable:', err)
+      })
+
+    // WebRTC signaling receiver
+    const onWebRtcSignal = async (payload: { senderId: string; data: any }) => {
+      const data = payload?.data
+      if (!data || !peerConnectionRef.current) return
+      const currentPc = peerConnectionRef.current
+
+      try {
+        if (data.type === 'offer') {
+          const offerCollision = makingOfferRef.current || currentPc.signalingState !== 'stable'
+          ignoreOfferRef.current = !isPolite && offerCollision
+          if (ignoreOfferRef.current) {
+            return
+          }
+          await currentPc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+          await currentPc.setLocalDescription()
+          socketService.emit('webrtc_signal', {
+            sessionId,
+            data: { type: 'answer', sdp: currentPc.localDescription },
+          })
+        } else if (data.type === 'answer') {
+          if (currentPc.signalingState === 'have-local-offer') {
+            await currentPc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+          }
+        } else if (data.type === 'ice-candidate') {
+          try {
+            await currentPc.addIceCandidate(new RTCIceCandidate(data.candidate))
+          } catch (err) {
+            if (!ignoreOfferRef.current) {
+              console.warn('Error adding ICE candidate:', err)
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error handling incoming WebRTC signal:', err)
+      }
+    }
+
+    socketService.on('webrtc_signal', onWebRtcSignal)
+
+    return () => {
+      socketService.off('webrtc_signal', onWebRtcSignal)
+      pc.close()
+      peerConnectionRef.current = null
+      if (localAudioStreamRef.current) {
+        localAudioStreamRef.current.getTracks().forEach((t) => t.stop())
+        localAudioStreamRef.current = null
+      }
+    }
+  }, [sId, ticketId, user?.role])
 
   // WebSocket lifecycle & event listeners
   useEffect(() => {
@@ -142,24 +267,30 @@ export const SessionFocusModePage: React.FC = () => {
     }
   }, [sId, ticketId, user?.id, refTicketSess, refStd, refMtr, refMsg])
 
-  // Microphone toggle & WebRTC track control
+  // Microphone toggle & WebRTC audio track control
   const handleToggleMic = async () => {
+    const nextMic = !mic
     try {
       if (!localAudioStreamRef.current) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         localAudioStreamRef.current = stream
-        setMic(true)
+        if (peerConnectionRef.current) {
+          stream.getAudioTracks().forEach((track) => {
+            track.enabled = nextMic
+            peerConnectionRef.current?.addTrack(track, stream)
+          })
+        }
+        setMic(nextMic)
         return
       }
 
-      const nextMic = !mic
       localAudioStreamRef.current.getAudioTracks().forEach((track) => {
         track.enabled = nextMic
       })
       setMic(nextMic)
     } catch (err) {
       console.warn('Microphone permission or hardware access unavailable:', err)
-      setMic((prev) => !prev)
+      setMic(false)
     }
   }
 
@@ -282,6 +413,9 @@ export const SessionFocusModePage: React.FC = () => {
 
   return (
     <div className="relative min-h-[92vh] w-full bg-[#f5f4f0] text-slate-900 flex flex-col justify-between font-body">
+      {/* Hidden audio element for receiving peer audio */}
+      <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+
       {/* Header */}
       <header className="relative z-20 px-6 py-4 border-b bg-white flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
