@@ -5,6 +5,7 @@ import { useRegisterMutation } from '@/store/api/authApi'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
 import type { UserRole } from '@/types/auth.types'
+import { useToast } from '@/context/ToastContext'
 
 export const RegisterPage: React.FC = () => {
   const [role, setRole] = useState<UserRole>('STUDENT')
@@ -17,6 +18,7 @@ export const RegisterPage: React.FC = () => {
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [register, { isLoading }] = useRegisterMutation()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,15 +26,19 @@ export const RegisterPage: React.FC = () => {
     setErrorMessage(null)
     if (!agreeTerms) {
       setErrorMessage('Please accept the Terms to continue.')
+      showToast('Please accept the Terms to continue.', 'error')
       return
     }
     try {
       const res = await register({ fullName, email, password, role }).unwrap()
       dispatch(setCredentials({ token: res.access_token, user: res.user }))
+      showToast('Account created successfully!', 'success')
       navigate(role === 'MENTOR' ? '/mentor/configuration' : '/settings')
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } }
-      setErrorMessage(error.data?.message || 'Registration failed.')
+      const msg = error.data?.message || 'Registration failed.'
+      setErrorMessage(msg)
+      showToast(msg, 'error')
     }
   }
 

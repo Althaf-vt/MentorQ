@@ -4,6 +4,7 @@ import { Eye, EyeOff, Sparkles, AlertCircle, ArrowRight } from 'lucide-react'
 import { useLoginMutation } from '@/store/api/authApi'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
+import { useToast } from '@/context/ToastContext'
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -13,6 +14,7 @@ export const LoginPage: React.FC = () => {
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const [login, { isLoading }] = useLoginMutation()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,10 +28,13 @@ export const LoginPage: React.FC = () => {
     try {
       const res = await login({ email, password }).unwrap()
       dispatch(setCredentials({ token: res.access_token, user: res.user }))
+      showToast('Logged in successfully!', 'success')
       navigate(res.user.role === 'MENTOR' ? '/mentor/configuration' : '/settings')
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } }
-      setErrorMessage(error.data?.message || 'Invalid email or password.')
+      const msg = error.data?.message || 'Invalid email or password.'
+      setErrorMessage(msg)
+      showToast(msg, 'error')
     }
   }
 
