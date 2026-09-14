@@ -185,10 +185,20 @@ export const SessionFocusModePage: React.FC = () => {
         }
       } else if (event.track.kind === 'video') {
         const stream = event.streams[0] || new MediaStream([event.track])
-        setRemoteScreenStream(stream)
-        setRemoteScreen(true)
+
+        // Only show the remote screen canvas when the track is actually live.
+        // Pre-negotiated transceivers fire ontrack with a muted track on SDP
+        // exchange — these should NOT render the canvas.
+        if (!event.track.muted) {
+          setRemoteScreenStream(stream)
+          setRemoteScreen(true)
+        }
 
         event.track.onended = () => {
+          setRemoteScreen(false)
+          setRemoteScreenStream(null)
+        }
+        event.track.onmute = () => {
           setRemoteScreen(false)
           setRemoteScreenStream(null)
         }
