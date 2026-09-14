@@ -12,6 +12,16 @@ export class TicketsController {
     return this.ticketsService.createTicket(req.user.id, body);
   }
 
+  @Get('pool/pending')
+  async getPendingPool() {
+    return this.ticketsService.getPendingPool();
+  }
+
+  @Post(':id/claim')
+  async claim(@Request() req: any, @Param('id') id: string) {
+    return this.ticketsService.claimTicket(id, req.user.id);
+  }
+
   @Get('student')
   async getStudentTickets(@Request() req: any) {
     return this.ticketsService.getStudentTickets(req.user.id);
@@ -42,3 +52,4 @@ export class TicketsController {
     return { position };
   }
 }
+

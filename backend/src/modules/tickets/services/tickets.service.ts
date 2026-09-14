@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { TicketsRepository } from '../repositories/tickets.repository.js';
 import { Ticket, TicketDocument } from '../schemas/ticket.schema.js';
 
@@ -19,6 +19,34 @@ export class TicketsService {
     const ticket = await this.ticketsRepository.findById(id);
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
+  }
+
+  async getPendingPool(): Promise<TicketDocument[]> {
+    return this.ticketsRepository.find({
+      status: 'PENDING',
+      $or: [{ mentor_id: null }, { mentor_id: { $exists: false } }],
+    });
+  }
+
+  async claimTicket(id: string, mentorId: string): Promise<TicketDocument> {
+    const ticket = await this.getTicketById(id);
+    if (ticket.status !== 'PENDING') {
+      throw new BadRequestException('Ticket is not in PENDING status');
+    }
+    if (ticket.mentor_id) {
+      throw new BadRequestException('Ticket is already claimed');
+    }
+
+    const statusHistory = ticket.status_history || [];
+    statusHistory.push({ status: 'APPROVED', timestamp: new Date(), feedback_note: 'Ticket claimed by mentor' });
+
+    const updated = await this.ticketsRepository.update(id, {
+      mentor_id: mentorId,
+      status: 'APPROVED',
+      status_history: statusHistory,
+    });
+    if (!updated) throw new NotFoundException('Ticket not found during claim');
+    return updated;
   }
 
   async updateTicketStatus(
@@ -50,3 +78,4 @@ export class TicketsService {
     return this.ticketsRepository.getQueuePosition(ticketId);
   }
 }
+
