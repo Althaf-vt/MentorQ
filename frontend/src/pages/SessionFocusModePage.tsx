@@ -221,24 +221,6 @@ export const SessionFocusModePage: React.FC = () => {
       await makeOffer()
     }
 
-    // Acquire local microphone audio muted by default
-    navigator.mediaDevices
-      ?.getUserMedia({ audio: true })
-      .then((stream) => {
-        localAudioStreamRef.current = stream
-        stream.getAudioTracks().forEach((track) => {
-          track.enabled = false // Muted by default
-          try {
-            pc.addTrack(track, stream)
-          } catch (e) {
-            console.warn('Error adding audio track to pc:', e)
-          }
-        })
-      })
-      .catch((err) => {
-        console.warn('Microphone permission not granted yet or unavailable:', err)
-      })
-
     // WebRTC signaling receiver with duplicate suppression
     let lastSigHash = ''
     let lastSigTime = 0
@@ -425,18 +407,21 @@ export const SessionFocusModePage: React.FC = () => {
     }
   }, [sId, ticketId, user?.id, refTicketSess, refStd, refMtr, refMsg])
 
-  // Microphone toggle & WebRTC audio track control
+  // Microphone toggle & WebRTC audio track control (hardware access deferred until explicit unmute)
   const handleToggleMic = async () => {
     const nextMic = !mic
     try {
       if (!localAudioStreamRef.current) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         localAudioStreamRef.current = stream
-        if (peerConnectionRef.current) {
-          stream.getAudioTracks().forEach((track) => {
-            track.enabled = nextMic
-            peerConnectionRef.current?.addTrack(track, stream)
-          })
+        const audioTrack = stream.getAudioTracks()[0]
+        if (audioTrack) {
+          audioTrack.enabled = nextMic
+          if (audioTransceiverRef.current?.sender) {
+            await audioTransceiverRef.current.sender.replaceTrack(audioTrack)
+          } else if (peerConnectionRef.current) {
+            peerConnectionRef.current.addTrack(audioTrack, stream)
+          }
         }
         setMic(nextMic)
         return
