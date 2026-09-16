@@ -42,7 +42,6 @@ export const SessionFocusModePage: React.FC = () => {
   // Stream and WebRTC references
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
   const audioTransceiverRef = useRef<RTCRtpTransceiver | null>(null)
-  const videoTransceiverRef = useRef<RTCRtpTransceiver | null>(null)
   const localAudioStreamRef = useRef<MediaStream | null>(null)
   const remoteAudioStreamRef = useRef<MediaStream | null>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
@@ -143,11 +142,11 @@ export const SessionFocusModePage: React.FC = () => {
     const pc = new RTCPeerConnection(RTC_CONFIG)
     peerConnectionRef.current = pc
 
-    // Initialize pre-negotiated transceivers for audio and screen video
+    // Initialize pre-negotiated transceiver for audio only.
+    // Screen video is added dynamically via addTrack when the user shares,
+    // which triggers onnegotiationneeded → renegotiation → remote ontrack.
     const audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' })
-    const videoTransceiver = pc.addTransceiver('video', { direction: 'sendrecv' })
     audioTransceiverRef.current = audioTransceiver
-    videoTransceiverRef.current = videoTransceiver
 
     // Helper to process buffered ICE candidates
     const processPendingCandidates = async () => {
@@ -310,7 +309,6 @@ export const SessionFocusModePage: React.FC = () => {
     return () => {
       socketService.off('webrtc_signal', onWebRtcSignal)
       audioTransceiverRef.current = null
-      videoTransceiverRef.current = null
       if (screenSenderRef.current && pc) {
         try {
           pc.removeTrack(screenSenderRef.current)
@@ -459,13 +457,7 @@ export const SessionFocusModePage: React.FC = () => {
 
   // Stop local screen sharing and cleanup WebRTC track
   const stopLocalScreenShare = async () => {
-    if (videoTransceiverRef.current?.sender) {
-      try {
-        await videoTransceiverRef.current.sender.replaceTrack(null)
-      } catch (e) {
-        console.warn('Error clearing video transceiver track:', e)
-      }
-    } else if (screenSenderRef.current && peerConnectionRef.current) {
+    if (screenSenderRef.current && peerConnectionRef.current) {
       try {
         peerConnectionRef.current.removeTrack(screenSenderRef.current)
       } catch (e) {
@@ -501,13 +493,7 @@ export const SessionFocusModePage: React.FC = () => {
         screenStreamRef.current = stream
         const videoTrack = stream.getVideoTracks()[0]
 
-        if (videoTransceiverRef.current?.sender && videoTrack) {
-          try {
-            await videoTransceiverRef.current.sender.replaceTrack(videoTrack)
-          } catch (e) {
-            console.warn('Error setting display track on video transceiver:', e)
-          }
-        } else if (peerConnectionRef.current && videoTrack) {
+        if (peerConnectionRef.current && videoTrack) {
           try {
             const sender = peerConnectionRef.current.addTrack(videoTrack, stream)
             screenSenderRef.current = sender
