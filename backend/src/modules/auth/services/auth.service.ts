@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -47,6 +47,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (credentials.expectedRole && credentials.expectedRole !== user.role) {
+      if (credentials.expectedRole === 'MENTOR') {
+        throw new ForbiddenException('Mentor profile not accessed');
+      } else if (credentials.expectedRole === 'STUDENT') {
+        throw new NotFoundException('User not found');
+      } else {
+        throw new UnauthorizedException('Invalid role specified');
+      }
+    }
+
     const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -74,7 +84,7 @@ export class AuthService {
     return { message: 'OTP sent successfully' };
   }
 
-  async verifyOtp(email: string, code: string) {
+  async verifyOtp(email: string, code: string, expectedRole?: string) {
     const otp = await this.otpModel.findOne({ email, otp_code: code });
     if (!otp || otp.expires_at < new Date()) {
       throw new UnauthorizedException('Invalid or expired OTP');
@@ -86,6 +96,16 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     let tokenData = {};
     if (user) {
+      if (expectedRole && user.role !== expectedRole) {
+        if (expectedRole === 'MENTOR') {
+          throw new ForbiddenException('Mentor profile not accessed');
+        } else if (expectedRole === 'STUDENT') {
+          throw new NotFoundException('User not found');
+        } else {
+          throw new UnauthorizedException('Invalid role specified');
+        }
+      }
+
       await this.usersRepository.update(user._id.toString(), { is_verified: true });
       // Fetch fresh user
       const updatedUser = await this.usersService.findById(user._id.toString());
@@ -111,15 +131,26 @@ export class AuthService {
     };
   }
 
-  async validateGoogleUser(profile: any) {
+  async validateGoogleUser(profile: any, expectedRole?: string) {
     let user = await this.usersService.findByEmail(profile.emails[0].value);
+
+    if (user && expectedRole && user.role !== expectedRole) {
+      if (expectedRole === 'MENTOR') {
+        throw new ForbiddenException('Mentor profile not accessed');
+      } else if (expectedRole === 'STUDENT') {
+        throw new NotFoundException('User not found');
+      } else {
+        throw new UnauthorizedException('Invalid role specified');
+      }
+    }
+
     if (!user) {
       user = await this.usersRepository.create({
         full_name: profile.displayName,
         email: profile.emails[0].value,
         password_hash: 'OAUTH_USER', // Placeholder
         avatar_url: profile.photos[0]?.value,
-        role: 'STUDENT',
+        role: expectedRole || 'STUDENT',
         is_verified: true,
       });
     } else if (!user.is_verified) {

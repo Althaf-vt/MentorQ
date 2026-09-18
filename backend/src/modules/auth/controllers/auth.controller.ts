@@ -1,8 +1,17 @@
-import { Controller, Post, Body, Get, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req, Res, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../services/auth.service.js';
 import * as express from 'express';
+
+export class GoogleAuthGuardWithState extends AuthGuard('google') {
+  getAuthenticateOptions(context: ExecutionContext) {
+    const req = context.switchToHttp().getRequest();
+    return {
+      state: req.query.state,
+    };
+  }
+}
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -27,8 +36,8 @@ export class AuthController {
   }
 
   @Post('otp/verify')
-  async verifyOtp(@Body('email') email: string, @Body('otp') otp: string) {
-    return this.authService.verifyOtp(email, otp);
+  async verifyOtp(@Body('email') email: string, @Body('otp') otp: string, @Body('expectedRole') expectedRole?: string) {
+    return this.authService.verifyOtp(email, otp, expectedRole);
   }
 
   @Post('refresh')
@@ -38,15 +47,17 @@ export class AuthController {
   }
 
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuardWithState)
   async googleAuth(@Req() req: any) {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: any, @Res() res: express.Response) {
-    const authResult = await this.authService.validateGoogleUser(req.user);
+    const expectedRole = req.query.state as string;
+    const authResult = await this.authService.validateGoogleUser(req.user, expectedRole);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5180';
-    const redirectUrl = `${frontendUrl}/login?token=${authResult.access_token}&user=${encodeURIComponent(
+    const loginPath = expectedRole === 'MENTOR' ? '/mentor/login' : '/login';
+    const redirectUrl = `${frontendUrl}${loginPath}?token=${authResult.access_token}&user=${encodeURIComponent(
       JSON.stringify(authResult.user),
     )}`;
     return res.redirect(redirectUrl);
