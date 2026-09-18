@@ -16,6 +16,11 @@ export interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  // Per-role session state
+  studentToken: string | null
+  studentUser: User | null
+  mentorToken: string | null
+  mentorUser: User | null
 }
 
 export interface LoginRequest {
@@ -32,6 +37,7 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   access_token: string
+  refresh_token?: string
   user: User
 }
 
