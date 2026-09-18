@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import {
   Sparkles,
@@ -17,8 +17,9 @@ import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
 import { useRoleAuth } from '@/store/hooks/useRoleAuth'
 import { NotificationDrawer } from './NotificationDrawer'
-import { useGetUserNotificationsQuery } from '@/store/api/notificationApi'
+import { useGetUserNotificationsQuery, notificationApi } from '@/store/api/notificationApi'
 import type { Notification } from '@/types/operational.types'
+import { socketService } from '@/services/socket.service'
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, activeRole } = useRoleAuth()
@@ -29,6 +30,29 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: notifications = [] } = useGetUserNotificationsQuery(undefined, { skip: !isAuthenticated })
   const unreadCount = notifications.filter((n: Notification) => !n.isRead).length
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      socketService.connect()
+      const invalidateNotifs = () => {
+        dispatch(notificationApi.util.invalidateTags(['Notification']))
+      }
+
+      socketService.on('student_requested_mentorship', invalidateNotifs)
+      socketService.on('mentor_claimed_ticket', invalidateNotifs)
+      socketService.on('focus_mode_started', invalidateNotifs)
+      socketService.on('session_ended', invalidateNotifs)
+      socketService.on('session_ended_by_peer', invalidateNotifs)
+
+      return () => {
+        socketService.off('student_requested_mentorship', invalidateNotifs)
+        socketService.off('mentor_claimed_ticket', invalidateNotifs)
+        socketService.off('focus_mode_started', invalidateNotifs)
+        socketService.off('session_ended', invalidateNotifs)
+        socketService.off('session_ended_by_peer', invalidateNotifs)
+      }
+    }
+  }, [isAuthenticated, dispatch])
 
   const handleLogout = () => {
     setMobileMenuOpen(false)
