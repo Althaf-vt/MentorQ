@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../../auth/services/auth.service.js';
+import { SessionsRepository } from '../repositories/sessions.repository.js';
 
 @WebSocketGateway({
   cors: {
@@ -19,7 +20,10 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly sessionsRepository: SessionsRepository,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -43,7 +47,17 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   async handleDisconnect(client: Socket) {
-    // Client cleanup handled automatically by Socket.IO
+    const sessionId = client.data?.activeSessionId;
+    if (sessionId && this.server) {
+      try {
+        const sockets = await this.server.in(`session_${sessionId}`).fetchSockets();
+        if (sockets.length === 0) {
+          await this.sessionsRepository.update(sessionId, { last_empty_at: new Date() });
+        }
+      } catch (err) {
+        console.error('Error handling disconnect for session:', err);
+      }
+    }
   }
 
   @SubscribeMessage('joinUser')
@@ -73,17 +87,33 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   @SubscribeMessage('joinSession')
-  handleJoinSession(@ConnectedSocket() client: Socket, @MessageBody() sessionId: string) {
+  async handleJoinSession(@ConnectedSocket() client: Socket, @MessageBody() sessionId: string) {
     if (sessionId) {
       client.join(`session_${sessionId}`);
+      client.data.activeSessionId = sessionId;
+      // Notify peers in the room so they can renegotiate WebRTC if needed
+      client.to(`session_${sessionId}`).emit('peer_rejoined', { userId: client.data?.user?.id || client.data?.user?._id });
+      // Unset last_empty_at since someone joined
+      try {
+        await this.sessionsRepository.update(sessionId, { $unset: { last_empty_at: 1 } });
+      } catch (err) {}
     }
     return { event: 'joined', data: sessionId };
   }
 
   @SubscribeMessage('leaveSession')
-  handleLeaveSession(@ConnectedSocket() client: Socket, @MessageBody() sessionId: string) {
+  async handleLeaveSession(@ConnectedSocket() client: Socket, @MessageBody() sessionId: string) {
     if (sessionId) {
       client.leave(`session_${sessionId}`);
+      if (client.data?.activeSessionId === sessionId) {
+        delete client.data.activeSessionId;
+      }
+      try {
+        const sockets = await this.server.in(`session_${sessionId}`).fetchSockets();
+        if (sockets.length === 0) {
+          await this.sessionsRepository.update(sessionId, { last_empty_at: new Date() });
+        }
+      } catch (err) {}
     }
     return { event: 'left', data: sessionId };
   }
