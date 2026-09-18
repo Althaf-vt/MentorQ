@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Radio,
@@ -19,6 +19,7 @@ import {
   useClaimTicketMutation,
 } from '@/store/api/ticketApi'
 import { useStartSessionMutation } from '@/store/api/sessionApi'
+import { socketService } from '@/services/socket.service'
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -40,6 +41,29 @@ export const MentorDashboardPage: React.FC = () => {
   const [poolPage, setPoolPage] = useState(1)
   const [activePage, setActivePage] = useState(1)
   const [historyPage, setHistoryPage] = useState(1)
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      Notification.requestPermission()
+    }
+  }, [])
+
+  useEffect(() => {
+    socketService.connect()
+
+    const handleStudentRequestedMentorship = () => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('New mentorship request available.')
+      }
+      refetchPool()
+    }
+
+    socketService.on('student_requested_mentorship', handleStudentRequestedMentorship)
+
+    return () => {
+      socketService.off('student_requested_mentorship', handleStudentRequestedMentorship)
+    }
+  }, [refetchPool])
 
   const isAvailable = mentorProfileResp?.data?.is_available ?? false
 
