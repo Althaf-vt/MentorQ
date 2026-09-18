@@ -8,12 +8,14 @@ import { SessionsController } from './controllers/sessions.controller.js';
 import { SessionsGateway } from './gateways/sessions.gateway.js';
 import { TicketsModule } from '../tickets/tickets.module.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
     forwardRef(() => TicketsModule),
     AuthModule,
+    NotificationsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [SessionsController],

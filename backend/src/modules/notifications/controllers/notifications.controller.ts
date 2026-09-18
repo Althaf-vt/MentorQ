@@ -9,7 +9,7 @@ export class NotificationsController {
 
   @Get()
   async getUserNotifications(@Request() req: any) {
-    return this.notificationsService.getUserNotifications(req.user.id);
+    return this.notificationsService.getUserNotifications(req.user.id, req.user.role);
   }
 
   @Post(':id/read')
@@ -19,7 +19,7 @@ export class NotificationsController {
 
   @Post('read-all')
   async markAllAsRead(@Request() req: any) {
-    await this.notificationsService.markAllAsRead(req.user.id);
+    await this.notificationsService.markAllAsRead(req.user.id, req.user.role);
     return { success: true };
   }
 }

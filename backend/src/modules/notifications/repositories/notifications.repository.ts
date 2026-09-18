@@ -14,25 +14,31 @@ export class NotificationsRepository {
     return newNotification.save();
   }
 
-  async findByUser(userId: string): Promise<NotificationDocument[]> {
+  async findByUser(userId: string, role: string): Promise<NotificationDocument[]> {
     return this.notificationModel
-      .find({ user_id: userId as any })
+      .find({
+        $or: [
+          { recipientId: userId as any, role },
+          { recipientId: null, role },
+          { recipientId: { $exists: false }, role },
+        ],
+      })
       .sort({ createdAt: -1 })
       .exec();
   }
 
   async markAsRead(notificationId: string, userId: string): Promise<NotificationDocument | null> {
     return this.notificationModel.findOneAndUpdate(
-      { _id: notificationId, user_id: userId as any },
-      { read_status: true },
+      { _id: notificationId, recipientId: userId as any },
+      { isRead: true },
       { returnDocument: 'after' },
     );
   }
 
-  async markAllAsRead(userId: string): Promise<any> {
+  async markAllAsRead(userId: string, role: string): Promise<any> {
     return this.notificationModel.updateMany(
-      { user_id: userId as any, read_status: false },
-      { read_status: true },
+      { recipientId: userId as any, role, isRead: false },
+      { isRead: true },
     );
   }
 }

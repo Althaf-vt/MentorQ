@@ -12,8 +12,11 @@ export enum NotificationType {
 
 @Schema({ timestamps: true })
 export class Notification {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-  user_id: MongooseSchema.Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: false })
+  recipientId: MongooseSchema.Types.ObjectId;
+
+  @Prop({ required: true, enum: ['MENTOR', 'STUDENT'] })
+  role: string;
 
   @Prop({ required: true })
   title: string;
@@ -25,7 +28,7 @@ export class Notification {
   type: NotificationType;
 
   @Prop({ default: false })
-  read_status: boolean;
+  isRead: boolean;
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
