@@ -117,6 +117,18 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
+  @SubscribeMessage('student_refused_session')
+  handleStudentRefusedSession(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { ticketId: string; sessionId?: string },
+  ) {
+    if (payload?.sessionId) {
+      client.to(`session_${payload.sessionId}`).emit('student_refused_session', payload);
+    } else if (payload?.ticketId) {
+      client.to(`ticket_${payload.ticketId}`).emit('student_refused_session', payload);
+    }
+  }
+
   // Method to broadcast focus mode launch to student and ticket rooms
   emitFocusModeStarted(payload: {
     sessionId: string;
@@ -141,6 +153,17 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     // Also notify queue and session listeners
     this.emitQueueUpdate({ type: 'TICKET_ACTIVE', ticketId: payload.ticketId });
     this.emitSessionUpdate(payload.sessionId, { type: 'SESSION_STARTED', ...eventData });
+  }
+
+  emitStudentRequestedMentorship(ticketId: string) {
+    if (!this.server) return;
+    this.server.emit('student_requested_mentorship', { ticketId });
+  }
+
+  emitMentorClaimedTicket(studentId: string, ticketId: string) {
+    if (!this.server) return;
+    this.server.to(`student_${studentId}`).emit('mentor_claimed_ticket', { ticketId });
+    this.server.to(`user_${studentId}`).emit('mentor_claimed_ticket', { ticketId });
   }
 
   // Method to emit updates to a specific session room

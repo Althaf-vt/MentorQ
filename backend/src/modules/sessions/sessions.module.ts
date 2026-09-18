@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { Session, SessionSchema } from './schemas/session.schema.js';
@@ -12,7 +12,7 @@ import { AuthModule } from '../auth/auth.module.js';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
-    TicketsModule,
+    forwardRef(() => TicketsModule),
     AuthModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
