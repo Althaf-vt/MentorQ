@@ -31,6 +31,12 @@ export class AuthController {
     return this.authService.verifyOtp(email, otp);
   }
 
+  @Post('refresh')
+  @UseGuards(AuthGuard('jwt'))
+  async refreshToken(@Req() req: any) {
+    return this.authService.refreshToken(req.user);
+  }
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req: any) {}

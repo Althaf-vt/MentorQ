@@ -128,6 +128,14 @@ export class AuthService {
     return this.generateToken(user);
   }
 
+  async refreshToken(jwtUser: { id: string; email: string; role: string }) {
+    const user = await this.usersService.findById(jwtUser.id);
+    if (!user) {
+      throw new UnauthorizedException('User no longer exists');
+    }
+    return this.generateToken(user);
+  }
+
   async validateToken(token: string) {
     try {
       const payload = this.jwtService.verify(token);
