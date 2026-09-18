@@ -1,6 +1,6 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAppSelector } from '@/store/hooks'
+import { useRoleAuth } from '@/store/hooks/useRoleAuth'
 import type { UserRole } from '@/types/auth.types'
 
 interface RoleRouteProps {
@@ -9,14 +9,18 @@ interface RoleRouteProps {
 }
 
 export const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth)
+  const { isAuthenticated, user } = useRoleAuth()
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />
   }
 
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/settings" replace />
+    // Redirect to the appropriate dashboard for their actual role
+    if (user.role === 'MENTOR') {
+      return <Navigate to="/mentor/dashboard" replace />
+    }
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>

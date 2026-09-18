@@ -13,14 +13,15 @@ import {
   X,
   ChevronRight,
 } from 'lucide-react'
-import { useAppSelector, useAppDispatch } from '@/store/hooks'
+import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
+import { useRoleAuth } from '@/store/hooks/useRoleAuth'
 import { NotificationDrawer } from './NotificationDrawer'
 import { useGetUserNotificationsQuery } from '@/store/api/notificationApi'
 import type { Notification } from '@/types/operational.types'
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const { user, isAuthenticated, activeRole } = useRoleAuth()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,14 +32,20 @@ export const Navbar: React.FC = () => {
 
   const handleLogout = () => {
     setMobileMenuOpen(false)
-    dispatch(logout())
+    // Only clear the current role's session
+    dispatch(logout(activeRole))
     navigate('/login')
   }
 
   const getDashboardPath = () => {
     if (user?.role === 'ADMIN') return '/admin'
-    if (user?.role === 'MENTOR') return '/mentor'
-    return '/student'
+    if (user?.role === 'MENTOR') return '/mentor/dashboard'
+    return '/dashboard'
+  }
+
+  const getSettingsPath = () => {
+    if (user?.role === 'MENTOR') return '/mentor/settings'
+    return '/settings'
   }
 
   const isActive = (path: string) => location.pathname === path
@@ -113,9 +120,9 @@ export const Navbar: React.FC = () => {
                 </Link>
               )}
               <Link
-                to="/settings"
+                to={getSettingsPath()}
                 className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-                  isActive('/settings')
+                  isActive(getSettingsPath())
                     ? 'text-primary bg-primary/10 font-semibold'
                     : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
                 }`}
@@ -256,10 +263,10 @@ export const Navbar: React.FC = () => {
                 )}
 
                 <Link
-                  to="/settings"
+                  to={getSettingsPath()}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
-                    isActive('/settings')
+                    isActive(getSettingsPath())
                       ? 'bg-primary text-white font-bold shadow-xs'
                       : 'text-slate-700 hover:bg-[#faf9f7]'
                   }`}

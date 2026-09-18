@@ -14,18 +14,18 @@ import { TicketHistoryArchivePage } from './pages/TicketHistoryArchivePage'
 import { ProtectedRoute } from './routes/ProtectedRoute'
 import { PublicRoute } from './routes/PublicRoute'
 import { RoleRoute } from './routes/RoleRoute'
-import { useAppSelector } from './store/hooks'
+import { useRoleAuth } from './store/hooks/useRoleAuth'
 import './App.css'
 
 function RootRedirect() {
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const { user, isAuthenticated } = useRoleAuth()
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />
   }
   if (user.role === 'MENTOR') {
-    return <Navigate to="/mentor" replace />
+    return <Navigate to="/mentor/dashboard" replace />
   }
-  return <Navigate to="/student" replace />
+  return <Navigate to="/dashboard" replace />
 }
 
 function App() {
@@ -41,22 +41,22 @@ function App() {
             <Route path="/forgot-password" element={<PublicRoute><PasswordResetPage /></PublicRoute>} />
             <Route path="/verify-otp" element={<PublicRoute><VerifyOtpPage /></PublicRoute>} />
 
-            {/* Protected Student Routes */}
-            <Route path="/student" element={<RoleRoute allowedRoles={['STUDENT', 'ADMIN']}><StudentDashboardPage /></RoleRoute>} />
+            {/* ============================================================
+                Student Routes — root base URL (no /student prefix)
+               ============================================================ */}
+            <Route path="/dashboard" element={<RoleRoute allowedRoles={['STUDENT', 'ADMIN']}><StudentDashboardPage /></RoleRoute>} />
             <Route path="/queue/:ticketId" element={<ProtectedRoute><QueueTrackerPage /></ProtectedRoute>} />
             <Route path="/history" element={<RoleRoute allowedRoles={['STUDENT', 'ADMIN']}><TicketHistoryArchivePage /></RoleRoute>} />
-
-            {/* Protected Mentor Routes */}
-            <Route path="/mentor" element={<RoleRoute allowedRoles={['MENTOR', 'ADMIN']}><MentorDashboardPage /></RoleRoute>} />
-            <Route path="/mentor/configuration" element={<RoleRoute allowedRoles={['MENTOR', 'ADMIN']}><MentorConfigurationPage /></RoleRoute>} />
-
-            {/* Live Focus Session Mode */}
             <Route path="/focus/:ticketId" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
-            <Route path="/session/:ticketId" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
-            <Route path="/sessions/:ticketId/focus" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
-
-            {/* Shared Settings */}
             <Route path="/settings" element={<ProtectedRoute><UserSettingsPage /></ProtectedRoute>} />
+
+            {/* ============================================================
+                Mentor Routes — all prefixed with /mentor
+               ============================================================ */}
+            <Route path="/mentor/dashboard" element={<RoleRoute allowedRoles={['MENTOR', 'ADMIN']}><MentorDashboardPage /></RoleRoute>} />
+            <Route path="/mentor/configuration" element={<RoleRoute allowedRoles={['MENTOR', 'ADMIN']}><MentorConfigurationPage /></RoleRoute>} />
+            <Route path="/mentor/focus/:ticketId" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
+            <Route path="/mentor/settings" element={<ProtectedRoute><UserSettingsPage /></ProtectedRoute>} />
 
             {/* Root & Fallback */}
             <Route path="/" element={<RootRedirect />} />
