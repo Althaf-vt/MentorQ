@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client'
+import { getToken } from '@/lib/roleContext'
 
 const WS_URL = (import.meta.env.VITE_WS_URL as string) || 'http://localhost:3133'
 
@@ -20,7 +21,7 @@ class SocketService {
       return this.socket
     }
 
-    const authToken = token || localStorage.getItem('token')
+    const authToken = token || getToken()
 
     this.socket = io(WS_URL, {
       autoConnect: true,

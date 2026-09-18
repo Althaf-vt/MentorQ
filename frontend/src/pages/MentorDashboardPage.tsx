@@ -140,7 +140,7 @@ export const MentorDashboardPage: React.FC = () => {
         console.error(e)
       }
     } finally {
-      navigate(`/focus/${ticketId}`)
+      navigate(`/mentor/focus/${ticketId}`)
     }
   }
 

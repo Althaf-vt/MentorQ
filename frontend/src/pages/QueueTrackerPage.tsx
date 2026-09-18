@@ -43,13 +43,13 @@ export const QueueTrackerPage: React.FC = () => {
   }, [ticketId, user?.id, refetch, refetchPos])
 
   if (isLoading) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-2"><Loader2 className="animate-spin text-[#5948d3]" /><p className="text-xs text-slate-500">Loading...</p></div>
-  if (!ticket) return <div className="max-w-md mx-auto my-12 p-6 bg-white rounded-xl border text-center space-y-3"><AlertCircle className="mx-auto text-red-500" /><p className="text-sm">Ticket not found.</p><Link to="/student" className="inline-block px-4 py-2 bg-[#5948d3] text-white text-xs rounded-full">Back to Dashboard</Link></div>
+  if (!ticket) return <div className="max-w-md mx-auto my-12 p-6 bg-white rounded-xl border text-center space-y-3"><AlertCircle className="mx-auto text-red-500" /><p className="text-sm">Ticket not found.</p><Link to="/dashboard" className="inline-block px-4 py-2 bg-[#5948d3] text-white text-xs rounded-full">Back to Dashboard</Link></div>
 
   const pos = posData?.position ?? 1
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <button onClick={() => navigate('/student')} className="flex items-center gap-1.5 text-slate-600 text-xs font-semibold"><ArrowLeft className="w-4 h-4" /> Back</button>
+        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-slate-600 text-xs font-semibold"><ArrowLeft className="w-4 h-4" /> Back</button>
         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#5948d3]/10 text-[#5948d3]">Ticket #{ticket._id.slice(-6)}</span>
       </div>
 
@@ -82,7 +82,7 @@ export const QueueTrackerPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex gap-1">{ticket.tags?.map(t => <span key={t} className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">#{t}</span>)}</div>
           {ticket.status === 'PENDING' && (
-            <button onClick={async () => { if (confirm('Cancel ticket?')) { await updateStatus({ id: ticket._id, status: 'CANCELLED' }); navigate('/student') } }} disabled={isCancelling} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs rounded-lg flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Cancel</button>
+            <button onClick={async () => { if (confirm('Cancel ticket?')) { await updateStatus({ id: ticket._id, status: 'CANCELLED' }); navigate('/dashboard') } }} disabled={isCancelling} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs rounded-lg flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Cancel</button>
           )}
         </div>
       </div>

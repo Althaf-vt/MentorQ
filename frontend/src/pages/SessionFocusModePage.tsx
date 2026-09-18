@@ -591,7 +591,7 @@ export const SessionFocusModePage: React.FC = () => {
       }
     }
     setShowRating(false)
-    navigate(user?.role === 'MENTOR' ? '/mentor' : '/student')
+    navigate(user?.role === 'MENTOR' ? '/mentor/dashboard' : '/dashboard')
   }
 
   const handleAcknowledgeRefusal = async () => {
@@ -602,7 +602,7 @@ export const SessionFocusModePage: React.FC = () => {
         console.error('Failed to end session after refusal:', e)
       }
     }
-    navigate('/mentor')
+    navigate('/mentor/dashboard')
   }
 
   const format = (s: number) =>
