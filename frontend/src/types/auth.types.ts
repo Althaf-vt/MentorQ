@@ -26,6 +26,7 @@ export interface AuthState {
 export interface LoginRequest {
   email: string
   password: string
+  expectedRole?: UserRole
 }
 
 export interface RegisterRequest {

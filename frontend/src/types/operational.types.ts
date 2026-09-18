@@ -55,11 +55,12 @@ export type NotificationType = 'SYSTEM' | 'TICKET' | 'SESSION' | 'REVIEW'
 
 export interface Notification {
   _id: string
-  user_id: string
+  recipientId?: string
+  role: string
   title: string
   message: string
   type: NotificationType
-  read_status: boolean
+  isRead: boolean
   createdAt: string
   updatedAt: string
 }
