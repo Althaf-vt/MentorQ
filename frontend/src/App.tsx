@@ -20,6 +20,10 @@ import './App.css'
 function RootRedirect() {
   const { user, isAuthenticated } = useRoleAuth()
   if (!isAuthenticated || !user) {
+    // Check if the user was trying to access a mentor path
+    if (window.location.pathname.startsWith('/mentor')) {
+      return <Navigate to="/mentor/login" replace />
+    }
     return <Navigate to="/login" replace />
   }
   if (user.role === 'MENTOR') {
@@ -36,7 +40,8 @@ function App() {
         <div className="flex-grow">
           <Routes>
             {/* Public Routes */}
-            <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+            <Route path="/login" element={<PublicRoute><LoginPage expectedRole="STUDENT" /></PublicRoute>} />
+            <Route path="/mentor/login" element={<PublicRoute><LoginPage expectedRole="MENTOR" /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><PasswordResetPage /></PublicRoute>} />
             <Route path="/verify-otp" element={<PublicRoute><VerifyOtpPage /></PublicRoute>} />

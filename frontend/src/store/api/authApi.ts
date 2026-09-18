@@ -33,7 +33,7 @@ export const authApi = baseApi.injectEndpoints({
     }),
     verifyOtp: builder.mutation<
       AuthResponse & { message: string },
-      { email: string; otp: string }
+      { email: string; otp: string; expectedRole?: UserRole }
     >({
       query: (body) => ({
         url: '/auth/otp/verify',

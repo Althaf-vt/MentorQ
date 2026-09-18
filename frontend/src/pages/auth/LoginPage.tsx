@@ -16,7 +16,11 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-export const LoginPage: React.FC = () => {
+interface LoginPageProps {
+  expectedRole?: 'MENTOR' | 'STUDENT'
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ expectedRole = 'STUDENT' }) => {
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -44,6 +48,12 @@ export const LoginPage: React.FC = () => {
     if (token && userParam) {
       try {
         const parsedUser = JSON.parse(decodeURIComponent(userParam))
+        if (parsedUser.role !== expectedRole) {
+          showToast(`Please use the ${parsedUser.role === 'MENTOR' ? 'Mentor' : 'Student'} login portal.`, 'error')
+          // Clean up the URL
+          navigate(expectedRole === 'MENTOR' ? '/mentor/login' : '/login', { replace: true })
+          return
+        }
         dispatch(setCredentials({ token, user: parsedUser }))
         showToast('Logged in with Google successfully!', 'success')
         navigate(parsedUser.role === 'MENTOR' ? '/mentor/dashboard' : '/dashboard')
@@ -51,12 +61,18 @@ export const LoginPage: React.FC = () => {
         console.error('Failed to parse Google user', err)
       }
     }
-  }, [searchParams, dispatch, navigate, showToast])
+  }, [searchParams, dispatch, navigate, showToast, expectedRole])
 
   const onSubmit = async (data: LoginFormValues) => {
     setErrorMessage(null)
     try {
-      const res = await login({ email: data.email, password: data.password }).unwrap()
+      const res = await login({ email: data.email, password: data.password, expectedRole }).unwrap()
+      if (res.user.role !== expectedRole) {
+        const msg = `Please use the ${res.user.role === 'MENTOR' ? 'Mentor' : 'Student'} login portal.`
+        setErrorMessage(msg)
+        showToast(msg, 'error')
+        return
+      }
       dispatch(setCredentials({ token: res.access_token, user: res.user }))
       showToast('Logged in successfully!', 'success')
       navigate(res.user.role === 'MENTOR' ? '/mentor/dashboard' : '/dashboard')
@@ -66,7 +82,7 @@ export const LoginPage: React.FC = () => {
       setErrorMessage(msg)
       showToast(msg, 'error')
       if (msg.includes('Please verify your email')) {
-        navigate('/verify-otp', { state: { email: data.email } })
+        navigate('/verify-otp', { state: { email: data.email, expectedRole } })
       }
     }
   }
@@ -102,7 +118,9 @@ export const LoginPage: React.FC = () => {
       <section className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           <div className="mb-8">
-            <h2 className="font-headline text-3xl font-bold text-[#303331] tracking-tight mb-2">Welcome back</h2>
+            <h2 className="font-headline text-3xl font-bold text-[#303331] tracking-tight mb-2">
+              {expectedRole === 'MENTOR' ? 'Mentor Login' : 'Welcome back'}
+            </h2>
             <p className="font-body text-sm text-[#5d605e]">Enter your credentials to access your MentorQ dashboard.</p>
           </div>
           {errorMessage && (
@@ -173,7 +191,7 @@ export const LoginPage: React.FC = () => {
             type="button"
             onClick={() => {
               const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3133/api/v1'
-              window.location.href = `${apiBase}/auth/google`
+              window.location.href = `${apiBase}/auth/google?state=${expectedRole}`
             }}
             className="w-full h-11 rounded-full border border-[#b0b2b0]/50 hover:bg-[#faf9f7] text-[#303331] font-medium text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >

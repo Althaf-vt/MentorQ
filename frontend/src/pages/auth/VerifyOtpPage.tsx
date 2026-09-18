@@ -13,6 +13,7 @@ export const VerifyOtpPage: React.FC = () => {
   const { showToast } = useToast()
 
   const initialEmail = location.state?.email || ''
+  const expectedRole = location.state?.expectedRole as 'MENTOR' | 'STUDENT' | undefined
   const [email, setEmail] = useState<string>(initialEmail)
   const [step, setStep] = useState<'enter-email' | 'enter-otp'>(initialEmail ? 'enter-otp' : 'enter-email')
 
@@ -78,7 +79,7 @@ export const VerifyOtpPage: React.FC = () => {
       return
     }
     try {
-      const res = await verifyOtp({ email, otp: code }).unwrap()
+      const res = await verifyOtp({ email, otp: code, expectedRole }).unwrap()
       if (res.access_token && res.user) {
         dispatch(setCredentials({ token: res.access_token, user: res.user }))
         showToast('Email verified successfully! Welcome to MentorQ.', 'success')
@@ -115,7 +116,7 @@ export const VerifyOtpPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#faf9f7] flex flex-col justify-between">
       <header className="w-full py-6 px-6 flex items-center justify-between border-b border-[#e1e3e0]/50 bg-white">
-        <Link to="/" className="inline-flex items-center gap-2.5">
+        <Link to={expectedRole === 'MENTOR' ? '/mentor/login' : '/login'} className="inline-flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm">
             <Sparkles className="w-5 h-5" />
           </div>

@@ -12,6 +12,9 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) 
   const { isAuthenticated, user } = useRoleAuth()
 
   if (!isAuthenticated || !user) {
+    if (window.location.pathname.startsWith('/mentor')) {
+      return <Navigate to="/mentor/login" replace />
+    }
     return <Navigate to="/login" replace />
   }
 
