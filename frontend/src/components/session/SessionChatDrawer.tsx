@@ -37,7 +37,7 @@ export const SessionChatDrawer: React.FC<SessionChatDrawerProps> = ({
   const QUICK_CHIPS = ['Try this approach', 'Great progress!', 'Let me check', 'Review this link']
 
   return (
-    <div className="w-full md:w-80 bg-white border-l flex flex-col justify-between h-[50vh] md:h-auto shadow-lg">
+    <div className="w-full md:w-80 bg-white border-l flex flex-col justify-between h-[50vh] md:h-full shadow-lg">
       <div className="p-3 border-b flex items-center justify-between bg-[#faf9f7]">
         <div className="flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-[#5948d3]" />

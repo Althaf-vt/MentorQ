@@ -11,7 +11,7 @@ import {
 import { useGetSessionMessagesQuery, useSendMessageMutation } from '@/store/api/chatApi'
 import { useCreateReviewMutation } from '@/store/api/reviewApi'
 import { socketService } from '@/services/socket.service'
-import { useAppSelector } from '@/store/hooks'
+import { useRoleAuth } from '@/store/hooks/useRoleAuth'
 import { SessionChatDrawer } from '@/components/session/SessionChatDrawer'
 import { PostSessionReviewModal } from '@/components/session/PostSessionReviewModal'
 import type { Message } from '@/types/operational.types'
@@ -26,7 +26,7 @@ const RTC_CONFIG: RTCConfiguration = {
 export const SessionFocusModePage: React.FC = () => {
   const { ticketId } = useParams<{ ticketId: string }>()
   const navigate = useNavigate()
-  const user = useAppSelector((s) => s.auth.user)
+  const { user, activeRole } = useRoleAuth()
 
   // Media state - Microphone is MUTED by default on session entry
   const [mic, setMic] = useState(false)
@@ -137,7 +137,7 @@ export const SessionFocusModePage: React.FC = () => {
   // Dependent strictly on ticketId and user role to prevent tear-down when session queries resolve
   useEffect(() => {
     if (!ticketId) return
-    const isPolite = user?.role !== 'MENTOR'
+    const isPolite = activeRole !== 'mentor'
     const sessionId = ticketId
 
     const pc = new RTCPeerConnection(RTC_CONFIG)
@@ -252,9 +252,11 @@ export const SessionFocusModePage: React.FC = () => {
 
       try {
         if (data.type === 'peer_ready') {
-          if (user?.role === 'MENTOR') {
+          if (activeRole === 'mentor') {
             await makeOffer()
           }
+        } else if (data.type === 'force_renegotiate') {
+          await makeOffer()
         } else if (data.type === 'offer') {
           const offerCollision = makingOfferRef.current || currentPc.signalingState !== 'stable'
           ignoreOfferRef.current = !isPolite && offerCollision
@@ -299,6 +301,11 @@ export const SessionFocusModePage: React.FC = () => {
     }
 
     socketService.on('webrtc_signal', onWebRtcSignal)
+    
+    const onPeerRejoined = () => {
+      makeOffer().catch(console.error)
+    }
+    socketService.on('peer_rejoined', onPeerRejoined)
 
     // Notify peers that this participant is ready
     socketService.emit('webrtc_signal', {
@@ -309,6 +316,7 @@ export const SessionFocusModePage: React.FC = () => {
 
     return () => {
       socketService.off('webrtc_signal', onWebRtcSignal)
+      socketService.off('peer_rejoined', onPeerRejoined)
       audioTransceiverRef.current = null
       if (screenSenderRef.current && pc) {
         try {
@@ -327,7 +335,7 @@ export const SessionFocusModePage: React.FC = () => {
       }
       iceCandidatesQueueRef.current = []
     }
-  }, [ticketId, user?.role])
+  }, [ticketId, activeRole])
 
   // Bind local screen video element to local stream (prevents blank canvas race)
   useEffect(() => {
@@ -398,14 +406,14 @@ export const SessionFocusModePage: React.FC = () => {
         return
       }
       setPeerEndedInfo({
-        endedByRole: data?.endedByRole || (user?.role === 'MENTOR' ? 'Student' : 'Mentor'),
+        endedByRole: data?.endedByRole || (activeRole === 'mentor' ? 'Student' : 'Mentor'),
         endedByUserId: data?.endedByUserId,
       })
       setShowRating(true)
     }
 
     const onStudentRefusedSession = () => {
-      if (user?.role === 'MENTOR') {
+      if (activeRole === 'mentor') {
         setStudentRefused(true)
       }
     }
@@ -432,7 +440,7 @@ export const SessionFocusModePage: React.FC = () => {
       socketService.off('session_ended_by_peer', onSessionEnded)
       socketService.off('student_refused_session', onStudentRefusedSession)
     }
-  }, [sId, ticketId, user?.id, user?.role, refTicketSess, refStd, refMtr, refMsg])
+  }, [sId, ticketId, user?.id, activeRole, refTicketSess, refStd, refMtr, refMsg])
 
   // Microphone toggle & WebRTC audio track control (hardware access deferred until explicit unmute)
   const handleToggleMic = async () => {
@@ -591,7 +599,7 @@ export const SessionFocusModePage: React.FC = () => {
       }
     }
     setShowRating(false)
-    navigate(user?.role === 'MENTOR' ? '/mentor/dashboard' : '/dashboard')
+    navigate(activeRole === 'mentor' ? '/mentor/dashboard' : '/dashboard')
   }
 
   const handleAcknowledgeRefusal = async () => {
@@ -729,7 +737,7 @@ export const SessionFocusModePage: React.FC = () => {
                     <span>
                       {hasLocalScreen
                         ? 'Your Screen (Sharing)'
-                        : `${user?.role === 'MENTOR' ? "Student's" : "Mentor's"} Screen`}
+                        : `${activeRole === 'mentor' ? "Student's" : "Mentor's"} Screen`}
                     </span>
                   </div>
                 </div>
