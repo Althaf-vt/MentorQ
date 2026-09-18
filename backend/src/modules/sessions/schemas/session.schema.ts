@@ -38,6 +38,9 @@ export class Session {
 
   @Prop()
   resolution_notes: string;
+
+  @Prop()
+  last_empty_at: Date;
 }
 
 export const SessionSchema = SchemaFactory.createForClass(Session);

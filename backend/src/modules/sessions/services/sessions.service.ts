@@ -3,6 +3,7 @@ import { SessionsRepository } from '../repositories/sessions.repository.js';
 import { TicketsService } from '../../tickets/services/tickets.service.js';
 import { SessionDocument } from '../schemas/session.schema.js';
 import { SessionsGateway } from '../gateways/sessions.gateway.js';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class SessionsService {
@@ -116,5 +117,25 @@ export class SessionsService {
     });
     if (active) return active;
     return this.sessionsRepository.findOne({ ticket_id: ticketId as any });
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async handleCronStaleSessions() {
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+    // Find sessions that are ACTIVE and have a last_empty_at older than 15 mins
+    // Unfortunately, we don't have a direct repository method for this, so we'll query through sessionModel?
+    // Wait, let's use the repository find with query
+    const staleSessions = await (this.sessionsRepository as any).sessionModel.find({
+      session_status: 'ACTIVE',
+      last_empty_at: { $lte: fifteenMinsAgo },
+    }).exec();
+
+    for (const session of staleSessions) {
+      await this.endSession(
+        session._id.toString(),
+        'Automatically abandoned due to inactivity',
+      );
+      console.log(`Abandoned session ${session._id} closed by Cron Job.`);
+    }
   }
 }
