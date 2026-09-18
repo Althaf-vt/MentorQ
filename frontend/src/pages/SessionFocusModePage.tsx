@@ -36,6 +36,7 @@ export const SessionFocusModePage: React.FC = () => {
   const [remoteScreenStream, setRemoteScreenStream] = useState<MediaStream | null>(null)
   const [chatOpen, setChatOpen] = useState(true)
   const [showRating, setShowRating] = useState(false)
+  const [studentRefused, setStudentRefused] = useState(false)
   const [peerEndedInfo, setPeerEndedInfo] = useState<{ endedByRole?: string; endedByUserId?: string } | null>(null)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
 
@@ -403,11 +404,18 @@ export const SessionFocusModePage: React.FC = () => {
       setShowRating(true)
     }
 
+    const onStudentRefusedSession = () => {
+      if (user?.role === 'MENTOR') {
+        setStudentRefused(true)
+      }
+    }
+
     socketService.on('sessionUpdate', onSessionUpdate)
     socketService.on('timer_sync', onTimerSync)
     socketService.on('receiveMessage', onReceiveMessage)
     socketService.on('session_ended', onSessionEnded)
     socketService.on('session_ended_by_peer', onSessionEnded)
+    socketService.on('student_refused_session', onStudentRefusedSession)
 
     return () => {
       if (ticketId) {
@@ -422,6 +430,7 @@ export const SessionFocusModePage: React.FC = () => {
       socketService.off('receiveMessage', onReceiveMessage)
       socketService.off('session_ended', onSessionEnded)
       socketService.off('session_ended_by_peer', onSessionEnded)
+      socketService.off('student_refused_session', onStudentRefusedSession)
     }
   }, [sId, ticketId, user?.id, user?.role, refTicketSess, refStd, refMtr, refMsg])
 
@@ -583,6 +592,17 @@ export const SessionFocusModePage: React.FC = () => {
     }
     setShowRating(false)
     navigate(user?.role === 'MENTOR' ? '/mentor' : '/student')
+  }
+
+  const handleAcknowledgeRefusal = async () => {
+    if (sId) {
+      try {
+        await endSess({ id: sId }).unwrap()
+      } catch (e) {
+        console.error('Failed to end session after refusal:', e)
+      }
+    }
+    navigate('/mentor')
   }
 
   const format = (s: number) =>
@@ -817,6 +837,25 @@ export const SessionFocusModePage: React.FC = () => {
           isForcedEnd={Boolean(peerEndedInfo)}
           endedByRole={peerEndedInfo?.endedByRole}
         />
+      )}
+
+      {studentRefused && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-5 text-center relative animate-in zoom-in-95 fade-in duration-200">
+            <h2 className="text-xl font-black text-slate-900 font-headline">Session Refused</h2>
+            <p className="text-sm text-slate-600 font-medium">
+              The student refused to join. The session has been ended.
+            </p>
+            <div className="pt-2">
+              <button
+                onClick={handleAcknowledgeRefusal}
+                className="w-full py-3 rounded-xl bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold text-sm shadow-md transition-colors"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
