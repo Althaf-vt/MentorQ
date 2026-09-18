@@ -46,7 +46,7 @@ export const LoginPage: React.FC = () => {
         const parsedUser = JSON.parse(decodeURIComponent(userParam))
         dispatch(setCredentials({ token, user: parsedUser }))
         showToast('Logged in with Google successfully!', 'success')
-        navigate(parsedUser.role === 'MENTOR' ? '/mentor/configuration' : '/settings')
+        navigate(parsedUser.role === 'MENTOR' ? '/mentor/dashboard' : '/dashboard')
       } catch (err) {
         console.error('Failed to parse Google user', err)
       }
@@ -59,7 +59,7 @@ export const LoginPage: React.FC = () => {
       const res = await login({ email: data.email, password: data.password }).unwrap()
       dispatch(setCredentials({ token: res.access_token, user: res.user }))
       showToast('Logged in successfully!', 'success')
-      navigate(res.user.role === 'MENTOR' ? '/mentor/configuration' : '/settings')
+      navigate(res.user.role === 'MENTOR' ? '/mentor/dashboard' : '/dashboard')
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } }
       const msg = error.data?.message || 'Invalid email or password.'

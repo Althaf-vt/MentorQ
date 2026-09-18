@@ -82,7 +82,7 @@ export const VerifyOtpPage: React.FC = () => {
       if (res.access_token && res.user) {
         dispatch(setCredentials({ token: res.access_token, user: res.user }))
         showToast('Email verified successfully! Welcome to MentorQ.', 'success')
-        navigate(res.user.role === 'MENTOR' ? '/mentor/configuration' : '/settings')
+        navigate(res.user.role === 'MENTOR' ? '/mentor/dashboard' : '/dashboard')
       } else {
         showToast('Email verified! Please log in.', 'success')
         navigate('/login')
