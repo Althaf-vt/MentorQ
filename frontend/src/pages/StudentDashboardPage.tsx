@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, ChevronLeft, ChevronRight, Inbox, Filter } from 'lucide-react'
 import { useGetStudentTicketsQuery } from '@/store/api/ticketApi'
 import { useAppSelector } from '@/store/hooks'
 import { TicketCreationModal } from '@/components/tickets/TicketCreationModal'
+import { socketService } from '@/services/socket.service'
 
 type FilterStatus = 'PENDING' | 'ALL' | 'COMPLETED' | 'CANCELLED'
 
@@ -12,6 +13,8 @@ export const StudentDashboardPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('PENDING')
+  const navigate = useNavigate()
+  const [inviteModalData, setInviteModalData] = useState<{ticketId: string; sessionId: string} | null>(null)
 
   // Auto-refreshing poll every 20 seconds (stealth)
   const { data: tickets = [], isLoading, refetch } = useGetStudentTicketsQuery(undefined, {
@@ -30,6 +33,58 @@ export const StudentDashboardPage: React.FC = () => {
       setStatusFilter('ALL')
     }
   }, [isLoading, tickets.length, statusFilter, pendingTicketsCount])
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      Notification.requestPermission()
+    }
+  }, [])
+
+  useEffect(() => {
+    socketService.connect()
+    if (user?.id) {
+      socketService.emit('joinUser', user.id)
+    }
+
+    const handleMentorClaimedTicket = () => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('A mentor has claimed your request!')
+      }
+      refetch()
+    }
+
+    const handleFocusModeStarted = (data: any) => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Your mentor has started the Focus Session.')
+      }
+      setInviteModalData({ ticketId: data.ticketId, sessionId: data.sessionId })
+    }
+
+    socketService.on('mentor_claimed_ticket', handleMentorClaimedTicket)
+    socketService.on('focus_mode_started', handleFocusModeStarted)
+
+    return () => {
+      socketService.off('mentor_claimed_ticket', handleMentorClaimedTicket)
+      socketService.off('focus_mode_started', handleFocusModeStarted)
+    }
+  }, [user?.id, refetch])
+
+  const handleJoinSession = () => {
+    if (inviteModalData) {
+      navigate(`/focus/${inviteModalData.ticketId}`)
+      setInviteModalData(null)
+    }
+  }
+
+  const handleRefuseSession = () => {
+    if (inviteModalData) {
+      socketService.emit('student_refused_session', { 
+        ticketId: inviteModalData.ticketId, 
+        sessionId: inviteModalData.sessionId 
+      })
+      setInviteModalData(null)
+    }
+  }
 
   // Filter student tickets according to active filter
   const filteredTickets = useMemo(() => {
@@ -276,6 +331,31 @@ export const StudentDashboardPage: React.FC = () => {
             refetch()
           }}
         />
+      )}
+
+      {inviteModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-5 text-center relative animate-in zoom-in-95 fade-in duration-200">
+            <h2 className="text-xl font-black text-slate-900 font-headline">Session Started</h2>
+            <p className="text-sm text-slate-600 font-medium">
+              Focus mode is started by your mentor. They are waiting for you.
+            </p>
+            <div className="flex flex-col gap-3 pt-2">
+              <button
+                onClick={handleJoinSession}
+                className="w-full py-3 rounded-xl bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold text-sm shadow-md transition-colors"
+              >
+                Join Now
+              </button>
+              <button
+                onClick={handleRefuseSession}
+                className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors"
+              >
+                Cancel / Refuse
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
