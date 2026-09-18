@@ -29,7 +29,7 @@ export const MentorConfigurationPage: React.FC = () => {
     setValue,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<MentorConfigFormValues>({
     resolver: zodResolver(mentorConfigSchema),
     defaultValues: {
@@ -181,13 +181,15 @@ export const MentorConfigurationPage: React.FC = () => {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="bg-brand hover:bg-brand-600 text-white rounded-xl px-6 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-70"
-            >
-              {isLoading ? 'Saving...' : 'Save Configuration'}
-            </button>
+            {isDirty && (
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="bg-brand hover:bg-brand-600 text-white rounded-xl px-6 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-70 animate-in fade-in"
+              >
+                {isLoading ? 'Saving...' : 'Save Configuration'}
+              </button>
+            )}
           </form>
         </section>
       </div>

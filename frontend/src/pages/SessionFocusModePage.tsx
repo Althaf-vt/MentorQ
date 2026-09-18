@@ -39,6 +39,7 @@ export const SessionFocusModePage: React.FC = () => {
   const [studentRefused, setStudentRefused] = useState(false)
   const [peerEndedInfo, setPeerEndedInfo] = useState<{ endedByRole?: string; endedByUserId?: string } | null>(null)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
+  const [isConfirmingStopScreen, setIsConfirmingStopScreen] = useState(false)
 
   // Stream and WebRTC references
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
@@ -503,7 +504,7 @@ export const SessionFocusModePage: React.FC = () => {
   // Screen sharing toggle & WebRTC track control
   const handleToggleScreen = async () => {
     if (screen) {
-      await stopLocalScreenShare()
+      setIsConfirmingStopScreen(true)
     } else {
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
@@ -861,6 +862,37 @@ export const SessionFocusModePage: React.FC = () => {
               >
                 Go to Dashboard
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen Share Stop Confirmation Modal */}
+      {isConfirmingStopScreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#303331]/40 backdrop-blur-sm p-4 font-body">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-xl animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <h3 className="text-lg font-headline font-bold text-[#303331] mb-2">Stop sharing screen?</h3>
+              <p className="text-sm text-[#5d605e] mb-6">
+                Are you sure you want to stop sharing your screen? Your peer will no longer be able to see it.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setIsConfirmingStopScreen(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-[#5d605e] hover:bg-[#F5F4F0] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    stopLocalScreenShare()
+                    setIsConfirmingStopScreen(false)
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-white bg-[#e11d48] hover:bg-[#be123c] shadow-sm transition-colors"
+                >
+                  Stop Sharing
+                </button>
+              </div>
             </div>
           </div>
         </div>

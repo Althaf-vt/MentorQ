@@ -26,7 +26,7 @@ export const UserSettingsPage: React.FC = () => {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -130,13 +130,15 @@ export const UserSettingsPage: React.FC = () => {
                 {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio.message}</p>}
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="bg-primary hover:bg-primary-dim text-white rounded-xl px-5 py-2 text-sm font-semibold flex items-center gap-2 cursor-pointer disabled:opacity-70"
-            >
-              {isLoading ? 'Saving...' : 'Save'}
-            </button>
+            {isDirty && (
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="bg-primary hover:bg-primary-dim text-white rounded-xl px-5 py-2 text-sm font-semibold flex items-center gap-2 cursor-pointer disabled:opacity-70 animate-in fade-in"
+              >
+                {isLoading ? 'Saving...' : 'Save'}
+              </button>
+            )}
           </form>
         </section>
       </div>

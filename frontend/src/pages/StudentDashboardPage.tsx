@@ -5,6 +5,7 @@ import { useGetStudentTicketsQuery } from '@/store/api/ticketApi'
 import { useAppSelector } from '@/store/hooks'
 import { TicketCreationModal } from '@/components/tickets/TicketCreationModal'
 import { socketService } from '@/services/socket.service'
+import { playNotificationSound } from '@/utils/audioUtils'
 
 type FilterStatus = 'PENDING' | 'ALL' | 'COMPLETED' | 'CANCELLED'
 
@@ -50,6 +51,7 @@ export const StudentDashboardPage: React.FC = () => {
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('A mentor has claimed your request!')
       }
+      playNotificationSound()
       refetch()
     }
 
@@ -57,6 +59,7 @@ export const StudentDashboardPage: React.FC = () => {
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Your mentor has started the Focus Session.')
       }
+      playNotificationSound()
       setInviteModalData({ ticketId: data.ticketId, sessionId: data.sessionId })
     }
 

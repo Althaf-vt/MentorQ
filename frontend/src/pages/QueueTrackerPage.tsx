@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Clock, ArrowLeft, AlertCircle, CheckCircle2, Loader2, PlayCircle, XCircle } from 'lucide-react'
 import { useGetTicketByIdQuery, useGetQueuePositionQuery, useUpdateTicketStatusMutation } from '@/store/api/ticketApi'
 import { socketService } from '@/services/socket.service'
+import { playNotificationSound } from '@/utils/audioUtils'
 
 import { useAppSelector } from '@/store/hooks'
 
@@ -26,6 +27,7 @@ export const QueueTrackerPage: React.FC = () => {
     const onUp = () => { refetch(); refetchPos() }
     const onFocusStarted = (data: any) => {
       console.log('Focus mode started event received:', data)
+      playNotificationSound()
       refetch()
       refetchPos()
     }

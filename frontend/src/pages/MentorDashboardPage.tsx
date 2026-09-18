@@ -20,6 +20,7 @@ import {
 } from '@/store/api/ticketApi'
 import { useStartSessionMutation } from '@/store/api/sessionApi'
 import { socketService } from '@/services/socket.service'
+import { playNotificationSound } from '@/utils/audioUtils'
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -55,6 +56,7 @@ export const MentorDashboardPage: React.FC = () => {
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('New mentorship request available.')
       }
+      playNotificationSound()
       refetchPool()
     }
 
