@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
-import { getToken, getUser } from '@/lib/roleContext'
+import { useAppSelector } from '@/store/hooks'
 import type { ActiveRole } from '@/lib/roleContext'
 import type { User } from '@/types/auth.types'
 
@@ -23,14 +22,15 @@ export function useRoleAuth(): {
   const { pathname } = useLocation()
   const activeRole: ActiveRole = pathname.startsWith('/mentor') ? 'mentor' : 'student'
 
-  return useMemo(() => {
-    const token = getToken(activeRole)
-    const user = getUser(activeRole)
-    return {
-      token,
-      user,
-      isAuthenticated: Boolean(token),
-      activeRole,
-    }
-  }, [activeRole])
+  const authState = useAppSelector(state => state.auth)
+
+  const token = activeRole === 'mentor' ? authState.mentorToken : authState.studentToken
+  const user = activeRole === 'mentor' ? authState.mentorUser : authState.studentUser
+
+  return {
+    token,
+    user,
+    isAuthenticated: Boolean(token),
+    activeRole,
+  }
 }

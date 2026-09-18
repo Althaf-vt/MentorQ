@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   User,
+  UserRole,
 } from '@/types/auth.types'
 
 export const authApi = baseApi.injectEndpoints({

@@ -34,7 +34,7 @@ export const Navbar: React.FC = () => {
     setMobileMenuOpen(false)
     // Only clear the current role's session
     dispatch(logout(activeRole))
-    if (activeRole === 'MENTOR') {
+    if (activeRole === 'mentor') {
       navigate('/mentor/login')
     } else {
       navigate('/login')
