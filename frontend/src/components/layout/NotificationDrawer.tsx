@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { X, Bell, Check } from 'lucide-react'
 import {
   useGetUserNotificationsQuery,
@@ -34,8 +35,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
     }
   }
 
-  return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-80 bg-white border-l shadow-2xl flex flex-col font-body">
+  return createPortal(
+    <div className="fixed inset-y-0 right-0 z-[9999] w-full sm:w-80 bg-white border-l shadow-2xl flex flex-col font-body">
       <div className="p-4 border-b flex items-center justify-between bg-[#faf9f7]">
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-[#5948d3]" />
@@ -54,7 +55,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
             <div
               key={n._id}
               className={`p-3 rounded-xl border text-xs relative ${
-                n.read_status ? 'bg-slate-50 border-slate-200' : 'bg-[#5948d3]/5 border-[#5948d3]/20 font-medium'
+                n.isRead ? 'bg-slate-50 border-slate-200' : 'bg-[#5948d3]/5 border-[#5948d3]/20 font-medium'
               }`}
             >
               <div className="font-bold text-slate-900 mb-0.5">{n.title}</div>
@@ -62,7 +63,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
               <div className="text-[10px] text-slate-400 mt-1">
                 {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
-              {!n.read_status && (
+              {!n.isRead && (
                 <button
                   onClick={() => handleMarkOne(n._id)}
                   className="absolute top-2.5 right-2.5 p-0.5 rounded-full bg-white border text-slate-400 hover:text-[#5948d3]"
@@ -86,7 +87,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
           </button>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -28,13 +28,17 @@ export const Navbar: React.FC = () => {
   const [notifOpen, setNotifOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: notifications = [] } = useGetUserNotificationsQuery(undefined, { skip: !isAuthenticated })
-  const unreadCount = notifications.filter((n: Notification) => !n.read_status).length
+  const unreadCount = notifications.filter((n: Notification) => !n.isRead).length
 
   const handleLogout = () => {
     setMobileMenuOpen(false)
     // Only clear the current role's session
     dispatch(logout(activeRole))
-    navigate('/login')
+    if (activeRole === 'MENTOR') {
+      navigate('/mentor/login')
+    } else {
+      navigate('/login')
+    }
   }
 
   const getDashboardPath = () => {
@@ -51,7 +55,7 @@ export const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <header className="w-full bg-[#FAFAF8]/90 backdrop-blur-md border-b border-[#E5E4DE] sticky top-0 z-30 font-body">
+    <header className="w-full bg-[#FAFAF8]/90 backdrop-blur-md border-b border-[#E5E4DE] sticky top-0 z-50 font-body">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4 sm:gap-10">
           {/* Hamburger Menu Toggle for Mobile / Tablet viewports */}
