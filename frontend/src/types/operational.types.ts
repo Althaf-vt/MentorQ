@@ -17,6 +17,7 @@ export interface Ticket {
   scheduled_time?: string
   actual_time_spent_minutes?: number
   tags: string[]
+  guidance_message?: string
   status_history: TicketStatusHistory[]
   createdAt: string
   updatedAt: string

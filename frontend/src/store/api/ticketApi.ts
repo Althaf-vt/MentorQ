@@ -61,6 +61,18 @@ export const ticketApi = baseApi.injectEndpoints({
       invalidatesTags: ['Ticket', 'Queue'],
     }),
 
+    resolveTicketWithGuidance: builder.mutation<
+      Ticket,
+      { id: string; message: string }
+    >({
+      query: ({ id, message }) => ({
+        url: `/tickets/${id}/resolve-with-guidance`,
+        method: 'PATCH',
+        body: { message },
+      }),
+      invalidatesTags: ['Ticket', 'Queue'],
+    }),
+
     getQueuePosition: builder.query<{ position: number }, string>({
       query: (id) => `/tickets/${id}/queue-position`,
       providesTags: ['Queue'],
@@ -76,6 +88,7 @@ export const {
   useClaimTicketMutation,
   useGetTicketByIdQuery,
   useUpdateTicketStatusMutation,
+  useResolveTicketWithGuidanceMutation,
   useGetQueuePositionQuery,
 } = ticketApi
 
