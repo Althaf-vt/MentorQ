@@ -10,6 +10,7 @@ import {
   Inbox,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react'
 import { useGetMyMentorProfileQuery, useUpdateMyMentorProfileMutation } from '@/store/api/mentorApi'
 import {
@@ -17,6 +18,7 @@ import {
   useUpdateTicketStatusMutation,
   useGetPendingPoolQuery,
   useClaimTicketMutation,
+  useResolveTicketWithGuidanceMutation,
 } from '@/store/api/ticketApi'
 import { useStartSessionMutation } from '@/store/api/sessionApi'
 import { socketService } from '@/services/socket.service'
@@ -37,11 +39,16 @@ export const MentorDashboardPage: React.FC = () => {
   })
   const [claimTicket, { isLoading: isClaiming }] = useClaimTicketMutation()
   const [updateTicketStatus] = useUpdateTicketStatusMutation()
+  const [resolveWithGuidance, { isLoading: isResolvingGuidance }] = useResolveTicketWithGuidanceMutation()
 
   // Pagination states
   const [poolPage, setPoolPage] = useState(1)
   const [activePage, setActivePage] = useState(1)
   const [historyPage, setHistoryPage] = useState(1)
+
+  // Guidance modal state
+  const [guidanceModalData, setGuidanceModalData] = useState<{ticketId: string} | null>(null)
+  const [guidanceMessage, setGuidanceMessage] = useState('')
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -151,6 +158,18 @@ export const MentorDashboardPage: React.FC = () => {
       await claimTicket(ticketId).unwrap()
       refetchTickets()
       refetchPool()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const submitGuidance = async () => {
+    if (!guidanceModalData || !guidanceMessage.trim()) return
+    try {
+      await resolveWithGuidance({ id: guidanceModalData.ticketId, message: guidanceMessage }).unwrap()
+      setGuidanceModalData(null)
+      setGuidanceMessage('')
+      refetchTickets()
     } catch (err) {
       console.error(err)
     }
@@ -352,13 +371,22 @@ export const MentorDashboardPage: React.FC = () => {
                     </div>
                     <div className="pt-2 flex items-center justify-between border-t border-slate-200">
                       <span className="text-[10px] text-slate-400">{dateStr}</span>
-                      <button
-                        onClick={() => handleStartFocusSession(t._id)}
-                        className="px-3.5 py-1.5 rounded-lg bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Launch Focus Mode</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setGuidanceModalData({ ticketId: t._id })}
+                          className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold text-[10px] flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Resolve (Guidance)</span>
+                        </button>
+                        <button
+                          onClick={() => handleStartFocusSession(t._id)}
+                          className="px-3.5 py-1.5 rounded-lg bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold text-[10px] flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Focus Mode</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
@@ -484,6 +512,43 @@ export const MentorDashboardPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {guidanceModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 relative">
+            <h2 className="text-xl font-bold text-slate-900">Provide Guidance & Resolve</h2>
+            <p className="text-xs text-slate-500">
+              Provide resources, links, or advice to resolve this student's doubt directly without launching Focus Mode.
+            </p>
+            <textarea
+              value={guidanceMessage}
+              onChange={(e) => setGuidanceMessage(e.target.value)}
+              rows={4}
+              placeholder="e.g., Check out this documentation link..."
+              className="w-full bg-[#f4f4f1] border border-[#e5e4de] focus:border-[#5948d3] outline-none rounded-xl p-3 text-sm resize-none"
+            />
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                onClick={() => {
+                  setGuidanceModalData(null)
+                  setGuidanceMessage('')
+                }}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitGuidance}
+                disabled={isResolvingGuidance || !guidanceMessage.trim()}
+                className="px-5 py-2 rounded-xl bg-[#5948d3] hover:bg-[#4d39c7] text-white text-xs font-bold flex items-center gap-2 disabled:opacity-50"
+              >
+                <MessageSquare className="w-4 h-4" />
+                {isResolvingGuidance ? 'Resolving...' : 'Submit & Resolve'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
