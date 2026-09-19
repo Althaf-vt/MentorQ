@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Bell, Check } from 'lucide-react'
 import {
@@ -16,6 +16,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
   const { data: notifications = [] } = useGetUserNotificationsQuery()
   const [markRead] = useMarkNotificationAsReadMutation()
   const [markAllRead] = useMarkAllNotificationsAsReadMutation()
+  
+  const [activeTab, setActiveTab] = useState<'NEW' | 'ALL'>('NEW')
 
   const handleMarkAll = async () => {
     try {
@@ -33,6 +35,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
     }
   }
 
+  const displayedNotifications = activeTab === 'NEW' 
+    ? notifications.filter((n: Notification) => !n.isRead)
+    : notifications
+
   return createPortal(
     <div className="fixed inset-y-0 right-0 z-[9999] w-full sm:w-80 bg-white border-l shadow-2xl flex flex-col font-body">
       <div className="p-4 border-b flex items-center justify-between bg-[#faf9f7]">
@@ -45,11 +51,28 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
         </button>
       </div>
 
+      <div className="flex border-b">
+        <button 
+          onClick={() => setActiveTab('NEW')}
+          className={`flex-1 py-2 text-xs font-bold text-center border-b-2 transition-colors ${activeTab === 'NEW' ? 'border-[#5948d3] text-[#5948d3]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          New
+        </button>
+        <button 
+          onClick={() => setActiveTab('ALL')}
+          className={`flex-1 py-2 text-xs font-bold text-center border-b-2 transition-colors ${activeTab === 'ALL' ? 'border-[#5948d3] text-[#5948d3]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          All
+        </button>
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {notifications.length === 0 ? (
-          <div className="text-center py-12 text-xs text-slate-400">No new notifications.</div>
+        {displayedNotifications.length === 0 ? (
+          <div className="text-center py-12 text-xs text-slate-400">
+            {activeTab === 'NEW' ? 'No new notifications.' : 'No notifications yet.'}
+          </div>
         ) : (
-          notifications.map((n: Notification) => (
+          displayedNotifications.map((n: Notification) => (
             <div
               key={n._id}
               className={`p-3 rounded-xl border text-xs relative ${
