@@ -29,5 +29,8 @@ pnpm-debug.log*
 
 docs/
 
+# Uploaded files (avatars, etc.)
+backend/uploads/
+
 .clinerules
 litellm_config.yaml
