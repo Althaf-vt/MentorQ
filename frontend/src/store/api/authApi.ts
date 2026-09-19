@@ -51,7 +51,7 @@ export const authApi = baseApi.injectEndpoints({
       Partial<User> & Record<string, unknown>
     >({
       query: (updateData) => {
-        const { fullName, avatarUrl, ...rest } = updateData
+        const { fullName, avatarUrl, socialLinks, ...rest } = updateData
         return {
           url: '/users/me',
           method: 'PATCH',
@@ -59,6 +59,7 @@ export const authApi = baseApi.injectEndpoints({
             ...rest,
             ...(fullName ? { full_name: fullName } : {}),
             ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+            ...(socialLinks ? { social_links: socialLinks } : {}),
           },
         }
       },
