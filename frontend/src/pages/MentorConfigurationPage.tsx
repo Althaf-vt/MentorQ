@@ -170,8 +170,7 @@ export const MentorConfigurationPage: React.FC = () => {
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Start Time</label>
                   <input
-                    type="text"
-                    placeholder="HH:mm (24h)"
+                    type="time"
                     {...register('operating_hours.start')}
                     className={`bg-[#F5F4F0] border focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none ${errors.operating_hours?.start ? 'border-red-500' : 'border-[#E5E4DE]'}`}
                   />
@@ -182,8 +181,7 @@ export const MentorConfigurationPage: React.FC = () => {
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">End Time</label>
                   <input
-                    type="text"
-                    placeholder="HH:mm (24h)"
+                    type="time"
                     {...register('operating_hours.end')}
                     className={`bg-[#F5F4F0] border focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none ${errors.operating_hours?.end ? 'border-red-500' : 'border-[#E5E4DE]'}`}
                   />
