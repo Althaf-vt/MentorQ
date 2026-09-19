@@ -2,19 +2,30 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Sliders, Clock, Calendar, CheckCircle } from 'lucide-react'
+import { Sliders, Clock, Calendar, CheckCircle, AlertCircle } from 'lucide-react'
 import { useGetMyMentorProfileQuery, useUpdateMyMentorProfileMutation } from '@/store/api/mentorApi'
 
 const mentorConfigSchema = z.object({
   is_online: z.boolean(),
   daily_available_minutes: z.number().min(15).max(1440),
   operating_hours: z.object({
-    start: z.string().min(1, 'Start time is required'),
-    end: z.string().min(1, 'End time is required'),
+    start: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Start time must be in HH:mm format (e.g. 09:00)'),
+    end: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'End time must be in HH:mm format (e.g. 17:00)'),
     timezone: z.string(),
-  }),
+  }).refine(data => {
+    if (!data.start || !data.end) return true;
+    const [startH, startM] = data.start.split(':').map(Number);
+    const [endH, endM] = data.end.split(':').map(Number);
+    return startH < endH || (startH === endH && startM < endM);
+  }, { message: "Start time must be before end time", path: ["start"] }),
   expertise_tags: z.array(z.string()),
-})
+}).refine(data => {
+  if (!data.operating_hours.start || !data.operating_hours.end) return true;
+  const [startH, startM] = data.operating_hours.start.split(':').map(Number);
+  const [endH, endM] = data.operating_hours.end.split(':').map(Number);
+  const totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+  return data.daily_available_minutes <= totalMinutes;
+}, { message: "Daily availability cannot exceed total operating hours window", path: ["daily_available_minutes"] })
 
 type MentorConfigFormValues = z.infer<typeof mentorConfigSchema>
 
@@ -36,8 +47,8 @@ export const MentorConfigurationPage: React.FC = () => {
       is_online: true,
       daily_available_minutes: 90,
       operating_hours: {
-        start: '09:00 AM',
-        end: '06:00 PM',
+        start: '09:00',
+        end: '18:00',
         timezone: 'Asia/Kolkata',
       },
       expertise_tags: [],
@@ -54,8 +65,8 @@ export const MentorConfigurationPage: React.FC = () => {
         is_online: p.is_online,
         daily_available_minutes: p.daily_available_minutes || 90,
         operating_hours: {
-          start: p.operating_hours?.start || '09:00 AM',
-          end: p.operating_hours?.end || '06:00 PM',
+          start: p.operating_hours?.start || '09:00',
+          end: p.operating_hours?.end || '18:00',
           timezone: p.operating_hours?.timezone || 'Asia/Kolkata',
         },
         expertise_tags: p.expertise_tags || [],
@@ -142,10 +153,10 @@ export const MentorConfigurationPage: React.FC = () => {
                 max="1440"
                 step="15"
                 {...register('daily_available_minutes', { valueAsNumber: true })}
-                className="bg-[#F5F4F0] border border-[#E5E4DE] focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none"
+                className={`bg-[#F5F4F0] border focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none ${errors.daily_available_minutes ? 'border-red-500' : 'border-[#E5E4DE]'}`}
               />
               {errors.daily_available_minutes && (
-                <p className="text-red-500 text-xs mt-1">{errors.daily_available_minutes.message}</p>
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.daily_available_minutes.message}</p>
               )}
             </div>
 
@@ -160,22 +171,24 @@ export const MentorConfigurationPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Start Time</label>
                   <input
                     type="text"
+                    placeholder="HH:mm (24h)"
                     {...register('operating_hours.start')}
-                    className="bg-[#F5F4F0] border border-[#E5E4DE] focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none"
+                    className={`bg-[#F5F4F0] border focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none ${errors.operating_hours?.start ? 'border-red-500' : 'border-[#E5E4DE]'}`}
                   />
                   {errors.operating_hours?.start && (
-                    <p className="text-red-500 text-xs mt-1">{errors.operating_hours.start.message}</p>
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.operating_hours.start.message}</p>
                   )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">End Time</label>
                   <input
                     type="text"
+                    placeholder="HH:mm (24h)"
                     {...register('operating_hours.end')}
-                    className="bg-[#F5F4F0] border border-[#E5E4DE] focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none"
+                    className={`bg-[#F5F4F0] border focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none ${errors.operating_hours?.end ? 'border-red-500' : 'border-[#E5E4DE]'}`}
                   />
                   {errors.operating_hours?.end && (
-                    <p className="text-red-500 text-xs mt-1">{errors.operating_hours.end.message}</p>
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.operating_hours.end.message}</p>
                   )}
                 </div>
               </div>

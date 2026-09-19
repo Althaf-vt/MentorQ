@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { User as UserIcon, Settings, Sliders, CheckCircle, Camera, Trash2, Loader2 } from 'lucide-react'
+import { User as UserIcon, Settings, Sliders, CheckCircle, Camera, Trash2, Loader2, AlertCircle } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -16,11 +16,22 @@ import { Link } from 'react-router-dom'
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string)?.replace('/api/v1', '') || 'http://localhost:3133'
 
 const settingsSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
-  bio: z.string().max(300, 'Bio must be less than 300 characters'),
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(50, 'Full name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s'\-]+$/, "Full name can only contain letters, spaces, hyphens, and apostrophes"),
+  bio: z.string()
+    .min(10, 'Bio must be at least 10 characters')
+    .max(500, 'Bio must be less than 500 characters')
+    .regex(/[a-zA-Z]{3,}/, "Bio must contain coherent sentences")
+    .optional().or(z.literal('')),
   socialLinks: z.object({
-    linkedin: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-    github: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    linkedin: z.string()
+      .regex(/^https:\/\/(www\.)?linkedin\.com\/.*/, 'Must be a valid LinkedIn profile URL')
+      .optional().or(z.literal('')),
+    github: z.string()
+      .regex(/^https:\/\/(www\.)?github\.com\/.*/, 'Must be a valid GitHub profile URL')
+      .optional().or(z.literal('')),
   }).optional(),
 })
 
@@ -203,7 +214,7 @@ export const UserSettingsPage: React.FC = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   className="hidden"
                   onChange={handleAvatarUpload}
                 />
@@ -239,29 +250,30 @@ export const UserSettingsPage: React.FC = () => {
               <div>
                 <label className="block text-xs font-semibold text-[#5d605e] mb-1">Full Name</label>
                 <input
-                  className="bg-[#F5F4F0] border border-[#DDD9D2] focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none"
+                  className={`bg-[#F5F4F0] border focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none ${errors.fullName ? 'border-red-500' : 'border-[#DDD9D2]'}`}
                   type="text"
                   {...register('fullName')}
                 />
-                {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName.message}</p>}
+                {errors.fullName && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.fullName.message}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#5d605e] mb-1">Email Address</label>
                 <input
-                  className="bg-[#F5F4F0] border border-[#DDD9D2] w-full px-3 py-2 rounded-xl text-sm outline-none opacity-70"
+                  className="bg-[#F5F4F0] border border-[#DDD9D2] w-full px-3 py-2 rounded-xl text-sm outline-none opacity-70 cursor-not-allowed"
                   type="email"
                   disabled
                   value={user?.email || ''}
+                  title="Email managed via Google login"
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#5d605e] mb-1">Bio</label>
                 <textarea
-                  className="bg-[#F5F4F0] border border-[#DDD9D2] focus:border-primary w-full p-3 rounded-xl text-sm outline-none"
+                  className={`bg-[#F5F4F0] border focus:border-primary w-full p-3 rounded-xl text-sm outline-none ${errors.bio ? 'border-red-500' : 'border-[#DDD9D2]'}`}
                   rows={3}
                   {...register('bio')}
                 />
-                {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio.message}</p>}
+                {errors.bio && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.bio.message}</p>}
               </div>
             </div>
             
@@ -270,22 +282,22 @@ export const UserSettingsPage: React.FC = () => {
               <div>
                 <label className="block text-xs font-semibold text-[#5d605e] mb-1">LinkedIn Profile URL</label>
                 <input
-                  className="bg-[#F5F4F0] border border-[#DDD9D2] focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none"
+                  className={`bg-[#F5F4F0] border focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none ${errors.socialLinks?.linkedin ? 'border-red-500' : 'border-[#DDD9D2]'}`}
                   type="url"
                   placeholder="https://linkedin.com/in/username"
                   {...register('socialLinks.linkedin')}
                 />
-                {errors.socialLinks?.linkedin && <p className="text-red-500 text-xs mt-1">{errors.socialLinks.linkedin.message}</p>}
+                {errors.socialLinks?.linkedin && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.socialLinks.linkedin.message}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#5d605e] mb-1">GitHub Profile URL</label>
                 <input
-                  className="bg-[#F5F4F0] border border-[#DDD9D2] focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none"
+                  className={`bg-[#F5F4F0] border focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none ${errors.socialLinks?.github ? 'border-red-500' : 'border-[#DDD9D2]'}`}
                   type="url"
                   placeholder="https://github.com/username"
                   {...register('socialLinks.github')}
                 />
-                {errors.socialLinks?.github && <p className="text-red-500 text-xs mt-1">{errors.socialLinks.github.message}</p>}
+                {errors.socialLinks?.github && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.socialLinks.github.message}</p>}
               </div>
             </div>
 
