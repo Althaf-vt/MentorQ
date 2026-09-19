@@ -29,7 +29,14 @@ export class NotificationsRepository {
 
   async markAsRead(notificationId: string, userId: string): Promise<NotificationDocument | null> {
     return this.notificationModel.findOneAndUpdate(
-      { _id: notificationId, recipientId: userId as any },
+      {
+        _id: notificationId,
+        $or: [
+          { recipientId: userId as any },
+          { recipientId: null },
+          { recipientId: { $exists: false } },
+        ],
+      },
       { isRead: true },
       { returnDocument: 'after' },
     );
@@ -37,7 +44,15 @@ export class NotificationsRepository {
 
   async markAllAsRead(userId: string, role: string): Promise<any> {
     return this.notificationModel.updateMany(
-      { recipientId: userId as any, role, isRead: false },
+      {
+        role,
+        isRead: false,
+        $or: [
+          { recipientId: userId as any },
+          { recipientId: null },
+          { recipientId: { $exists: false } },
+        ],
+      },
       { isRead: true },
     );
   }
