@@ -1,12 +1,19 @@
-import React, { useState, useEffect } from 'react'
-import { User as UserIcon, Settings, Sliders, CheckCircle } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { User as UserIcon, Settings, Sliders, CheckCircle, Camera, Trash2, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
-import { useGetMeQuery, useUpdateMeMutation } from '@/store/api/authApi'
+import {
+  useGetMeQuery,
+  useUpdateMeMutation,
+  useUploadAvatarMutation,
+  useDeleteAvatarMutation,
+} from '@/store/api/authApi'
 import { updateUser } from '@/store/slices/authSlice'
 import { Link } from 'react-router-dom'
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string)?.replace('/api/v1', '') || 'http://localhost:3133'
 
 const settingsSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
@@ -20,7 +27,12 @@ export const UserSettingsPage: React.FC = () => {
   const { user } = useAppSelector((s) => s.auth)
   const { data: sUser, refetch } = useGetMeQuery()
   const [updateMe, { isLoading }] = useUpdateMeMutation()
+  const [uploadAvatar, { isLoading: isUploading }] = useUploadAvatarMutation()
+  const [deleteAvatar, { isLoading: isDeleting }] = useDeleteAvatarMutation()
   const [success, setSuccess] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const currentUser = sUser?.data || user
 
   const {
     register,
@@ -36,14 +48,18 @@ export const UserSettingsPage: React.FC = () => {
   })
 
   useEffect(() => {
-    const u = sUser?.data || user
-    if (u) {
+    if (currentUser) {
       reset({
-        fullName: u.fullName || '',
-        bio: u.bio || '',
+        fullName: currentUser.fullName || '',
+        bio: currentUser.bio || '',
       })
     }
   }, [sUser, user, reset])
+
+  const showSuccess = (msg: string) => {
+    setSuccess(msg)
+    setTimeout(() => setSuccess(null), 3000)
+  }
 
   const handleSave = async (data: SettingsFormValues) => {
     try {
@@ -51,13 +67,51 @@ export const UserSettingsPage: React.FC = () => {
       if (res.data) {
         dispatch(updateUser(res.data))
         refetch()
-        setSuccess('Profile updated successfully!')
-        setTimeout(() => setSuccess(null), 3000)
+        showSuccess('Profile updated successfully!')
       }
     } catch {
       setSuccess('Failed to update.')
     }
   }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const res = await uploadAvatar(file).unwrap()
+      if (res.data) {
+        dispatch(updateUser(res.data))
+        showSuccess('Photo uploaded successfully!')
+      }
+    } catch {
+      setSuccess('Failed to upload photo.')
+    }
+
+    // Reset the file input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleAvatarDelete = async () => {
+    try {
+      const res = await deleteAvatar().unwrap()
+      if (res.data) {
+        dispatch(updateUser(res.data))
+        showSuccess('Photo removed successfully!')
+      }
+    } catch {
+      setSuccess('Failed to remove photo.')
+    }
+  }
+
+  /** Resolve an avatarUrl (which may be a relative path) to a full URL. */
+  const resolveAvatarUrl = (url?: string) => {
+    if (!url) return null
+    if (url.startsWith('http')) return url
+    return `${API_BASE}${url}`
+  }
+
+  const avatarSrc = resolveAvatarUrl(currentUser?.avatarUrl)
 
   return (
     <main className="min-h-screen bg-[#F5F4F0] text-[#303331] font-body p-6 text-left">
@@ -99,6 +153,67 @@ export const UserSettingsPage: React.FC = () => {
             </div>
           )}
 
+          {/* ── Profile Photo Section ───────────────────────────── */}
+          <div className="bg-[#FAFAF8] border border-[#E8E6E1] rounded-2xl p-6">
+            <h2 className="font-headline text-base font-semibold border-b pb-2 mb-4">Profile Photo</h2>
+            <div className="flex items-center gap-6">
+              {/* Avatar Preview */}
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center ring-4 ring-[#E8E6E1] shadow-sm">
+                  {avatarSrc ? (
+                    <img
+                      src={avatarSrc}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-primary">
+                      {currentUser?.fullName?.charAt(0)?.toUpperCase() || <UserIcon className="w-8 h-8" />}
+                    </span>
+                  )}
+                </div>
+                {(isUploading || isDeleting) && (
+                  <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading || isDeleting}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dim text-white rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-70 transition-colors"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  {currentUser?.avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                </button>
+                {currentUser?.avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleAvatarDelete}
+                    disabled={isUploading || isDeleting}
+                    className="flex items-center gap-2 px-4 py-2 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-70 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Remove Photo
+                  </button>
+                )}
+                <p className="text-[10px] text-[#5d605e]">JPG, PNG or GIF. Max 5 MB.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Basic Details Form ──────────────────────────────── */}
           <form onSubmit={handleSubmit(handleSave)} className="bg-[#FAFAF8] border border-[#E8E6E1] rounded-2xl p-6 space-y-4">
             <h2 className="font-headline text-base font-semibold border-b pb-2">Basic Details</h2>
             <div className="space-y-3">
@@ -145,3 +260,4 @@ export const UserSettingsPage: React.FC = () => {
     </main>
   )
 }
+
