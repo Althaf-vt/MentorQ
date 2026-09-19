@@ -25,4 +25,13 @@ export class UsersService {
     }
     return user;
   }
+
+  async updateAvatar(id: string, avatarUrl: string | null): Promise<UserDocument> {
+    const user = await this.usersRepository.update(id, { avatar_url: avatarUrl });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
 }
+
