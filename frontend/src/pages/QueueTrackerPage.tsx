@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Clock, ArrowLeft, AlertCircle, CheckCircle2, Loader2, PlayCircle, XCircle } from 'lucide-react'
 import { useGetTicketByIdQuery, useGetQueuePositionQuery, useUpdateTicketStatusMutation } from '@/store/api/ticketApi'
@@ -14,6 +14,7 @@ export const QueueTrackerPage: React.FC = () => {
   const { data: ticket, isLoading, refetch } = useGetTicketByIdQuery(ticketId || '', { skip: !ticketId })
   const { data: posData, refetch: refetchPos } = useGetQueuePositionQuery(ticketId || '', { skip: !ticketId || ticket?.status !== 'PENDING' })
   const [updateStatus, { isLoading: isCancelling }] = useUpdateTicketStatusMutation()
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
 
   useEffect(() => {
     socketService.connect()
@@ -84,7 +85,7 @@ export const QueueTrackerPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex gap-1">{ticket.tags?.map(t => <span key={t} className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">#{t}</span>)}</div>
           {ticket.status === 'PENDING' && (
-            <button onClick={async () => { if (confirm('Cancel ticket?')) { await updateStatus({ id: ticket._id, status: 'CANCELLED' }); navigate('/dashboard') } }} disabled={isCancelling} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs rounded-lg flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Cancel</button>
+            <button onClick={() => setIsCancelModalOpen(true)} disabled={isCancelling} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs rounded-lg flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Cancel</button>
           )}
         </div>
       </div>
@@ -104,6 +105,34 @@ export const QueueTrackerPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden p-6 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="font-bold text-lg text-slate-900">Cancel Ticket?</h2>
+              <p className="text-xs text-slate-500 mt-1">Are you sure you want to cancel this mentorship request? You will lose your position in the queue.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button onClick={() => setIsCancelModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-50">Keep Ticket</button>
+              <button 
+                onClick={async () => {
+                  await updateStatus({ id: ticket._id, status: 'CANCELLED' });
+                  setIsCancelModalOpen(false);
+                  navigate('/dashboard');
+                }} 
+                disabled={isCancelling} 
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold flex justify-center items-center gap-2 disabled:opacity-50"
+              >
+                {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

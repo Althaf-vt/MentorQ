@@ -35,6 +35,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation()
   const [notifOpen, setNotifOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false)
   const { data: notifications = [] } = useGetUserNotificationsQuery(undefined, { skip: !isAuthenticated })
   const unreadCount = notifications.filter((n: Notification) => !n.isRead).length
 
@@ -202,7 +203,7 @@ export const Navbar: React.FC = () => {
 
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => setLogoutModalOpen(true)}
                 className="p-2 text-[#797b79] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                 title="Log out"
                 aria-label="Log out"
@@ -326,7 +327,7 @@ export const Navbar: React.FC = () => {
             {/* Logout Button in Drawer Footer */}
             <div className="pt-4 border-t border-[#ecebe6]">
               <button
-                onClick={handleLogout}
+                onClick={() => setLogoutModalOpen(true)}
                 className="w-full px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
@@ -338,6 +339,33 @@ export const Navbar: React.FC = () => {
       )}
 
       {notifOpen && <NotificationDrawer onClose={() => setNotifOpen(false)} />}
+
+      {/* Logout Confirmation Modal */}
+      {logoutModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden p-6 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+              <LogOut className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="font-bold text-lg text-slate-900">Sign Out?</h2>
+              <p className="text-xs text-slate-500 mt-1">Are you sure you want to sign out of MentorQ?</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button onClick={() => setLogoutModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+              <button 
+                onClick={() => {
+                  setLogoutModalOpen(false)
+                  handleLogout()
+                }} 
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold flex justify-center items-center"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
