@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type UserDocument = User & Document;
 
@@ -28,6 +28,12 @@ export class User {
     linkedin?: string;
     github?: string;
   };
+
+  @Prop({ default: false })
+  is_online: boolean;
+
+  @Prop({ type: [{ type: String }], default: [] })
+  favorite_mentors: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

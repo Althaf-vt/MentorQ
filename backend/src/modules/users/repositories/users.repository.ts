@@ -25,4 +25,24 @@ export class UsersRepository {
   async update(id: string, update: UpdateQuery<UserDocument>): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
+
+  async getMentorsDirectory(): Promise<any[]> {
+    return this.userModel.aggregate([
+      { $match: { role: 'MENTOR' } },
+      { $project: { password_hash: 0 } },
+      {
+        $lookup: {
+          from: 'mentorprofiles',
+          let: { uId: { $toString: '$_id' } },
+          pipeline: [
+            { $match: { $expr: { $or: [ { $eq: ['$user_id', '$$uId'] }, { $eq: ['$user_id', '$_id'] } ] } } }
+          ],
+          as: 'mentorProfile'
+        }
+      },
+      {
+        $unwind: { path: '$mentorProfile', preserveNullAndEmptyArrays: true }
+      }
+    ]).exec();
+  }
 }

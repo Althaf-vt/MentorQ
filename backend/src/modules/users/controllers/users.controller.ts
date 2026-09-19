@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Patch, Post, Delete, Body,
+  Controller, Get, Patch, Post, Delete, Body, Param,
   UseGuards, UseInterceptors, UploadedFile, Req, BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -21,6 +21,8 @@ function serialiseUser(user: any) {
     role: user.role,
     avatarUrl: user.avatar_url,
     socialLinks: user.social_links,
+    favoriteMentors: user.favorite_mentors || [],
+    isOnline: user.is_online || false,
   };
 }
 
@@ -39,6 +41,24 @@ export class UsersController {
   async updateMe(@Req() req: any, @Body() updateData: UpdateUserDto) {
     const user = await this.usersService.updateProfile(req.user.id, updateData);
     return { status: 'success', data: serialiseUser(user) };
+  }
+
+  @Post('favorites/:mentorId')
+  async addFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
+    const user = await this.usersService.addFavorite(req.user.id, mentorId);
+    return { status: 'success', data: serialiseUser(user) };
+  }
+
+  @Delete('favorites/:mentorId')
+  async removeFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
+    const user = await this.usersService.removeFavorite(req.user.id, mentorId);
+    return { status: 'success', data: serialiseUser(user) };
+  }
+
+  @Get('mentors/directory')
+  async getMentorsDirectory() {
+    const directory = await this.usersService.getMentorsDirectory();
+    return { status: 'success', data: directory };
   }
 
   // ---- Avatar Upload -------------------------------------------------------
