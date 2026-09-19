@@ -13,14 +13,13 @@ interface NotificationDrawerProps {
 }
 
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose }) => {
-  const { data: notifications = [], refetch } = useGetUserNotificationsQuery()
+  const { data: notifications = [] } = useGetUserNotificationsQuery()
   const [markRead] = useMarkNotificationAsReadMutation()
   const [markAllRead] = useMarkAllNotificationsAsReadMutation()
 
   const handleMarkAll = async () => {
     try {
       await markAllRead().unwrap()
-      refetch()
     } catch (e) {
       console.error(e)
     }
@@ -29,7 +28,6 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
   const handleMarkOne = async (id: string) => {
     try {
       await markRead(id).unwrap()
-      refetch()
     } catch (e) {
       console.error(e)
     }
@@ -91,4 +89,5 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
     document.body
   )
 }
+
 
