@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, BadReque
 import { TicketsService } from '../services/tickets.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { CreateTicketDto } from '../dto/create-ticket.dto.js';
+import { ResolveGuidanceDto } from '../dto/resolve-guidance.dto.js';
 
 @Controller('api/v1/tickets')
 @UseGuards(JwtAuthGuard)
@@ -42,12 +43,9 @@ export class TicketsController {
   async resolveWithGuidance(
     @Request() req: any,
     @Param('id') id: string,
-    @Body('message') message: string,
+    @Body() body: ResolveGuidanceDto,
   ) {
-    if (!message || message.trim() === '') {
-      throw new BadRequestException('Guidance message is required');
-    }
-    return this.ticketsService.resolveWithGuidance(id, req.user.id, message);
+    return this.ticketsService.resolveWithGuidance(id, req.user.id, body.message);
   }
 
   @Patch(':id/status')
