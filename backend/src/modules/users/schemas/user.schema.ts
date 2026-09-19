@@ -22,6 +22,12 @@ export class User {
 
   @Prop()
   avatar_url?: string;
+
+  @Prop({ type: { linkedin: String, github: String }, required: false })
+  social_links?: {
+    linkedin?: string;
+    github?: string;
+  };
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
