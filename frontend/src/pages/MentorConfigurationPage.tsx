@@ -7,7 +7,7 @@ import { useGetMyMentorProfileQuery, useUpdateMyMentorProfileMutation } from '@/
 
 const mentorConfigSchema = z.object({
   is_online: z.boolean(),
-  daily_available_minutes: z.number().min(15).max(180),
+  daily_available_minutes: z.number().min(15).max(1440),
   operating_hours: z.object({
     start: z.string().min(1, 'Start time is required'),
     end: z.string().min(1, 'End time is required'),
@@ -133,16 +133,16 @@ export const MentorConfigurationPage: React.FC = () => {
             {/* Daily Availability */}
             <div className="bg-[#FAFAF8] border border-[#E5E4DE] rounded-2xl p-6 space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-base font-bold text-slate-900">Daily Availability</h2>
+                <h2 className="text-base font-bold text-slate-900">Daily Availability (minutes)</h2>
                 <span className="text-sm font-semibold text-brand">{dailyMinutes} min</span>
               </div>
               <input
-                type="range"
+                type="number"
                 min="15"
-                max="180"
+                max="1440"
                 step="15"
                 {...register('daily_available_minutes', { valueAsNumber: true })}
-                className="w-full accent-brand cursor-pointer"
+                className="bg-[#F5F4F0] border border-[#E5E4DE] focus:border-brand rounded-xl px-3 py-2 text-sm w-full outline-none"
               />
               {errors.daily_available_minutes && (
                 <p className="text-red-500 text-xs mt-1">{errors.daily_available_minutes.message}</p>
