@@ -9,6 +9,10 @@ export interface User {
   headline?: string
   bio?: string
   timezone?: string
+  socialLinks?: {
+    linkedin?: string
+    github?: string
+  }
 }
 
 export interface AuthState {
