@@ -130,17 +130,30 @@ export const Navbar: React.FC = () => {
                 <span>Dashboard</span>
               </Link>
               {user?.role === 'STUDENT' && (
-                <Link
-                  to="/history"
-                  className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-                    isActive('/history')
-                      ? 'text-primary bg-primary/10 font-semibold'
-                      : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
-                  }`}
-                >
-                  <ListCollapse className="w-4 h-4" />
-                  <span>History Archive</span>
-                </Link>
+                <>
+                  <Link
+                    to="/mentors"
+                    className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+                      isActive('/mentors') || isActive('/mentors/favorites')
+                        ? 'text-primary bg-primary/10 font-semibold'
+                        : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
+                    }`}
+                  >
+                    <UserIcon className="w-4 h-4" />
+                    <span>Find Mentors</span>
+                  </Link>
+                  <Link
+                    to="/history"
+                    className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+                      isActive('/history')
+                        ? 'text-primary bg-primary/10 font-semibold'
+                        : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
+                    }`}
+                  >
+                    <ListCollapse className="w-4 h-4" />
+                    <span>History Archive</span>
+                  </Link>
+                </>
               )}
               {user?.role === 'MENTOR' && (
                 <Link
@@ -271,21 +284,38 @@ export const Navbar: React.FC = () => {
                 </Link>
 
                 {user?.role === 'STUDENT' && (
-                  <Link
-                    to="/history"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
-                      isActive('/history')
-                        ? 'bg-primary text-white font-bold shadow-xs'
-                        : 'text-slate-700 hover:bg-[#faf9f7]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <ListCollapse className="w-4 h-4" />
-                      <span>History Archive</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-                  </Link>
+                  <>
+                    <Link
+                      to="/mentors"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                        isActive('/mentors') || isActive('/mentors/favorites')
+                          ? 'bg-primary text-white font-bold shadow-xs'
+                          : 'text-slate-700 hover:bg-[#faf9f7]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <UserIcon className="w-4 h-4" />
+                        <span>Find Mentors</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                    </Link>
+                    <Link
+                      to="/history"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                        isActive('/history')
+                          ? 'bg-primary text-white font-bold shadow-xs'
+                          : 'text-slate-700 hover:bg-[#faf9f7]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ListCollapse className="w-4 h-4" />
+                        <span>History Archive</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+                    </Link>
+                  </>
                 )}
 
                 {user?.role === 'MENTOR' && (

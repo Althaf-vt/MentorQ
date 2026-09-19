@@ -12,6 +12,7 @@ import { QueueTrackerPage } from './pages/QueueTrackerPage'
 import { SessionFocusModePage } from './pages/SessionFocusModePage'
 import { TicketHistoryArchivePage } from './pages/TicketHistoryArchivePage'
 import { ProtectedRoute } from './routes/ProtectedRoute'
+import { MentorsDirectoryPage } from './pages/MentorsDirectoryPage'
 import { PublicRoute } from './routes/PublicRoute'
 import { RoleRoute } from './routes/RoleRoute'
 import { useRoleAuth } from './store/hooks/useRoleAuth'
@@ -54,6 +55,8 @@ function App() {
             <Route path="/history" element={<RoleRoute allowedRoles={['STUDENT', 'ADMIN']}><TicketHistoryArchivePage /></RoleRoute>} />
             <Route path="/focus/:ticketId" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><UserSettingsPage /></ProtectedRoute>} />
+            <Route path="/mentors" element={<RoleRoute allowedRoles={['STUDENT', 'ADMIN']}><MentorsDirectoryPage /></RoleRoute>} />
+            <Route path="/mentors/favorites" element={<RoleRoute allowedRoles={['STUDENT', 'ADMIN']}><MentorsDirectoryPage /></RoleRoute>} />
 
             {/* ============================================================
                 Mentor Routes — all prefixed with /mentor
