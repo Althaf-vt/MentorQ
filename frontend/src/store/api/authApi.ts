@@ -64,6 +64,30 @@ export const authApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ['User'],
     }),
+
+    // ---- Avatar Management -------------------------------------------------
+    uploadAvatar: builder.mutation<{ status: string; data: User }, File>({
+      query: (file) => {
+        const formData = new FormData()
+        formData.append('avatar', file)
+        return {
+          url: '/users/me/avatar',
+          method: 'POST',
+          body: formData,
+          // Let the browser set Content-Type with the multipart boundary
+          formData: true,
+        }
+      },
+      invalidatesTags: ['User'],
+    }),
+
+    deleteAvatar: builder.mutation<{ status: string; data: User }, void>({
+      query: () => ({
+        url: '/users/me/avatar',
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 })
 
@@ -74,4 +98,7 @@ export const {
   useVerifyOtpMutation,
   useGetMeQuery,
   useUpdateMeMutation,
+  useUploadAvatarMutation,
+  useDeleteAvatarMutation,
 } = authApi
+
