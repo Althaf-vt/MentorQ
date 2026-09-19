@@ -19,6 +19,7 @@ function serialiseUser(user: any) {
     email: user.email,
     role: user.role,
     avatarUrl: user.avatar_url,
+    socialLinks: user.social_links,
   };
 }
 
