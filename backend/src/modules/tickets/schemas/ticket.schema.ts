@@ -36,6 +36,9 @@ export class Ticket {
   @Prop([String])
   tags: string[];
 
+  @Prop()
+  guidance_message: string;
+
   @Prop([
     {
       status: String,

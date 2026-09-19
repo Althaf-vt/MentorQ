@@ -57,6 +57,31 @@ export class TicketsService {
     return updated;
   }
 
+  async resolveWithGuidance(ticketId: string, mentorId: string, message: string): Promise<TicketDocument> {
+    const ticket = await this.getTicketById(ticketId);
+    if (ticket.status !== 'APPROVED' && ticket.status !== 'ACTIVE') {
+      throw new BadRequestException('Ticket must be APPROVED or ACTIVE to resolve');
+    }
+    if (ticket.mentor_id?.toString() !== mentorId) {
+      throw new BadRequestException('You are not the mentor for this ticket');
+    }
+
+    const statusHistory = ticket.status_history || [];
+    statusHistory.push({ status: 'COMPLETED', timestamp: new Date(), feedback_note: 'Resolved with guidance' });
+
+    const updated = await this.ticketsRepository.update(ticketId, {
+      status: 'COMPLETED',
+      guidance_message: message,
+      status_history: statusHistory,
+    });
+    
+    if (!updated) throw new NotFoundException('Ticket not found during resolution');
+    
+    this.sessionsGateway.emitTicketResolvedWithGuidance(ticketId, ticket.student_id.toString(), mentorId);
+    
+    return updated;
+  }
+
   async updateTicketStatus(
     id: string,
     status: string,

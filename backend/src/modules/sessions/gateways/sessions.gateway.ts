@@ -233,6 +233,25 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     ).catch(console.error);
   }
 
+  emitTicketResolvedWithGuidance(ticketId: string, studentId: string, mentorId: string) {
+    if (!this.server) return;
+    const data = { ticketId, mentorId };
+    
+    this.server.to(`ticket_${ticketId}`).emit('ticket_resolved_guidance', data);
+    this.server.to(`student_${studentId}`).emit('ticket_resolved_guidance', data);
+    this.server.to(`user_${studentId}`).emit('ticket_resolved_guidance', data);
+
+    this.emitQueueUpdate({ type: 'TICKET_COMPLETED', ticketId });
+
+    this.notificationsService.createNotification(
+      studentId,
+      'STUDENT',
+      'Ticket Resolved',
+      'Your mentor has resolved your request with guidance.',
+      NotificationType.TICKET
+    ).catch(console.error);
+  }
+
   // Method to emit updates to a specific session room
   emitSessionUpdate(sessionId: string, data: any) {
     if (!this.server) return;

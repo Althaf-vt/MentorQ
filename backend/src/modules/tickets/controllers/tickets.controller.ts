@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { TicketsService } from '../services/tickets.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { CreateTicketDto } from '../dto/create-ticket.dto.js';
@@ -37,6 +37,17 @@ export class TicketsController {
   @Get(':id')
   async getById(@Param('id') id: string) {
     return this.ticketsService.getTicketById(id);
+  }
+  @Patch(':id/resolve-with-guidance')
+  async resolveWithGuidance(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('message') message: string,
+  ) {
+    if (!message || message.trim() === '') {
+      throw new BadRequestException('Guidance message is required');
+    }
+    return this.ticketsService.resolveWithGuidance(id, req.user.id, message);
   }
 
   @Patch(':id/status')
