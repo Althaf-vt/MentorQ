@@ -21,6 +21,13 @@ import { useGetUserNotificationsQuery, notificationApi } from '@/store/api/notif
 import type { Notification } from '@/types/operational.types'
 import { socketService } from '@/services/socket.service'
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string)?.replace('/api/v1', '') || 'http://localhost:3133'
+function resolveAvatarUrl(url?: string) {
+  if (!url) return null
+  if (url.startsWith('http')) return url
+  return `${API_BASE}${url}`
+}
+
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, activeRole } = useRoleAuth()
   const dispatch = useAppDispatch()
@@ -180,8 +187,12 @@ export const Navbar: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                  {user.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon className="w-4 h-4" />}
+                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs overflow-hidden">
+                  {resolveAvatarUrl(user.avatarUrl) ? (
+                    <img src={resolveAvatarUrl(user.avatarUrl)!} alt={user.fullName} className="w-full h-full object-cover" />
+                  ) : (
+                    user.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon className="w-4 h-4" />
+                  )}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-xs font-semibold text-[#303331] leading-tight truncate max-w-[120px]">{user.fullName}</p>
@@ -226,8 +237,12 @@ export const Navbar: React.FC = () => {
             <div className="space-y-4">
               {/* User Identity Banner in Drawer */}
               <div className="p-3 bg-[#faf9f7] rounded-xl border border-[#ecebe6] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon className="w-5 h-5" />}
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm overflow-hidden">
+                  {resolveAvatarUrl(user?.avatarUrl) ? (
+                    <img src={resolveAvatarUrl(user?.avatarUrl)!} alt={user?.fullName || 'User'} className="w-full h-full object-cover" />
+                  ) : (
+                    user?.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon className="w-5 h-5" />
+                  )}
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-xs font-bold text-[#303331] truncate">{user?.fullName || 'User'}</p>
