@@ -18,6 +18,10 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL as string)?.replace('/api/v1
 const settingsSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   bio: z.string().max(300, 'Bio must be less than 300 characters'),
+  socialLinks: z.object({
+    linkedin: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    github: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  }).optional(),
 })
 
 type SettingsFormValues = z.infer<typeof settingsSchema>
@@ -44,6 +48,10 @@ export const UserSettingsPage: React.FC = () => {
     defaultValues: {
       fullName: '',
       bio: '',
+      socialLinks: {
+        linkedin: '',
+        github: '',
+      },
     },
   })
 
@@ -52,6 +60,10 @@ export const UserSettingsPage: React.FC = () => {
       reset({
         fullName: currentUser.fullName || '',
         bio: currentUser.bio || '',
+        socialLinks: {
+          linkedin: currentUser.socialLinks?.linkedin || '',
+          github: currentUser.socialLinks?.github || '',
+        },
       })
     }
   }, [sUser, user, reset])
@@ -63,7 +75,14 @@ export const UserSettingsPage: React.FC = () => {
 
   const handleSave = async (data: SettingsFormValues) => {
     try {
-      const res = await updateMe({ fullName: data.fullName, bio: data.bio }).unwrap()
+      const res = await updateMe({ 
+        fullName: data.fullName, 
+        bio: data.bio,
+        socialLinks: {
+          linkedin: data.socialLinks?.linkedin || undefined,
+          github: data.socialLinks?.github || undefined,
+        }
+      }).unwrap()
       if (res.data) {
         dispatch(updateUser(res.data))
         refetch()
@@ -245,6 +264,31 @@ export const UserSettingsPage: React.FC = () => {
                 {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio.message}</p>}
               </div>
             </div>
+            
+            <h2 className="font-headline text-base font-semibold border-b pb-2 pt-4">Social Links (Optional)</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#5d605e] mb-1">LinkedIn Profile URL</label>
+                <input
+                  className="bg-[#F5F4F0] border border-[#DDD9D2] focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none"
+                  type="url"
+                  placeholder="https://linkedin.com/in/username"
+                  {...register('socialLinks.linkedin')}
+                />
+                {errors.socialLinks?.linkedin && <p className="text-red-500 text-xs mt-1">{errors.socialLinks.linkedin.message}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#5d605e] mb-1">GitHub Profile URL</label>
+                <input
+                  className="bg-[#F5F4F0] border border-[#DDD9D2] focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none"
+                  type="url"
+                  placeholder="https://github.com/username"
+                  {...register('socialLinks.github')}
+                />
+                {errors.socialLinks?.github && <p className="text-red-500 text-xs mt-1">{errors.socialLinks.github.message}</p>}
+              </div>
+            </div>
+
             {isDirty && (
               <button
                 type="submit"
