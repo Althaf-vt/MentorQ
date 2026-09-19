@@ -9,6 +9,7 @@ import { SessionsGateway } from './gateways/sessions.gateway.js';
 import { TicketsModule } from '../tickets/tickets.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { UsersModule } from '../users/users.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
     forwardRef(() => TicketsModule),
     AuthModule,
     NotificationsModule,
+    UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [SessionsController],

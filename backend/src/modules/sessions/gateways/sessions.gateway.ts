@@ -12,6 +12,7 @@ import { AuthService } from '../../auth/services/auth.service.js';
 import { SessionsRepository } from '../repositories/sessions.repository.js';
 import { NotificationsService } from '../../notifications/services/notifications.service.js';
 import { NotificationType } from '../../notifications/schemas/notification.schema.js';
+import { UsersService } from '../../users/services/users.service.js';
 
 @WebSocketGateway({
   cors: {
@@ -26,6 +27,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly authService: AuthService,
     private readonly sessionsRepository: SessionsRepository,
     private readonly notificationsService: NotificationsService,
+    private readonly usersService: UsersService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -41,6 +43,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
             client.join(`user_${uid}`);
             client.join(`student_${uid}`);
             client.join(`mentor_${uid}`);
+            await this.usersService.updateOnlineStatus(uid, true);
           }
         }
       }
@@ -59,6 +62,14 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
         }
       } catch (err) {
         console.error('Error handling disconnect for session:', err);
+      }
+    }
+    const uid = client.data?.user?.id || client.data?.user?._id;
+    if (uid) {
+      try {
+        await this.usersService.updateOnlineStatus(uid, false);
+      } catch (err) {
+        console.warn('Failed to update offline status', err);
       }
     }
   }
