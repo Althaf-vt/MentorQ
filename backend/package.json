@@ -37,6 +37,8 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^4.0.1",
     "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "mongoose": "^9.10.0",
     "nodemailer": "^10.0.9",
     "passport": "^0.7.0",

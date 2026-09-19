@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request } from '@nestjs/common';
 import { TicketsService } from '../services/tickets.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
+import { CreateTicketDto } from '../dto/create-ticket.dto.js';
 
 @Controller('api/v1/tickets')
 @UseGuards(JwtAuthGuard)
@@ -8,7 +9,7 @@ export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   @Post()
-  async create(@Request() req: any, @Body() body: any) {
+  async create(@Request() req: any, @Body() body: CreateTicketDto) {
     return this.ticketsService.createTicket(req.user.id, body);
   }
 

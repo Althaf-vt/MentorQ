@@ -8,6 +8,7 @@ import { extname, join } from 'path';
 import { existsSync, unlinkSync } from 'fs';
 import { UsersService } from '../services/users.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
+import { UpdateUserDto } from '../dto/update-user.dto.js';
 
 const AVATAR_DEST = join(process.cwd(), 'uploads', 'avatars');
 
@@ -35,7 +36,7 @@ export class UsersController {
   }
 
   @Patch('me')
-  async updateMe(@Req() req: any, @Body() updateData: any) {
+  async updateMe(@Req() req: any, @Body() updateData: UpdateUserDto) {
     const user = await this.usersService.updateProfile(req.user.id, updateData);
     return { status: 'success', data: serialiseUser(user) };
   }
@@ -52,8 +53,9 @@ export class UsersController {
         },
       }),
       fileFilter: (_req, file, cb) => {
-        if (!file.mimetype.startsWith('image/')) {
-          return cb(new BadRequestException('Only image files are allowed'), false);
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          return cb(new BadRequestException('Only JPEG, PNG, and WebP image files are allowed'), false);
         }
         cb(null, true);
       },
