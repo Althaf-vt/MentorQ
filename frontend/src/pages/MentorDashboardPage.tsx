@@ -23,6 +23,7 @@ import {
 import { useStartSessionMutation } from '@/store/api/sessionApi'
 import { socketService } from '@/services/socket.service'
 import { playNotificationSound } from '@/utils/audioUtils'
+import { useToast } from '@/context/ToastContext'
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -49,6 +50,8 @@ export const MentorDashboardPage: React.FC = () => {
   // Guidance modal state
   const [guidanceModalData, setGuidanceModalData] = useState<{ticketId: string} | null>(null)
   const [guidanceMessage, setGuidanceMessage] = useState('')
+  const [guidanceError, setGuidanceError] = useState('')
+  const { showToast } = useToast()
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -165,12 +168,30 @@ export const MentorDashboardPage: React.FC = () => {
 
   const submitGuidance = async () => {
     if (!guidanceModalData || !guidanceMessage.trim()) return
+    const msg = guidanceMessage.trim();
+    if (msg.length < 10) {
+      setGuidanceError('Guidance message must be at least 10 characters long');
+      return;
+    }
+    if (msg.length > 1000) {
+      setGuidanceError('Guidance message cannot exceed 1000 characters');
+      return;
+    }
+    if (!/^(?=.*[a-zA-Z0-9])[a-zA-Z0-9\s\S]+$/.test(msg)) {
+      setGuidanceError('Guidance message must contain meaningful alphanumeric text');
+      return;
+    }
+    
+    setGuidanceError('')
+    
     try {
-      await resolveWithGuidance({ id: guidanceModalData.ticketId, message: guidanceMessage }).unwrap()
+      await resolveWithGuidance({ id: guidanceModalData.ticketId, message: msg }).unwrap()
+      showToast('Ticket resolved with guidance', 'success')
       setGuidanceModalData(null)
       setGuidanceMessage('')
       refetchTickets()
-    } catch (err) {
+    } catch (err: any) {
+      showToast(err?.data?.message || 'Failed to resolve ticket', 'error')
       console.error(err)
     }
   }
@@ -520,13 +541,25 @@ export const MentorDashboardPage: React.FC = () => {
             <p className="text-xs text-slate-500">
               Provide resources, links, or advice to resolve this student's doubt directly without launching Focus Mode.
             </p>
-            <textarea
-              value={guidanceMessage}
-              onChange={(e) => setGuidanceMessage(e.target.value)}
-              rows={4}
-              placeholder="e.g., Check out this documentation link..."
-              className="w-full bg-[#f4f4f1] border border-[#e5e4de] focus:border-[#5948d3] outline-none rounded-xl p-3 text-sm resize-none"
-            />
+            <div className="space-y-1">
+              <textarea
+                value={guidanceMessage}
+                onChange={(e) => {
+                  setGuidanceMessage(e.target.value)
+                  if (guidanceError) setGuidanceError('')
+                }}
+                rows={4}
+                placeholder="e.g., Check out this documentation link..."
+                className={`w-full border outline-none rounded-xl p-3 text-sm resize-none ${
+                  guidanceError 
+                    ? 'bg-red-50 border-red-500 focus:border-red-600 text-red-900' 
+                    : 'bg-[#f4f4f1] border-[#e5e4de] focus:border-[#5948d3]'
+                }`}
+              />
+              {guidanceError && (
+                <p className="text-xs font-semibold text-red-500 pl-1">{guidanceError}</p>
+              )}
+            </div>
             <div className="flex gap-3 justify-end pt-2">
               <button
                 onClick={() => {
