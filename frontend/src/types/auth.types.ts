@@ -13,6 +13,8 @@ export interface User {
     linkedin?: string
     github?: string
   }
+  favoriteMentors?: string[]
+  isOnline?: boolean
 }
 
 export interface AuthState {
