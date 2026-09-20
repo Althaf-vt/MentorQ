@@ -25,17 +25,22 @@ export class MentorProfilesRepository {
     return this.mentorProfileModel.findOne(this.buildUserFilter(userId)).exec();
   }
 
-  async update(userId: string, update: Partial<MentorProfile>): Promise<MentorProfileDocument | null> {
+  async update(userId: string, update: any): Promise<MentorProfileDocument | null> {
     // 1. Look for existing profile matching either string or ObjectId
     const existing = await this.findByUserId(userId);
 
     // 2. Separate user_id and _id so we never attempt to overwrite or duplicate user_id
-    const { user_id, _id, ...cleanUpdate } = update as any;
+    const { user_id, _id, $unset, ...cleanUpdate } = update as any;
+
+    const updateQuery: any = { $set: cleanUpdate };
+    if ($unset) {
+      updateQuery.$unset = $unset;
+    }
 
     if (existing) {
       return this.mentorProfileModel.findByIdAndUpdate(
         existing._id,
-        { $set: cleanUpdate },
+        updateQuery,
         { returnDocument: 'after' },
       ).exec();
     }
@@ -44,7 +49,7 @@ export class MentorProfilesRepository {
     return this.mentorProfileModel.findOneAndUpdate(
       { user_id: new Types.ObjectId(userId) },
       {
-        $set: cleanUpdate,
+        ...updateQuery,
         $setOnInsert: {
           user_id: new Types.ObjectId(userId),
           expertise_tags: cleanUpdate.expertise_tags || [],

@@ -46,6 +46,13 @@ export class MentorProfilesService {
       updatePayload.expertise_tags = updateData.expertiseTags;
     }
 
+    updatePayload.$unset = {
+      isAvailable: "",
+      is_available: "",
+      dailyAvailability: "",
+      operatingHours: ""
+    };
+
     const profile = await this.mentorProfilesRepository.update(userId, updatePayload);
     return profile;
   }

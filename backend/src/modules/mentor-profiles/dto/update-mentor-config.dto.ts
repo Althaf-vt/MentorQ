@@ -1,4 +1,4 @@
-import { IsString, Matches, IsInt, Min, Max, Validate, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, ValidateNested } from 'class-validator';
+import { IsString, Matches, IsInt, Min, Max, Validate, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, ValidateNested, IsBoolean, IsOptional, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 @ValidatorConstraint({ name: 'isBeforeEndTime', async: false })
@@ -60,4 +60,13 @@ export class UpdateMentorConfigDto {
   @Max(1440)
   @Validate(IsWithinOperatingHoursConstraint)
   dailyAvailability: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnline?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  expertiseTags?: string[];
 }

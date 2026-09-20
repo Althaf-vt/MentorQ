@@ -77,7 +77,7 @@ export const MentorDashboardPage: React.FC = () => {
     }
   }, [refetchPool])
 
-  const isAvailable = mentorProfileResp?.data?.is_available ?? false
+  const isOnline = mentorProfileResp?.data?.is_online ?? false
 
   // Filter tickets by category
   const activeTicketsRaw = useMemo(
@@ -134,7 +134,21 @@ export const MentorDashboardPage: React.FC = () => {
 
   const toggleAvailability = async () => {
     try {
-      await updateProfile({ isAvailable: !isAvailable }).unwrap()
+      const profile = mentorProfileResp?.data;
+      if (!profile) return;
+
+      const parsedMinutes = parseInt(String(profile.daily_available_minutes || 60), 10);
+
+      await updateProfile({ 
+        isOnline: !isOnline,
+        dailyAvailability: parsedMinutes,
+        operatingHours: {
+          startTime: profile.operating_hours?.start || '09:00',
+          endTime: profile.operating_hours?.end || '17:00',
+          timezone: profile.operating_hours?.timezone || 'Asia/Kolkata',
+        },
+        expertiseTags: profile.expertise_tags || [],
+      }).unwrap()
       refetchProfile()
     } catch (err) {
       console.error(err)
@@ -210,13 +224,13 @@ export const MentorDashboardPage: React.FC = () => {
             onClick={toggleAvailability}
             disabled={isUpdatingProfile}
             className={`px-4 py-2 rounded-2xl border text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors ${
-              isAvailable
+              isOnline
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                 : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
             }`}
           >
             <Radio className="w-4 h-4" />
-            <span>{isAvailable ? 'Available' : 'Offline'}</span>
+            <span>{isOnline ? 'Available' : 'Offline'}</span>
           </button>
           <Link to="/mentor/configuration" className="p-2 rounded-2xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
             <Sliders className="w-4 h-4" />
@@ -288,13 +302,13 @@ export const MentorDashboardPage: React.FC = () => {
                       <span className="text-[10px] text-slate-400">{dateStr}</span>
                       <button
                         onClick={() => handleClaimTicket(t._id)}
-                        disabled={isClaiming || !isAvailable}
+                        disabled={isClaiming || !isOnline}
                         className={`px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
-                          isAvailable
+                          isOnline
                             ? 'bg-[#5948d3] hover:bg-[#4d39c7] text-white'
                             : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                         }`}
-                        title={!isAvailable ? 'Please mark yourself as Available to claim tickets' : 'Claim this ticket'}
+                        title={!isOnline ? 'Please mark yourself as Available to claim tickets' : 'Claim this ticket'}
                       >
                         <span>Claim Ticket</span>
                       </button>

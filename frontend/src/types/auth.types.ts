@@ -64,7 +64,6 @@ export interface MentorProfile {
   expertise?: string[]
   hourly_rate?: number
   bio?: string
-  is_available?: boolean
   max_session_duration?: number
   daily_cap_minutes?: number
   instant_queue_enabled?: boolean
@@ -74,7 +73,6 @@ export interface MentorProfile {
 
 export interface UpdateMentorProfileRequest {
   isOnline?: boolean;
-  isAvailable?: boolean;
   dailyAvailability?: number;
   operatingHours?: {
     startTime: string;
