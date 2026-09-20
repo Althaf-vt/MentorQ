@@ -27,6 +27,8 @@ export interface AuthState {
   studentUser: User | null
   mentorToken: string | null
   mentorUser: User | null
+  adminToken: string | null
+  adminUser: User | null
 }
 
 export interface LoginRequest {

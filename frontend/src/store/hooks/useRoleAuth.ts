@@ -20,12 +20,17 @@ export function useRoleAuth(): {
   activeRole: ActiveRole
 } {
   const { pathname } = useLocation()
-  const activeRole: ActiveRole = pathname === '/mentor' || pathname.startsWith('/mentor/') ? 'mentor' : 'student'
+  let activeRole: ActiveRole = 'student'
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    activeRole = 'admin'
+  } else if (pathname === '/mentor' || pathname.startsWith('/mentor/')) {
+    activeRole = 'mentor'
+  }
 
   const authState = useAppSelector(state => state.auth)
 
-  const token = activeRole === 'mentor' ? authState.mentorToken : authState.studentToken
-  const user = activeRole === 'mentor' ? authState.mentorUser : authState.studentUser
+  const token = activeRole === 'admin' ? authState.adminToken : activeRole === 'mentor' ? authState.mentorToken : authState.studentToken
+  const user = activeRole === 'admin' ? authState.adminUser : activeRole === 'mentor' ? authState.mentorUser : authState.studentUser
 
   return {
     token,
