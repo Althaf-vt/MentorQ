@@ -6,7 +6,6 @@ import {
   useAddFavoriteMentorMutation,
   useRemoveFavoriteMentorMutation,
 } from '@/store/api/directoryApi'
-import { useRoleAuth } from '@/store/hooks/useRoleAuth'
 import { useToast } from '@/context/ToastContext'
 
 export const MentorsDirectoryPage: React.FC = () => {
@@ -20,7 +19,7 @@ export const MentorsDirectoryPage: React.FC = () => {
     return new Set(favoriteMentors.map((m) => m.id))
   }, [favoriteMentors])
 
-  const { user } = useRoleAuth()
+  // useRoleAuth hook not needed for user object here
 
   const [addFavorite, { isLoading: isAdding }] = useAddFavoriteMentorMutation()
   const [removeFavorite, { isLoading: isRemoving }] = useRemoveFavoriteMentorMutation()

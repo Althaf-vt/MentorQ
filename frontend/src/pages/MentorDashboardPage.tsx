@@ -134,7 +134,7 @@ export const MentorDashboardPage: React.FC = () => {
 
   const toggleAvailability = async () => {
     try {
-      await updateProfile({ is_available: !isAvailable }).unwrap()
+      await updateProfile({ isAvailable: !isAvailable }).unwrap()
       refetchProfile()
     } catch (err) {
       console.error(err)

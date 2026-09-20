@@ -1,5 +1,5 @@
 import { baseApi } from './baseApi'
-import type { MentorProfile } from '@/types/auth.types'
+import type { MentorProfile, UpdateMentorProfileRequest } from '@/types/auth.types'
 
 export const mentorApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -9,7 +9,7 @@ export const mentorApi = baseApi.injectEndpoints({
     }),
     updateMyMentorProfile: builder.mutation<
       { status: string; data: MentorProfile },
-      Partial<MentorProfile>
+      UpdateMentorProfileRequest
     >({
       query: (updateData) => ({
         url: '/mentors/me',

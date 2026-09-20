@@ -71,3 +71,15 @@ export interface MentorProfile {
   allow_extensions?: boolean
   enable_pre_chat?: boolean
 }
+
+export interface UpdateMentorProfileRequest {
+  isOnline?: boolean;
+  isAvailable?: boolean;
+  dailyAvailability?: number;
+  operatingHours?: {
+    startTime: string;
+    endTime: string;
+    timezone?: string;
+  };
+  expertiseTags?: string[];
+}
