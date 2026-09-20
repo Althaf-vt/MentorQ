@@ -22,6 +22,10 @@ export class UsersRepository {
     return this.userModel.findById(id).exec();
   }
 
+  async findByIdPopulated(id: string, populateField: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id).populate(populateField).exec();
+  }
+
   async update(id: string, update: UpdateQuery<UserDocument>): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }

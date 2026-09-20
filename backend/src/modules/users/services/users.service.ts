@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Types } from 'mongoose';
 import { UsersRepository } from '../repositories/users.repository.js';
 import { UserDocument } from '../schemas/user.schema.js';
 
@@ -39,14 +40,28 @@ export class UsersService {
   }
 
   async addFavorite(userId: string, mentorId: string): Promise<UserDocument> {
-    const user = await this.usersRepository.update(userId, { $addToSet: { favorite_mentors: mentorId } as any });
+    const objectId = new Types.ObjectId(mentorId);
+    const user = await this.usersRepository.update(userId, {
+      $addToSet: { favorite_mentors: objectId },
+    } as any);
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
   async removeFavorite(userId: string, mentorId: string): Promise<UserDocument> {
-    const user = await this.usersRepository.update(userId, { $pull: { favorite_mentors: mentorId } as any });
+    const objectId = new Types.ObjectId(mentorId);
+    const user = await this.usersRepository.update(userId, {
+      $pull: { favorite_mentors: objectId },
+    } as any);
     if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async findByIdWithFavorites(id: string): Promise<UserDocument> {
+    const user = await this.usersRepository.findByIdPopulated(id, 'favorite_mentors');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     return user;
   }
 
@@ -54,4 +69,5 @@ export class UsersService {
     return this.usersRepository.getMentorsDirectory();
   }
 }
+
 

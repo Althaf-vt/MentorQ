@@ -32,8 +32,8 @@ export class User {
   @Prop({ default: false })
   is_online: boolean;
 
-  @Prop({ type: [{ type: String }], default: [] })
-  favorite_mentors: string[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+  favorite_mentors: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

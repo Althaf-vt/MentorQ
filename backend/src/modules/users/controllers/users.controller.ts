@@ -45,20 +45,37 @@ export class UsersController {
 
   @Post('favorites/:mentorId')
   async addFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
+    // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.addFavorite(req.user.id, mentorId);
     return { status: 'success', data: serialiseUser(user) };
   }
 
   @Delete('favorites/:mentorId')
   async removeFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
+    // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.removeFavorite(req.user.id, mentorId);
     return { status: 'success', data: serialiseUser(user) };
+  }
+
+  @Get('me/favorites')
+  async getMyFavorites(@Req() req: any) {
+    const user = await this.usersService.findByIdWithFavorites(req.user.id);
+    // favorite_mentors is now populated with full User documents
+    const populatedFavorites = (user.favorite_mentors || []).map((m: any) =>
+      m && m._id ? serialiseUser(m) : m,
+    );
+    return { status: 'success', data: populatedFavorites };
   }
 
   @Get('mentors/directory')
   async getMentorsDirectory() {
     const directory = await this.usersService.getMentorsDirectory();
-    return { status: 'success', data: directory };
+    // Map raw aggregate documents through serialiseUser to format keys (e.g. full_name -> fullName)
+    const mapped = directory.map(d => ({
+      ...serialiseUser(d),
+      mentorProfile: d.mentorProfile
+    }));
+    return { status: 'success', data: mapped };
   }
 
   // ---- Avatar Upload -------------------------------------------------------
