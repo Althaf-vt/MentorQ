@@ -1,15 +1,26 @@
 import React, { useState, useMemo } from 'react'
 import { Heart, Search, Users, Star, Clock } from 'lucide-react'
-import { useGetMentorsDirectoryQuery, useAddFavoriteMentorMutation, useRemoveFavoriteMentorMutation } from '@/store/api/directoryApi'
-import { useAppSelector } from '@/store/hooks'
+import {
+  useGetMentorsDirectoryQuery,
+  useGetFavoriteMentorsQuery,
+  useAddFavoriteMentorMutation,
+  useRemoveFavoriteMentorMutation,
+} from '@/store/api/directoryApi'
+import { useRoleAuth } from '@/store/hooks/useRoleAuth'
 import { useToast } from '@/context/ToastContext'
 
 export const MentorsDirectoryPage: React.FC = () => {
-  const { data: resp, isLoading } = useGetMentorsDirectoryQuery(undefined, { pollingInterval: 30000 })
-  const mentors = resp?.data || []
-  
-  const user = useAppSelector((s) => s.auth.user)
-  const favoriteIds = user?.favoriteMentors || []
+  const { data: directoryResp, isLoading: isLoadingDirectory } = useGetMentorsDirectoryQuery(undefined, { pollingInterval: 30000 })
+  const mentors = directoryResp?.data || []
+
+  const { data: favoritesResp, isLoading: isLoadingFavorites } = useGetFavoriteMentorsQuery()
+  const favoriteMentors = favoritesResp?.data || []
+  // Build a Set of favorite mentor IDs for O(1) lookups
+  const favoriteIdSet = useMemo(() => {
+    return new Set(favoriteMentors.map((m) => m.id))
+  }, [favoriteMentors])
+
+  const { user } = useRoleAuth()
 
   const [addFavorite, { isLoading: isAdding }] = useAddFavoriteMentorMutation()
   const [removeFavorite, { isLoading: isRemoving }] = useRemoveFavoriteMentorMutation()
@@ -35,30 +46,57 @@ export const MentorsDirectoryPage: React.FC = () => {
 
   // Filter and sort mentors
   const displayedMentors = useMemo(() => {
-    let filtered = [...mentors]
-
+    // For the FAVORITES tab, use the populated favorites data from the dedicated endpoint
     if (activeTab === 'FAVORITES') {
-      filtered = filtered.filter((m) => favoriteIds.includes(m.id))
+      let filtered = [...favoriteMentors]
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        filtered = filtered.filter((m) => {
+          const name = m.fullName || m.email || ''
+          return name.toLowerCase().includes(q)
+        })
+      }
+
+      // Sort alphabetically
+      filtered.sort((a, b) => {
+        const nameA = a.fullName || a.email || 'Unknown'
+        const nameB = b.fullName || b.email || 'Unknown'
+        return nameA.localeCompare(nameB)
+      })
+
+      return filtered
     }
+
+    // ALL tab — use directory data
+    let filtered = [...mentors]
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       filtered = filtered.filter((m) => {
-        const nameMatch = m.fullName.toLowerCase().includes(q)
+        const name = m.fullName || (m as any).full_name || m.email || ''
+        const nameMatch = name.toLowerCase().includes(q)
         const tagMatch = m.mentorProfile?.expertise_tags?.some((t) => t.toLowerCase().includes(q))
         return nameMatch || tagMatch
       })
     }
 
-    // Sort by online status first (online at the top), then by rating or name
+    // Sort by online status first (online at the top), then by name
     filtered.sort((a, b) => {
-      if (a.isOnline && !b.isOnline) return -1
-      if (!a.isOnline && b.isOnline) return 1
-      return a.fullName.localeCompare(b.fullName)
+      const aIsOnline = a.isOnline ?? (a as any).is_online ?? false
+      const bIsOnline = b.isOnline ?? (b as any).is_online ?? false
+      if (aIsOnline && !bIsOnline) return -1
+      if (!aIsOnline && bIsOnline) return 1
+
+      const nameA = a.fullName || (a as any).full_name || a.email || 'Unknown'
+      const nameB = b.fullName || (b as any).full_name || b.email || 'Unknown'
+      return nameA.localeCompare(nameB)
     })
 
     return filtered
-  }, [mentors, activeTab, searchQuery, favoriteIds])
+  }, [mentors, favoriteMentors, activeTab, searchQuery])
+
+  const isLoading = activeTab === 'FAVORITES' ? isLoadingFavorites : isLoadingDirectory
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 font-body space-y-6">
@@ -110,23 +148,34 @@ export const MentorsDirectoryPage: React.FC = () => {
       ) : displayedMentors.length === 0 ? (
         <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-slate-900">No mentors found</h3>
-          <p className="text-sm text-slate-500 mt-1">Try adjusting your search criteria or check back later.</p>
+          <h3 className="text-lg font-bold text-slate-900">
+            {activeTab === 'FAVORITES' ? 'No favorites yet' : 'No mentors found'}
+          </h3>
+          <p className="text-sm text-slate-500 mt-1">
+            {activeTab === 'FAVORITES'
+              ? 'Click the heart icon on any mentor card to add them to your favorites.'
+              : 'Try adjusting your search criteria or check back later.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayedMentors.map((mentor) => {
-            const isFav = favoriteIds.includes(mentor.id)
+          {displayedMentors.map((mentor: any) => {
+            const mId = mentor.id || mentor._id
+            const isFav = favoriteIdSet.has(mId)
+            const mName = mentor.fullName || mentor.full_name || mentor.email || 'Unknown Mentor'
+            const mAvatar = mentor.avatarUrl || mentor.avatar_url
+            const mIsOnline = mentor.isOnline ?? mentor.is_online ?? false
             const profile = mentor.mentorProfile
             return (
-              <div key={mentor.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-shadow p-6 flex flex-col gap-4 relative group">
+              <div key={mId} className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-shadow p-6 flex flex-col gap-4 relative group">
                 <button
-                  onClick={() => handleToggleFavorite(mentor.id, isFav)}
+                  onClick={() => handleToggleFavorite(mId, isFav)}
+                  disabled={isAdding || isRemoving}
                   className={`absolute top-4 right-4 p-2 rounded-full transition-all ${
                     isFav 
                       ? 'bg-pink-50 text-pink-500' 
                       : 'bg-slate-50 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-100 hover:text-pink-500'
-                  }`}
+                  } ${(isAdding || isRemoving) ? 'pointer-events-none opacity-50' : ''}`}
                   title={isFav ? 'Remove from favorites' : 'Add to favorites'}
                 >
                   <Heart className={`w-5 h-5 ${isFav ? 'fill-current' : ''}`} />
@@ -134,49 +183,53 @@ export const MentorsDirectoryPage: React.FC = () => {
 
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    {mentor.avatarUrl ? (
-                      <img src={mentor.avatarUrl} alt={mentor.fullName} className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100" />
+                    {mAvatar ? (
+                      <img src={mAvatar} alt={mName} className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100" />
                     ) : (
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#5948d3] to-[#8172fe] text-white flex items-center justify-center font-bold text-xl shadow-md">
-                        {mentor.fullName.charAt(0)}
+                        {mName.charAt(0).toUpperCase()}
                       </div>
                     )}
                     {/* Online Indicator */}
                     <span 
                       className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
-                        mentor.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+                        mIsOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
                       }`}
-                      title={mentor.isOnline ? 'Online' : 'Offline'}
+                      title={mIsOnline ? 'Online' : 'Offline'}
                     />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
-                      {mentor.fullName}
+                      {mName}
                     </h3>
                     <p className="text-xs text-slate-500 font-medium">Mentor</p>
                   </div>
                 </div>
 
-                <div className="pt-2">
-                  <div className="flex flex-wrap gap-1.5">
-                    {profile?.expertise_tags?.map(tag => (
-                      <span key={tag} className="px-2 py-1 bg-[#5948d3]/10 text-[#5948d3] rounded-lg text-[10px] font-bold uppercase tracking-wide">
-                        {tag}
-                      </span>
-                    ))}
+                {profile && (
+                  <div className="pt-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {profile?.expertise_tags?.map((tag: string) => (
+                        <span key={tag} className="px-2 py-1 bg-[#5948d3]/10 text-[#5948d3] rounded-lg text-[10px] font-bold uppercase tracking-wide">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between text-xs font-semibold text-slate-600">
-                  <div className="flex items-center gap-1.5">
-                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                    {profile?.rating_avg ? profile.rating_avg.toFixed(1) : 'New'}
+                {profile && (
+                  <div className="pt-4 border-t border-slate-100 mt-auto flex items-center justify-between text-xs font-semibold text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                      {profile?.rating_avg ? profile.rating_avg.toFixed(1) : 'New'}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      {profile?.operating_hours?.start} - {profile?.operating_hours?.end}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    {profile?.operating_hours?.start} - {profile?.operating_hours?.end}
-                  </div>
-                </div>
+                )}
               </div>
             )
           })}

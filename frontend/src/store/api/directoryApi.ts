@@ -1,5 +1,6 @@
 import { baseApi } from './baseApi'
 import type { User } from '@/types/auth.types'
+import { updateUser } from '../slices/authSlice'
 
 export interface DirectoryMentor extends User {
   mentorProfile: {
@@ -23,26 +24,42 @@ export const directoryApi = baseApi.injectEndpoints({
       query: () => '/users/mentors/directory',
       providesTags: ['Directory'],
     }),
+    getFavoriteMentors: builder.query<{ status: string; data: User[] }, void>({
+      query: () => '/users/me/favorites',
+      providesTags: ['FavoriteMentors'],
+    }),
     addFavoriteMentor: builder.mutation<{ status: string; data: User }, string>({
       query: (mentorId) => ({
         url: `/users/favorites/${mentorId}`,
         method: 'POST',
       }),
-      // We invalidate User so the current user's favoriteMentors array updates
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Directory', 'FavoriteMentors'],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled
+          dispatch(updateUser(data.data))
+        } catch { /* handled by component */ }
+      },
     }),
     removeFavoriteMentor: builder.mutation<{ status: string; data: User }, string>({
       query: (mentorId) => ({
         url: `/users/favorites/${mentorId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Directory', 'FavoriteMentors'],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled
+          dispatch(updateUser(data.data))
+        } catch { /* handled by component */ }
+      },
     }),
   }),
 })
 
 export const {
   useGetMentorsDirectoryQuery,
+  useGetFavoriteMentorsQuery,
   useAddFavoriteMentorMutation,
   useRemoveFavoriteMentorMutation,
 } = directoryApi
