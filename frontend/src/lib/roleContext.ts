@@ -19,7 +19,8 @@ export type ActiveRole = 'student' | 'mentor'
  */
 export function getActiveRole(): ActiveRole {
   if (typeof window === 'undefined') return 'student'
-  return window.location.pathname.startsWith('/mentor') ? 'mentor' : 'student'
+  const p = window.location.pathname
+  return (p === '/mentor' || p.startsWith('/mentor/')) ? 'mentor' : 'student'
 }
 
 /**

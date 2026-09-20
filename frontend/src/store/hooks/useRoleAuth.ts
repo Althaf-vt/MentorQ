@@ -20,7 +20,7 @@ export function useRoleAuth(): {
   activeRole: ActiveRole
 } {
   const { pathname } = useLocation()
-  const activeRole: ActiveRole = pathname.startsWith('/mentor') ? 'mentor' : 'student'
+  const activeRole: ActiveRole = pathname === '/mentor' || pathname.startsWith('/mentor/') ? 'mentor' : 'student'
 
   const authState = useAppSelector(state => state.auth)
 

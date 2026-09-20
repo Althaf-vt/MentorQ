@@ -11,7 +11,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation()
 
   if (!isAuthenticated) {
-    if (window.location.pathname.startsWith('/mentor')) {
+    if (window.location.pathname === '/mentor' || window.location.pathname.startsWith('/mentor/')) {
       return <Navigate to="/mentor/login" state={{ from: location }} replace />
     }
     return <Navigate to="/login" state={{ from: location }} replace />

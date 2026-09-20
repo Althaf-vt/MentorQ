@@ -22,7 +22,7 @@ function RootRedirect() {
   const { user, isAuthenticated } = useRoleAuth()
   if (!isAuthenticated || !user) {
     // Check if the user was trying to access a mentor path
-    if (window.location.pathname.startsWith('/mentor')) {
+    if (window.location.pathname === '/mentor' || window.location.pathname.startsWith('/mentor/')) {
       return <Navigate to="/mentor/login" replace />
     }
     return <Navigate to="/login" replace />
