@@ -32,7 +32,7 @@ type MentorConfigFormValues = z.infer<typeof mentorConfigSchema>
 export const MentorConfigurationPage: React.FC = () => {
   const { data: profileData, refetch } = useGetMyMentorProfileQuery()
   const [updateProfile, { isLoading }] = useUpdateMyMentorProfileMutation()
-  const [success, setSuccess] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
   const {
     register,
@@ -75,18 +75,28 @@ export const MentorConfigurationPage: React.FC = () => {
   }, [profileData, reset])
 
   const handleSave = async (data: MentorConfigFormValues) => {
+    const parsedMinutes = parseInt(String(data.daily_available_minutes), 10);
+    if (isNaN(parsedMinutes) || parsedMinutes < 15 || parsedMinutes > 1440) {
+      setFeedback({ type: 'error', message: 'Daily availability must be between 15 and 1440 minutes.' })
+      return;
+    }
+
     try {
       await updateProfile({
-        is_online: data.is_online,
-        daily_available_minutes: data.daily_available_minutes,
-        operating_hours: data.operating_hours,
-        expertise_tags: data.expertise_tags,
+        isOnline: data.is_online,
+        dailyAvailability: parsedMinutes,
+        operatingHours: {
+          startTime: data.operating_hours.start,
+          endTime: data.operating_hours.end,
+          timezone: data.operating_hours.timezone,
+        },
+        expertiseTags: data.expertise_tags,
       }).unwrap()
       refetch()
-      setSuccess('Configuration updated successfully!')
-      setTimeout(() => setSuccess(null), 3000)
+      setFeedback({ type: 'success', message: 'Configuration updated successfully!' })
+      setTimeout(() => setFeedback(null), 3000)
     } catch {
-      setSuccess('Failed to update.')
+      setFeedback({ type: 'error', message: 'Failed to update.' })
     }
   }
 
@@ -106,10 +116,14 @@ export const MentorConfigurationPage: React.FC = () => {
         </aside>
 
         <section className="flex-1 space-y-6">
-          {success && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-              <span>{success}</span>
+          {feedback && (
+            <div className={`border rounded-xl p-4 flex items-center gap-3 ${feedback.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+              {feedback.type === 'success' ? (
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              )}
+              <span>{feedback.message}</span>
             </div>
           )}
 

@@ -27,7 +27,26 @@ export class MentorProfilesService {
   }
 
   async updateProfile(userId: string, updateData: any): Promise<MentorProfileDocument | any> {
-    const profile = await this.mentorProfilesRepository.update(userId, updateData);
+    const updatePayload: any = {};
+    
+    if (updateData.isOnline !== undefined) {
+      updatePayload.is_online = updateData.isOnline;
+    }
+    if (updateData.dailyAvailability !== undefined) {
+      updatePayload.daily_available_minutes = updateData.dailyAvailability;
+    }
+    if (updateData.operatingHours) {
+      updatePayload.operating_hours = {
+        start: updateData.operatingHours.startTime,
+        end: updateData.operatingHours.endTime,
+        timezone: updateData.operatingHours.timezone,
+      };
+    }
+    if (updateData.expertiseTags) {
+      updatePayload.expertise_tags = updateData.expertiseTags;
+    }
+
+    const profile = await this.mentorProfilesRepository.update(userId, updatePayload);
     return profile;
   }
 
