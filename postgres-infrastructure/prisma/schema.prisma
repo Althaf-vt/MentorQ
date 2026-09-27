@@ -12,6 +12,15 @@ model User {
   email     String   @unique
   password  String
   role      String   @default("STUDENT")
+  mentor    MentorProfile?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model MentorProfile {
+  id               String  @id @default(uuid())
+  userId           String  @unique
+  user             User    @relation(fields: [userId], references: [id])
+  isOnline         Boolean @default(false)
+  dailyAvailability Int    @default(60)
 }
