@@ -25,6 +25,8 @@ const studentToken = getToken('student')
 const studentUser = getUser('student')
 const mentorToken = getToken('mentor')
 const mentorUser = getUser('mentor')
+const adminToken = getToken('admin')
+const adminUser = getUser('admin')
 
 const initialState: AuthState = {
   // Default to whichever session exists (prefer the one matching the current URL)
@@ -37,6 +39,8 @@ const initialState: AuthState = {
   studentUser,
   mentorToken,
   mentorUser,
+  adminToken,
+  adminUser,
 }
 
 export const authSlice = createSlice({
@@ -57,6 +61,9 @@ export const authSlice = createSlice({
       if (role === 'mentor') {
         state.mentorToken = token
         state.mentorUser = user
+      } else if (role === 'admin') {
+        state.adminToken = token
+        state.adminUser = user
       } else {
         state.studentToken = token
         state.studentUser = user
@@ -99,6 +106,9 @@ export const authSlice = createSlice({
       if (role === 'mentor') {
         state.mentorToken = null
         state.mentorUser = null
+      } else if (role === 'admin') {
+        state.adminToken = null
+        state.adminUser = null
       } else {
         state.studentToken = null
         state.studentUser = null

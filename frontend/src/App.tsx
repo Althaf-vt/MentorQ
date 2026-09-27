@@ -11,6 +11,17 @@ import { MentorDashboardPage } from './pages/MentorDashboardPage'
 import { QueueTrackerPage } from './pages/QueueTrackerPage'
 import { SessionFocusModePage } from './pages/SessionFocusModePage'
 import { TicketHistoryArchivePage } from './pages/TicketHistoryArchivePage'
+import { AdminAuthLayout } from './components/layout/AdminAuthLayout'
+import { AdminLoginPage } from './pages/admin/auth/AdminLoginPage'
+import { AdminForgotPasswordPage } from './pages/admin/auth/AdminForgotPasswordPage'
+import { AdminVerifyOtpPage } from './pages/admin/auth/AdminVerifyOtpPage'
+import { AdminResetPasswordPage } from './pages/admin/auth/AdminResetPasswordPage'
+import { AdminGuestGuard } from './routes/AdminGuestGuard'
+import { AdminAuthGuard } from './routes/AdminAuthGuard'
+import { AdminDashboardLayout } from './components/layout/AdminDashboardLayout'
+import { AdminDashboardPage } from './pages/admin/dashboard/AdminDashboardPage'
+import { AdminSettingsPage } from './pages/admin/dashboard/AdminSettingsPage'
+import { AdminUsersPage } from './pages/admin/dashboard/AdminUsersPage'
 import { ProtectedRoute } from './routes/ProtectedRoute'
 import { MentorsDirectoryPage } from './pages/MentorsDirectoryPage'
 import { PublicRoute } from './routes/PublicRoute'
@@ -65,6 +76,24 @@ function App() {
             <Route path="/mentor/configuration" element={<RoleRoute allowedRoles={['MENTOR', 'ADMIN']}><MentorConfigurationPage /></RoleRoute>} />
             <Route path="/mentor/focus/:ticketId" element={<ProtectedRoute><SessionFocusModePage /></ProtectedRoute>} />
             <Route path="/mentor/settings" element={<ProtectedRoute><UserSettingsPage /></ProtectedRoute>} />
+
+            {/* ============================================================
+                Admin Routes
+               ============================================================ */}
+            {/* Auth Routes */}
+            <Route path="/admin" element={<AdminAuthLayout />}>
+              <Route path="login" element={<AdminGuestGuard><AdminLoginPage /></AdminGuestGuard>} />
+              <Route path="forgot-password" element={<AdminGuestGuard><AdminForgotPasswordPage /></AdminGuestGuard>} />
+              <Route path="verify-otp" element={<AdminGuestGuard><AdminVerifyOtpPage /></AdminGuestGuard>} />
+              <Route path="reset-password" element={<AdminGuestGuard><AdminResetPasswordPage /></AdminGuestGuard>} />
+            </Route>
+
+            {/* Dashboard Routes */}
+            <Route path="/admin" element={<AdminAuthGuard><AdminDashboardLayout /></AdminAuthGuard>}>
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+            </Route>
 
             {/* Root & Fallback */}
             <Route path="/" element={<RootRedirect />} />

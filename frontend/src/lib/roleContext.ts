@@ -11,15 +11,15 @@ import type { User } from '@/types/auth.types'
 //   everything else  →  'student'
 // ---------------------------------------------------------------------------
 
-export type ActiveRole = 'student' | 'mentor'
+export type ActiveRole = 'student' | 'mentor' | 'admin'
 
 /**
  * Derive the active role from the current browser URL.
- * Any path starting with /mentor is considered the mentor context.
  */
 export function getActiveRole(): ActiveRole {
   if (typeof window === 'undefined') return 'student'
   const p = window.location.pathname
+  if (p === '/admin' || p.startsWith('/admin/')) return 'admin'
   return (p === '/mentor' || p.startsWith('/mentor/')) ? 'mentor' : 'student'
 }
 
@@ -84,6 +84,7 @@ export function clearSession(role?: ActiveRole): void {
 /**
  * Map a User's role enum to the ActiveRole key used for storage.
  */
-export function roleFromUser(user: User): ActiveRole {
+export function roleFromUser(user: any): ActiveRole {
+  if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return 'admin'
   return user.role === 'MENTOR' ? 'mentor' : 'student'
 }
