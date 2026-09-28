@@ -57,3 +57,11 @@ Read cutover must be reverted immediately if any of the following occur:
 - Query error rate exceeds **0.05%** over any 5-minute rolling window.
 - Database lookup P99 latency breaches **150ms**.
 - Dual-write replication lag exceeds **5,000ms**.
+
+## 9. Observability & Performance Metrics
+| Metric | Warning Threshold | Critical Threshold |
+| :--- | :--- | :--- |
+| Connection Pool Saturation | > 75% | > 90% |
+| P95 Read Latency | > 40ms | > 100ms |
+| P95 Write Latency | > 60ms | > 120ms |
+| Deadlock Incidents | > 0 / min | > 3 / min |
