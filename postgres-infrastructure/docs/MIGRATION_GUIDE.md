@@ -65,3 +65,11 @@ Read cutover must be reverted immediately if any of the following occur:
 | P95 Read Latency | > 40ms | > 100ms |
 | P95 Write Latency | > 60ms | > 120ms |
 | Deadlock Incidents | > 0 / min | > 3 / min |
+
+## 10. Local Environment Execution
+Run the local PostgreSQL development environment in isolation:
+```bash
+cd postgres-infrastructure
+docker-compose up -d
+npx prisma migrate dev --name init
+npm run seed
