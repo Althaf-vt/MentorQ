@@ -39,3 +39,10 @@ docs(infra): detail phased cutover and dual-write lifecycle
   - Idle Connection Timeout: `30,000 ms`.
   - Connection Acquisition Timeout: `2,000 ms`.
 - **Target Saturation**: Maintain total active connections below 75% of server capacity
+
+## 6. Historical Data Backfill Mechanics
+- Background batch ingestion processes records in deterministic chunks of **500 items**.
+- Checkpoint persistence tracked inside the operational table `_migration_progress`.
+- Relational mapping execution order:
+  1. Base `User` records populated first.
+  2. Sub-entities (`MentorProfile`, `Ticket`) mapped against the newly assigned primary UUIDs
