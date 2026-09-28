@@ -20,6 +20,13 @@ docs(infra): detail phased cutover and dual-write lifecycle
 | MongoDB (BSON) | PostgreSQL Type | Prisma Primitive | Conversion Rules |
 | :--- | :--- | :--- | :--- |
 | `ObjectId` | `UUID` | `String @id @default(uuid())` | Hex string converted to RFC 4122 UUID v4 |
+
+## 4. Referential Integrity & Index Strategy
+- **User -> MentorProfile**: One-to-one strict relation utilizing `ON DELETE CASCADE`.
+- **User -> Tickets**: One-to-many relationship utilizing `ON DELETE RESTRICT` to preserve audit records.
+- **Performance Indexes**:
+  - `User`: Compound index on `[email, role]` for credential lookups.
+  - `Ticket`: Compound index on `[status, createdAt]` for queue prioritization.
 | `String` | `VARCHAR(255)` / `TEXT` | `String` | Explicit limits applied to emails/usernames |
 | `Date` | `TIMESTAMPTZ` | `DateTime @default(now())` | ISO-8601 strings normalized to UTC |
 | `Boolean` | `BOOLEAN` | `Boolean` | Default flags explicitly enforced |
