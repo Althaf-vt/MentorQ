@@ -51,3 +51,9 @@ docs(infra): detail phased cutover and dual-write lifecycle
 - Read-only audit scripts execute non-blocking queries during off-peak hours.
 - Field-level SHA-256 checksums verify record consistency between databases.
 - Discrepancies are logged into `postgres-infrastructure/logs/audit.log` for targeted replay
+
+## 8. Abort Conditions & Rollback Procedures
+Read cutover must be reverted immediately if any of the following occur:
+- Query error rate exceeds **0.05%** over any 5-minute rolling window.
+- Database lookup P99 latency breaches **150ms**.
+- Dual-write replication lag exceeds **5,000ms**.
