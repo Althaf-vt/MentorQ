@@ -46,3 +46,8 @@ docs(infra): detail phased cutover and dual-write lifecycle
 - Relational mapping execution order:
   1. Base `User` records populated first.
   2. Sub-entities (`MentorProfile`, `Ticket`) mapped against the newly assigned primary UUIDs
+
+## 7. Data Reconciliation & Parity Audits
+- Read-only audit scripts execute non-blocking queries during off-peak hours.
+- Field-level SHA-256 checksums verify record consistency between databases.
+- Discrepancies are logged into `postgres-infrastructure/logs/audit.log` for targeted replay
