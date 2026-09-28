@@ -32,3 +32,10 @@ docs(infra): detail phased cutover and dual-write lifecycle
 | `Boolean` | `BOOLEAN` | `Boolean` | Default flags explicitly enforced |
 | `Array` | `JSONB` / Join Table | Relational Model | Normalized into dedicated relational schemas
 
+## 5. Connection Pooling Architecture
+- **Connection Adapter**: PgBouncer / Prisma Client connection pool.
+- **Instance Configuration**:
+  - Pool Size: `10` active connections per node worker.
+  - Idle Connection Timeout: `30,000 ms`.
+  - Connection Acquisition Timeout: `2,000 ms`.
+- **Target Saturation**: Maintain total active connections below 75% of server capacity
