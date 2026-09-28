@@ -13,3 +13,15 @@ This document defines the production cutover roadmap, operational architecture, 
 3. **Phase 3: Integrity Auditing** — Automated checksum validation compares state across both data stores.
 4. **Phase 4: Read Traffic Switch** — Shift read queries to PostgreSQL with MongoDB remaining in warm standby.
 5. **Phase 5: Final Deprecation** — Decommission MongoDB drivers and teardown legacy instances.
+
+docs(infra): detail phased cutover and dual-write lifecycle
+
+## 3. Data Type Mapping Reference
+| MongoDB (BSON) | PostgreSQL Type | Prisma Primitive | Conversion Rules |
+| :--- | :--- | :--- | :--- |
+| `ObjectId` | `UUID` | `String @id @default(uuid())` | Hex string converted to RFC 4122 UUID v4 |
+| `String` | `VARCHAR(255)` / `TEXT` | `String` | Explicit limits applied to emails/usernames |
+| `Date` | `TIMESTAMPTZ` | `DateTime @default(now())` | ISO-8601 strings normalized to UTC |
+| `Boolean` | `BOOLEAN` | `Boolean` | Default flags explicitly enforced |
+| `Array` | `JSONB` / Join Table | Relational Model | Normalized into dedicated relational schemas
+
