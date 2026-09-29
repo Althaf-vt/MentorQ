@@ -32,3 +32,17 @@ model MentorProfile {
   hourlyRate     Decimal  @db.Decimal(10, 2)
   isAvailable    Boolean  @default(true)
 }
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
