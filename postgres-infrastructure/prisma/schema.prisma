@@ -27,6 +27,7 @@ model User {
 
   @@index([email, role])
   @@index([deletedAt])
+  auditLogs     AuditLog[]
 }
 
 model MentorProfile {
@@ -76,4 +77,6 @@ model AuditLog {
   entityType  String
   timestamp   DateTime @default(now())
   metadata    Json?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
