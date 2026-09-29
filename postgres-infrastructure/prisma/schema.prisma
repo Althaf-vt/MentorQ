@@ -12,3 +12,10 @@ enum Role {
   MENTOR
   ADMIN
 }
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+}
