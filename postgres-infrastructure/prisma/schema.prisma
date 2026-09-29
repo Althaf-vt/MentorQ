@@ -22,3 +22,10 @@ model User {
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 }
+
+model MentorProfile {
+  id             String   @id @default(uuid())
+  bio            String?
+  hourlyRate     Decimal  @db.Decimal(10, 2)
+  isAvailable    Boolean  @default(true)
+}
