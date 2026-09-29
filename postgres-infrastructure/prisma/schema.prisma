@@ -64,4 +64,7 @@ model Ticket {
   author      User         @relation("AuthoredTickets", fields: [authorId], references: [id], onDelete: Restrict)
   assigneeId  String?
   assignee    User?        @relation("AssignedTickets", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([status, priority])
+  @@index([authorId])
 }
