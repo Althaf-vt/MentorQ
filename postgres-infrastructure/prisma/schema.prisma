@@ -24,6 +24,9 @@ model User {
   mentorProfile MentorProfile?
   tickets       Ticket[]     @relation("AuthoredTickets")
   assigned      Ticket[]     @relation("AssignedTickets")
+
+  @@index([email, role])
+  @@index([deletedAt])
 }
 
 model MentorProfile {
