@@ -68,3 +68,12 @@ model Ticket {
   @@index([status, priority])
   @@index([authorId])
 }
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String
+  entityId    String
+  entityType  String
+  timestamp   DateTime @default(now())
+  metadata    Json?
+}
