@@ -6,7 +6,7 @@ Built to scale into a premier peer-to-peer mentorship marketplace, the codebase 
 
 ---
 
-## 🎯 Project Vision & Motivation
+## 🎯 Project Vision & Motivation 
 
 MentorQ was born out of a real-world time management challenge. As a senior engineering student with a broad technical stack (MERN, NestJS, System Design, Python, GenAI), I frequently found myself acting as an ad-hoc mentor for peers needing help with architecture decisions and debugging. While I am deeply passionate about mentoring, the volume of requests became unmanageable, derailing my own daily tasks. Ad-hoc sessions often dragged on without limits.
 
