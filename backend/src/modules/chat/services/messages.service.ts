@@ -38,10 +38,10 @@ export class MessagesService {
     }
 
     const message = await this.messagesRepository.create({
-      session_id: sessionId as any,
-      sender_id: senderId as any,
-      message_text: text,
-      sent_at: new Date(),
+      sessionId,
+      senderId,
+      messageText: text,
+      sentAt: new Date(),
     });
 
     // Broadcast message via domain event (decoupled from WebSocket gateway)
@@ -57,7 +57,7 @@ export class MessagesService {
     return this.messagesRepository.findBySession(sessionId);
   }
 
-  async markAsRead(sessionId: string, userId: string): Promise<void> {
-    await this.messagesRepository.markAsRead(sessionId, userId);
+  async markAsRead(sessionId: string, userId: string): Promise<number> {
+    return this.messagesRepository.markAsRead(sessionId, userId);
   }
 }
