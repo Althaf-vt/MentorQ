@@ -1,46 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../../users/schemas/user.schema.js';
-import { Ticket, TicketDocument } from '../../tickets/schemas/ticket.schema.js';
-import { Session, SessionDocument } from '../../sessions/schemas/session.schema.js';
+import { UsersService } from '../../users/services/users.service.js';
+import { TicketsService } from '../../tickets/services/tickets.service.js';
+import { SessionsService } from '../../sessions/services/sessions.service.js';
 
 @Injectable()
 export class MetricsService {
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    @InjectModel(Ticket.name) private readonly ticketModel: Model<TicketDocument>,
-    @InjectModel(Session.name) private readonly sessionModel: Model<SessionDocument>,
+    private readonly usersService: UsersService,
+    private readonly ticketsService: TicketsService,
+    private readonly sessionsService: SessionsService,
   ) {}
 
   async getGlobalMetrics() {
-    const [
-      totalStudents,
-      suspendedStudents,
-      totalMentors,
-      suspendedMentors,
-      totalSessions,
-      pendingTickets
-    ] = await Promise.all([
-      this.userModel.countDocuments({ role: 'STUDENT' }).exec(),
-      this.userModel.countDocuments({ role: 'STUDENT', status: 'SUSPENDED' }).exec(),
-      this.userModel.countDocuments({ role: 'MENTOR' }).exec(),
-      this.userModel.countDocuments({ role: 'MENTOR', status: 'SUSPENDED' }).exec(),
-      this.sessionModel.countDocuments().exec(),
-      this.ticketModel.countDocuments({ status: 'PENDING' }).exec(),
+    const [userMetrics, totalSessions, pendingTickets] = await Promise.all([
+      this.usersService.getUserMetrics(),
+      this.sessionsService.getSessionCount(),
+      this.ticketsService.getPendingTicketCount(),
     ]);
 
     return {
-      students: {
-        total: totalStudents,
-        suspended: suspendedStudents,
-        active: totalStudents - suspendedStudents,
-      },
-      mentors: {
-        total: totalMentors,
-        suspended: suspendedMentors,
-        active: totalMentors - suspendedMentors,
-      },
+      students: userMetrics.students,
+      mentors: userMetrics.mentors,
       sessions: {
         total: totalSessions,
       },
