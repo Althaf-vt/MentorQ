@@ -98,7 +98,7 @@ flowchart TD
 
 ### Phase 1: Batch Decomposition & Ledger Initialization
 1. If no state ledger exists, invoke `task-batch-planner` to analyze the scope.
-2. `task-batch-planner` writes the initial `.agents/pipeline-state.md` with batches strictly capped at **200–300 lines of code changes** (or fewer).
+2. `task-batch-planner` writes the initial `.agents/pipeline-state.md` with batches strictly capped at **100-200 lines of code changes** (or fewer).
 3. Read `.agents/pipeline-state.md` to verify the generated batch plan and present the roadmap to the user.
 
 ### Phase 2: Per-Batch Execution Loop
