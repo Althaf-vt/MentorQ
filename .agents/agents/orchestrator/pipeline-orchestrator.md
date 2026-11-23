@@ -8,6 +8,7 @@ tools:
   - write_file
   - edit_file
   - run_command
+  - define_subagent
   - invoke_subagent
   - send_message
   - manage_subagents
@@ -54,7 +55,7 @@ You coordinate the following specialized agents:
 
 ```mermaid
 flowchart TD
-    Start([Start Task]) --> Plan["1. Call task-batch-planner\n(Split into <= 200-300 line batches)"]
+    Start([Start Task]) --> Plan["1. Call task-batch-planner\n(Split into <= 100-250 line batches)"]
     Plan --> BatchStart["2. Start Batch [N]"]
 
     subgraph BatchLoop ["Per-Batch Execution & Quality Loop"]
@@ -95,7 +96,7 @@ flowchart TD
 
 ### Phase 1: Batch Decomposition & Ledger Initialization
 1. If no state ledger exists, invoke `task-batch-planner` to analyze the scope.
-2. `task-batch-planner` writes the initial `.agents/pipeline-state.md` with batches strictly capped at **100-200 lines of code changes** (or fewer).
+2. `task-batch-planner` writes the initial `.agents/pipeline-state.md` with batches strictly capped at **100-250 lines of code changes** (or fewer).
 3. Read `.agents/pipeline-state.md` to verify the generated batch plan and present the roadmap to the user.
 
 ### Phase 2: Per-Batch Execution Loop
