@@ -11,9 +11,9 @@ import { PlatformSettings, PlatformSettingsSchema } from './schemas/settings.sch
 import { SettingsSeederService } from './services/settings-seeder.service.js';
 import { SettingsService } from './services/settings.service.js';
 import { SettingsController } from './controllers/settings.controller.js';
-import { User, UserSchema } from '../users/schemas/user.schema.js';
-import { Ticket, TicketSchema } from '../tickets/schemas/ticket.schema.js';
-import { Session, SessionSchema } from '../sessions/schemas/session.schema.js';
+import { UsersModule } from '../users/users.module.js';
+import { TicketsModule } from '../tickets/tickets.module.js';
+import { SessionsModule } from '../sessions/sessions.module.js';
 import { AdminUsersService } from './services/admin-users.service.js';
 import { AdminUsersController } from './controllers/admin-users.controller.js';
 import { MetricsService } from './services/metrics.service.js';
@@ -24,9 +24,6 @@ import { MetricsController } from './controllers/metrics.controller.js';
     MongooseModule.forFeature([
       { name: Admin.name, schema: AdminSchema },
       { name: PlatformSettings.name, schema: PlatformSettingsSchema },
-      { name: User.name, schema: UserSchema },
-      { name: Ticket.name, schema: TicketSchema },
-      { name: Session.name, schema: SessionSchema },
     ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -36,6 +33,9 @@ import { MetricsController } from './controllers/metrics.controller.js';
       }),
     }),
     AuthModule,
+    UsersModule,
+    TicketsModule,
+    SessionsModule,
   ],
   controllers: [AdminAuthController, SettingsController, AdminUsersController, MetricsController],
   providers: [
