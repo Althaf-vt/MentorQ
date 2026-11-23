@@ -30,6 +30,22 @@ export class UsersRepository {
     return this.userModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
 
+  async countDocuments(query: any): Promise<number> {
+    return this.userModel.countDocuments(query).exec();
+  }
+
+  async findPaginated(
+    query: any,
+    skip: number,
+    limit: number,
+  ): Promise<{ users: UserDocument[]; total: number }> {
+    const [users, total] = await Promise.all([
+      this.userModel.find(query).skip(skip).limit(limit).exec(),
+      this.userModel.countDocuments(query).exec(),
+    ]);
+    return { users, total };
+  }
+
   async getMentorsDirectory(): Promise<any[]> {
     return this.userModel.aggregate([
       { $match: { role: 'MENTOR' } },
