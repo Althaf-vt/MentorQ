@@ -60,4 +60,8 @@ export class MentorProfilesService {
   async getOnlineMentors(): Promise<MentorProfileDocument[]> {
     return this.mentorProfilesRepository.findAllOnline();
   }
+
+  async updateRating(userId: string, ratingAvg: number): Promise<void> {
+    await this.mentorProfilesRepository.update(userId, { rating_avg: ratingAvg });
+  }
 }
