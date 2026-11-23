@@ -23,6 +23,6 @@ import { UsersModule } from '../users/users.module.js';
   ],
   controllers: [SessionsController],
   providers: [SessionsRepository, SessionsService, SessionsGateway, TicketEventsListener],
-  exports: [SessionsService, SessionsRepository, SessionsGateway],
+  exports: [SessionsService, SessionsGateway],
 })
 export class SessionsModule {}
