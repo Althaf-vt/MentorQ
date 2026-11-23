@@ -6,6 +6,7 @@ import { NotificationsRepository } from './repositories/notifications.repository
 import { NOTIFICATIONS_REPOSITORY } from './repositories/notifications.repository.interface.js';
 import { NotificationsService } from './services/notifications.service.js';
 import { NotificationsController } from './controllers/notifications.controller.js';
+import { NotificationsListener } from './events/notifications.listener.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { NotificationsController } from './controllers/notifications.controller.
       useClass: NotificationsRepository,
     },
     NotificationsService,
+    NotificationsListener,
   ],
   exports: [NotificationsService],
 })
