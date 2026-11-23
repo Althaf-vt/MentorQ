@@ -8,8 +8,12 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Inject } from '@nestjs/common';
 import { AuthService } from '../../auth/services/auth.service.js';
-import { SessionsRepository } from '../repositories/sessions.repository.js';
+import {
+  SESSIONS_REPOSITORY,
+  type ISessionsRepository,
+} from '../repositories/sessions.repository.interface.js';
 import { NotificationsService } from '../../notifications/services/notifications.service.js';
 import { NotificationType } from '../../notifications/schemas/notification.schema.js';
 import { UsersService } from '../../users/services/users.service.js';
@@ -25,7 +29,8 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   constructor(
     private readonly authService: AuthService,
-    private readonly sessionsRepository: SessionsRepository,
+    @Inject(SESSIONS_REPOSITORY)
+    private readonly sessionsRepository: ISessionsRepository,
     private readonly notificationsService: NotificationsService,
     private readonly usersService: UsersService,
   ) {}
