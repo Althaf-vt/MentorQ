@@ -158,7 +158,7 @@ export class AuthService {
     try {
       const payload = this.jwtService.verify(token);
       return this.usersService.findById(payload.sub);
-    } catch (err) {
+    } catch {
       return null;
     }
   }
