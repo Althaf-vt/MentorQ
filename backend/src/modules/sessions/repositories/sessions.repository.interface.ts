@@ -1,10 +1,13 @@
-import { Session } from '../schemas/session.schema.js';
-import { SessionModel } from '../types/session.type.js';
+import {
+  SessionModel,
+  CreateSessionInput,
+  CompleteSessionInput,
+} from '../types/session.type.js';
 
 export const SESSIONS_REPOSITORY = Symbol('SESSIONS_REPOSITORY');
 
 export interface ISessionsRepository {
-  create(session: Partial<Session>): Promise<SessionModel>;
+  create(input: CreateSessionInput): Promise<SessionModel>;
   findById(id: string): Promise<SessionModel | null>;
   findActiveByTicketId(ticketId: string): Promise<SessionModel | null>;
   findByTicketId(ticketId: string): Promise<SessionModel | null>;
@@ -13,6 +16,6 @@ export interface ISessionsRepository {
   findStaleSessions(cutoff: Date): Promise<SessionModel[]>;
   markEmpty(id: string): Promise<void>;
   clearEmpty(id: string): Promise<void>;
-  update(id: string, update: any): Promise<SessionModel | null>;
-  count(query?: any): Promise<number>;
+  complete(id: string, input: CompleteSessionInput): Promise<SessionModel | null>;
+  count(query?: Record<string, unknown>): Promise<number>;
 }
