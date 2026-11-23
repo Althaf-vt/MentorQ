@@ -1,10 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../../users/services/users.service.js';
-import { Otp, OtpDocument } from '../schemas/otp.schema.js';
+import { OTP_REPOSITORY, type IOtpRepository } from '../repositories/otp.repository.interface.js';
 import { MailService } from './mail.service.js';
 
 @Injectable()
@@ -13,7 +11,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-    @InjectModel(Otp.name) private readonly otpModel: Model<OtpDocument>,
+    @Inject(OTP_REPOSITORY) private readonly otpRepository: IOtpRepository,
   ) {}
 
   async register(userData: any) {
@@ -72,24 +70,19 @@ export class AuthService {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
-    await this.otpModel.findOneAndUpdate(
-      { email },
-      { otp_code: otpCode, expires_at: expiresAt, is_verified: false },
-      { upsert: true, returnDocument: 'after' },
-    );
+    await this.otpRepository.upsertOtp(email, otpCode, expiresAt);
 
     await this.mailService.sendOtp(email, otpCode);
     return { message: 'OTP sent successfully' };
   }
 
   async verifyOtp(email: string, code: string, expectedRole?: string) {
-    const otp = await this.otpModel.findOne({ email, otp_code: code });
+    const otp = await this.otpRepository.findValidOtp(email, code);
     if (!otp || otp.expires_at < new Date()) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
 
-    otp.is_verified = true;
-    await otp.save();
+    await this.otpRepository.markAsVerified(otp._id.toString());
 
     const user = await this.usersService.findByEmail(email);
     let tokenData = {};
