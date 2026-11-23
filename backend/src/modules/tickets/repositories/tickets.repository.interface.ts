@@ -1,14 +1,15 @@
-import { Ticket, TicketDocument } from '../schemas/ticket.schema.js';
+import { Ticket } from '../schemas/ticket.schema.js';
+import { TicketModel } from '../types/ticket.type.js';
 
 export const TICKETS_REPOSITORY = Symbol('TICKETS_REPOSITORY');
 
 export interface ITicketsRepository {
-  create(ticket: Partial<Ticket>): Promise<TicketDocument>;
-  findById(id: string): Promise<TicketDocument | null>;
-  findPendingPool(): Promise<TicketDocument[]>;
-  findByStudentId(studentId: string): Promise<TicketDocument[]>;
-  findByMentorId(mentorId: string): Promise<TicketDocument[]>;
-  update(id: string, update: any): Promise<TicketDocument | null>;
+  create(ticket: Partial<Ticket>): Promise<TicketModel>;
+  findById(id: string): Promise<TicketModel | null>;
+  findPendingPool(): Promise<TicketModel[]>;
+  findByStudentId(studentId: string): Promise<TicketModel[]>;
+  findByMentorId(mentorId: string): Promise<TicketModel[]>;
+  update(id: string, update: any): Promise<TicketModel | null>;
   countPending(): Promise<number>;
   getQueuePosition(ticketId: string): Promise<number>;
 }
