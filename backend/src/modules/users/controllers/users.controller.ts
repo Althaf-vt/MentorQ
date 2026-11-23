@@ -10,6 +10,7 @@ import { UsersService } from '../services/users.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
 import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
+import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 const AVATAR_DEST = join(process.cwd(), 'uploads', 'avatars');
 
@@ -19,49 +20,42 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  async getMe(@Req() req: any) {
+  async getMe(@Req() req: AuthenticatedRequest) {
     const user = await this.usersService.findById(req.user.id);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Patch('me')
-  async updateMe(@Req() req: any, @Body() updateData: UpdateUserDto) {
+  async updateMe(@Req() req: AuthenticatedRequest, @Body() updateData: UpdateUserDto) {
     const user = await this.usersService.updateProfile(req.user.id, updateData);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Post('favorites/:mentorId')
-  async addFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
+  async addFavorite(@Req() req: AuthenticatedRequest, @Param('mentorId') mentorId: string) {
     // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.addFavorite(req.user.id, mentorId);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Delete('favorites/:mentorId')
-  async removeFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
+  async removeFavorite(@Req() req: AuthenticatedRequest, @Param('mentorId') mentorId: string) {
     // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.removeFavorite(req.user.id, mentorId);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Get('me/favorites')
-  async getMyFavorites(@Req() req: any) {
+  async getMyFavorites(@Req() req: AuthenticatedRequest) {
     const user = await this.usersService.findByIdWithFavorites(req.user.id);
-    // favorite_mentors is now populated with full User documents
-    const populatedFavorites = (user.favoriteMentors || []).map((m: any) =>
-      m && (m.id || m._id) ? UserDtoMapper.toResponseDto(m) : m,
-    );
+    const populatedFavorites = UserDtoMapper.toFavoriteList(user.favoriteMentors || []);
     return { status: 'success', data: populatedFavorites };
   }
 
   @Get('mentors/directory')
   async getMentorsDirectory() {
     const directory = await this.usersService.getMentorsDirectory();
-    const mapped = directory.map(d => ({
-      ...UserDtoMapper.toResponseDto(d),
-      mentorProfile: d.mentorProfile
-    }));
-    return { status: 'success', data: mapped };
+    return { status: 'success', data: UserDtoMapper.toDirectoryList(directory) };
   }
 
   // ---- Avatar Upload -------------------------------------------------------
@@ -85,7 +79,7 @@ export class UsersController {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
     }),
   )
-  async uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+  async uploadAvatar(@Req() req: AuthenticatedRequest, @UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
@@ -106,7 +100,7 @@ export class UsersController {
 
   // ---- Avatar Delete -------------------------------------------------------
   @Delete('me/avatar')
-  async deleteAvatar(@Req() req: any) {
+  async deleteAvatar(@Req() req: AuthenticatedRequest) {
     const currentUser = await this.usersService.findById(req.user.id);
 
     if (currentUser.avatarUrl) {
@@ -120,4 +114,3 @@ export class UsersController {
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 }
-
