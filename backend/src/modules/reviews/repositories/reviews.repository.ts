@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Review, ReviewDocument } from '../schemas/review.schema.js';
+import { IReviewsRepository } from './reviews.repository.interface.js';
 
 @Injectable()
-export class ReviewsRepository {
+export class ReviewsRepository implements IReviewsRepository {
   constructor(
     @InjectModel(Review.name) private readonly reviewModel: Model<ReviewDocument>,
   ) {}
