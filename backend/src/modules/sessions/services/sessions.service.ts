@@ -125,6 +125,10 @@ export class SessionsService {
     };
   }
 
+  async getSessionCount(query: any = {}): Promise<number> {
+    return this.sessionsRepository.count(query);
+  }
+
   async getSessionByTicketId(ticketId: string): Promise<SessionDocument | null> {
     const active = await this.sessionsRepository.findOne({
       ticket_id: ticketId as any,
