@@ -1,6 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { MessagesRepository } from '../repositories/messages.repository.js';
-import { SessionsRepository } from '../../sessions/repositories/sessions.repository.js';
+import { SessionsService } from '../../sessions/services/sessions.service.js';
 import { SessionsGateway } from '../../sessions/gateways/sessions.gateway.js';
 import { MessageDocument } from '../schemas/message.schema.js';
 
@@ -8,19 +8,19 @@ import { MessageDocument } from '../schemas/message.schema.js';
 export class MessagesService {
   constructor(
     private readonly messagesRepository: MessagesRepository,
-    private readonly sessionsRepository: SessionsRepository,
+    private readonly sessionsService: SessionsService,
     private readonly sessionsGateway: SessionsGateway,
   ) {}
 
   async sendMessage(sessionId: string, senderId: string, text: string): Promise<MessageDocument> {
-    const session = await this.sessionsRepository.findById(sessionId);
+    const session = await this.sessionsService.getSessionById(sessionId);
 
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
-    const sMentorId = session.mentor_id?.toString();
-    const sStudentId = session.student_id?.toString();
+    const sMentorId = session.mentorId;
+    const sStudentId = session.studentId;
     const senderIdStr = senderId?.toString();
 
     if (sMentorId !== senderIdStr && sStudentId !== senderIdStr) {

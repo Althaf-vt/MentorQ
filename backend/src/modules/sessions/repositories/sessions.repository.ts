@@ -26,6 +26,10 @@ export class SessionsRepository {
     return this.sessionModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
 
+  async count(query: any = {}): Promise<number> {
+    return this.sessionModel.countDocuments(query).exec();
+  }
+
   async findActiveByMentor(mentorId: string): Promise<SessionDocument | null> {
     return this.sessionModel
       .findOne({ mentor_id: mentorId as any, session_status: 'ACTIVE' })

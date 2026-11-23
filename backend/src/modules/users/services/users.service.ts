@@ -1,11 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { UsersRepository } from '../repositories/users.repository.js';
-import { UserDocument } from '../schemas/user.schema.js';
+import { User, UserDocument } from '../schemas/user.schema.js';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
+
+  async createUser(data: Partial<User>): Promise<UserDocument> {
+    return this.usersRepository.create(data);
+  }
+
+  async verifyUser(id: string): Promise<UserDocument> {
+    const user = await this.usersRepository.update(id, { is_verified: true });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
 
   async findById(id: string): Promise<UserDocument> {
     const user = await this.usersRepository.findById(id);
@@ -67,6 +79,71 @@ export class UsersService {
 
   async getMentorsDirectory(): Promise<any[]> {
     return this.usersRepository.getMentorsDirectory();
+  }
+
+  async listUsers(page: number = 1, limit: number = 10, role?: string) {
+    const query = role ? { role } : {};
+    const skip = (page - 1) * limit;
+    const { users, total } = await this.usersRepository.findPaginated(query, skip, limit);
+
+    return {
+      data: users.map(user => ({
+        id: user._id,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        is_verified: user.is_verified,
+        created_at: (user as any).created_at || user.get('created_at'),
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async updateUserStatus(id: string, status: string) {
+    const user = await this.usersRepository.update(id, { status });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      id: user._id,
+      full_name: user.full_name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    };
+  }
+
+  async getUserMetrics(): Promise<{
+    students: { total: number; suspended: number; active: number };
+    mentors: { total: number; suspended: number; active: number };
+  }> {
+    const [totalStudents, suspendedStudents, totalMentors, suspendedMentors] =
+      await Promise.all([
+        this.usersRepository.countDocuments({ role: 'STUDENT' }),
+        this.usersRepository.countDocuments({ role: 'STUDENT', status: 'SUSPENDED' }),
+        this.usersRepository.countDocuments({ role: 'MENTOR' }),
+        this.usersRepository.countDocuments({ role: 'MENTOR', status: 'SUSPENDED' }),
+      ]);
+
+    return {
+      students: {
+        total: totalStudents,
+        suspended: suspendedStudents,
+        active: totalStudents - suspendedStudents,
+      },
+      mentors: {
+        total: totalMentors,
+        suspended: suspendedMentors,
+        active: totalMentors - suspendedMentors,
+      },
+    };
   }
 }
 
