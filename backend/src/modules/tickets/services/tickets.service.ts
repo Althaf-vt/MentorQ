@@ -1,5 +1,6 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import {
   TICKETS_REPOSITORY,
   type ITicketsRepository,
@@ -37,7 +38,9 @@ export class TicketsService {
 
   async getTicketById(id: string): Promise<TicketModel> {
     const ticket = await this.ticketsRepository.findById(id);
-    if (!ticket) throw new NotFoundException('Ticket not found');
+    if (!ticket) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found');
+    }
     return ticket;
   }
 
@@ -48,10 +51,10 @@ export class TicketsService {
   async claimTicket(id: string, mentorId: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(id);
     if (ticket.status !== 'PENDING') {
-      throw new BadRequestException('Ticket is not in PENDING status');
+      throw new AppException(ErrorCode.TICKET_NOT_PENDING, 'Ticket is not in PENDING status');
     }
     if (ticket.mentorId) {
-      throw new BadRequestException('Ticket is already claimed');
+      throw new AppException(ErrorCode.TICKET_ALREADY_CLAIMED, 'Ticket is already claimed');
     }
 
     const statusHistory = ticket.statusHistory || [];
@@ -62,7 +65,9 @@ export class TicketsService {
       status: 'APPROVED',
       status_history: statusHistory,
     });
-    if (!updated) throw new NotFoundException('Ticket not found during claim');
+    if (!updated) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found during claim');
+    }
     this.eventEmitter.emit(
       TICKET_EVENTS.CLAIMED,
       new TicketClaimedEvent(ticket.id, ticket.studentId),
@@ -73,10 +78,10 @@ export class TicketsService {
   async resolveWithGuidance(ticketId: string, mentorId: string, message: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(ticketId);
     if (ticket.status !== 'APPROVED' && ticket.status !== 'ACTIVE') {
-      throw new BadRequestException('Ticket must be APPROVED or ACTIVE to resolve');
+      throw new AppException(ErrorCode.BAD_REQUEST, 'Ticket must be APPROVED or ACTIVE to resolve');
     }
     if (ticket.mentorId !== mentorId) {
-      throw new BadRequestException('You are not the mentor for this ticket');
+      throw new AppException(ErrorCode.FORBIDDEN, 'You are not the mentor for this ticket');
     }
 
     const statusHistory = ticket.statusHistory || [];
@@ -88,7 +93,9 @@ export class TicketsService {
       status_history: statusHistory,
     });
     
-    if (!updated) throw new NotFoundException('Ticket not found during resolution');
+    if (!updated) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found during resolution');
+    }
     
     this.eventEmitter.emit(
       TICKET_EVENTS.RESOLVED,
@@ -111,7 +118,9 @@ export class TicketsService {
       status,
       status_history: statusHistory,
     });
-    if (!updated) throw new NotFoundException('Ticket not found during update');
+    if (!updated) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found during update');
+    }
     return updated;
   }
 
