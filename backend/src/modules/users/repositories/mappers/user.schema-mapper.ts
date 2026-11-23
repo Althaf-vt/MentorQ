@@ -9,7 +9,7 @@ export class UserSchemaMapper {
 
     return {
       id: doc._id.toString(),
-      _id: doc._id,
+      _id: doc._id.toString(),
       fullName: doc.full_name,
       full_name: doc.full_name,
       email: doc.email,
