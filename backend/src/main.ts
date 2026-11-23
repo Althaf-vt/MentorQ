@@ -3,10 +3,13 @@ import { type NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
+import { AppExceptionFilter } from './common/index.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
+  app.useGlobalFilters(new AppExceptionFilter());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
