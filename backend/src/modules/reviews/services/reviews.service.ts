@@ -48,11 +48,11 @@ export class ReviewsService {
     }
 
     const review = await this.reviewsRepository.create({
-      session_id: sessionId as any,
-      student_id: studentId as any,
-      mentor_id: session.mentorId as any,
+      sessionId,
+      studentId,
+      mentorId: session.mentorId,
       rating,
-      feedback_text: feedbackText,
+      feedbackText,
     });
 
     // Recalculate average rating and emit domain event
