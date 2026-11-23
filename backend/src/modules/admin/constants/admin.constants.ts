@@ -19,4 +19,5 @@ export const ADMIN_ERROR_MESSAGES = {
   INVALID_OR_EXPIRED_RESET_TOKEN: 'Invalid or expired reset token',
   INVALID_TOKEN_INTENT: 'Invalid token intent',
   ADMIN_NOT_FOUND: 'Admin not found',
+  SETTINGS_NOT_FOUND: 'Platform settings not found',
 } as const;

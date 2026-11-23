@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Body, Param, Query, UseGuards } from '@nestjs/c
 import { AuthGuard } from '@nestjs/passport';
 import { AdminUsersService } from '../services/admin-users.service.js';
 import { UpdateUserStatusDto } from '../dto/users.dto.js';
+import { ListUsersQueryDto } from '../dto/list-users-query.dto.js';
 
 @Controller('api/v1/admin/users')
 @UseGuards(AuthGuard('jwt'))
@@ -9,14 +10,10 @@ export class AdminUsersController {
   constructor(private readonly adminUsersService: AdminUsersService) {}
 
   @Get()
-  async listUsers(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('role') role?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.adminUsersService.listUsers(pageNum, limitNum, role);
+  async listUsers(@Query() query: ListUsersQueryDto) {
+    const pageNum = query.page ?? 1;
+    const limitNum = query.limit ?? 10;
+    return this.adminUsersService.listUsers(pageNum, limitNum, query.role);
   }
 
   @Patch(':id/status')
