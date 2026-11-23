@@ -34,3 +34,7 @@ backend/uploads/
 
 .clinerules
 litellm_config.yaml
+
+# Antigravity agent runtime state
+.agents/pipeline-state.md
+
