@@ -3,6 +3,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../services/auth.service.js';
 import * as express from 'express';
+import { RegisterDto } from '../dto/register.dto.js';
+import { LoginDto } from '../dto/login.dto.js';
+import { SendOtpDto, VerifyOtpDto } from '../dto/otp.dto.js';
+
 export class GoogleAuthGuardWithState extends AuthGuard('google') {
   getAuthenticateOptions(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest();
@@ -20,23 +24,23 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(@Body() userData: any) {
+  async register(@Body() userData: RegisterDto) {
     return this.authService.register(userData);
   }
 
   @Post('login')
-  async login(@Body() credentials: any) {
+  async login(@Body() credentials: LoginDto) {
     return this.authService.login(credentials);
   }
 
   @Post('otp/send')
-  async sendOtp(@Body('email') email: string) {
-    return this.authService.sendOtp(email);
+  async sendOtp(@Body() sendOtpDto: SendOtpDto) {
+    return this.authService.sendOtp(sendOtpDto.email);
   }
 
   @Post('otp/verify')
-  async verifyOtp(@Body('email') email: string, @Body('otp') otp: string, @Body('expectedRole') expectedRole?: string) {
-    return this.authService.verifyOtp(email, otp, expectedRole);
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyOtp(verifyOtpDto.email, verifyOtpDto.otp, verifyOtpDto.expectedRole);
   }
 
   @Post('refresh')
@@ -47,7 +51,7 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuardWithState)
-  async googleAuth(@Req() req: any) {}
+  async googleAuth(@Req() _req: any) {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
