@@ -11,6 +11,8 @@ import {
   REVIEW_EVENTS,
   ReviewCreatedEvent,
 } from '../events/review.events.js';
+import { SESSION_STATUS } from '../../sessions/constants/sessions.constants.js';
+import { REVIEW_ERROR_MESSAGES } from '../constants/reviews.constants.js';
 
 @Injectable()
 export class ReviewsService {
@@ -29,20 +31,20 @@ export class ReviewsService {
   ): Promise<ReviewModel> {
     const session = await this.sessionsService.getSessionById(sessionId);
     if (!session) {
-      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, REVIEW_ERROR_MESSAGES.SESSION_NOT_FOUND);
     }
 
     if (session.studentId !== studentId) {
-      throw new AppException(ErrorCode.ONLY_STUDENT_CAN_REVIEW, 'Only the student of this session can submit a review');
+      throw new AppException(ErrorCode.ONLY_STUDENT_CAN_REVIEW, REVIEW_ERROR_MESSAGES.ONLY_STUDENT_CAN_REVIEW);
     }
 
-    if (session.sessionStatus !== 'COMPLETED') {
-      throw new AppException(ErrorCode.SESSION_NOT_COMPLETED, 'Reviews can only be submitted for completed sessions');
+    if (session.sessionStatus !== SESSION_STATUS.COMPLETED) {
+      throw new AppException(ErrorCode.SESSION_NOT_COMPLETED, REVIEW_ERROR_MESSAGES.SESSION_NOT_COMPLETED);
     }
 
     const existingReview = await this.reviewsRepository.findBySession(sessionId);
     if (existingReview) {
-      throw new AppException(ErrorCode.REVIEW_ALREADY_SUBMITTED, 'A review has already been submitted for this session');
+      throw new AppException(ErrorCode.REVIEW_ALREADY_SUBMITTED, REVIEW_ERROR_MESSAGES.REVIEW_ALREADY_SUBMITTED);
     }
 
     const review = await this.reviewsRepository.create({
