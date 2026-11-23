@@ -1,6 +1,7 @@
-import { Injectable, Inject, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import { MailService } from '../../auth/services/mail.service.js';
 import { ADMIN_REPOSITORY, type IAdminRepository } from '../repositories/admin.repository.interface.js';
 import { AdminDtoMapper } from '../mappers/admin.dto-mapper.js';
@@ -23,16 +24,16 @@ export class AdminAuthService {
   async login(credentials: AdminLoginDto): Promise<AdminTokenResponseDto> {
     const admin = await this.adminRepository.findByEmail(credentials.email);
     if (!admin) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials');
     }
 
     if (admin.status === AdminStatus.SUSPENDED) {
-      throw new UnauthorizedException('Admin account is suspended');
+      throw new AppException(ErrorCode.ACCOUNT_SUSPENDED, 'Admin account is suspended');
     }
 
     const isPasswordValid = await bcrypt.compare(credentials.password, admin.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials');
     }
 
     const payload = { sub: admin.id, email: admin.email, role: admin.role };
@@ -58,15 +59,15 @@ export class AdminAuthService {
   async verifyOtp(data: AdminVerifyOtpDto) {
     const admin = await this.adminRepository.findByEmail(data.email);
     if (!admin) {
-      throw new UnauthorizedException('Invalid OTP');
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, 'Invalid OTP');
     }
 
     if (!admin.otp || admin.otp !== data.otp) {
-      throw new UnauthorizedException('Invalid OTP');
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, 'Invalid OTP');
     }
 
     if (!admin.otpExpiresAt || admin.otpExpiresAt < new Date()) {
-      throw new UnauthorizedException('OTP has expired');
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, 'OTP has expired');
     }
 
     // Generate a temporary reset token (e.g., valid for 15 mins)
@@ -85,20 +86,20 @@ export class AdminAuthService {
   }
 
   async resetPassword(data: AdminResetPasswordDto) {
-    let payload;
+    let payload: { intent?: string; sub: string };
     try {
       payload = this.jwtService.verify(data.token);
     } catch {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new AppException(ErrorCode.BAD_REQUEST, 'Invalid or expired reset token');
     }
 
     if (payload.intent !== 'reset_password') {
-      throw new BadRequestException('Invalid token intent');
+      throw new AppException(ErrorCode.BAD_REQUEST, 'Invalid token intent');
     }
 
     const admin = await this.adminRepository.findById(payload.sub);
     if (!admin) {
-      throw new NotFoundException('Admin not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'Admin not found');
     }
 
     const password_hash = await bcrypt.hash(data.newPassword, 10);
