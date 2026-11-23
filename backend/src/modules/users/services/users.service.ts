@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Types } from 'mongoose';
-import { UsersRepository } from '../repositories/users.repository.js';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  USERS_REPOSITORY,
+  type IUsersRepository,
+} from '../repositories/users.repository.interface.js';
 import { User, UserDocument } from '../schemas/user.schema.js';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    @Inject(USERS_REPOSITORY)
+    private readonly usersRepository: IUsersRepository,
+  ) {}
 
   async createUser(data: Partial<User>): Promise<UserDocument> {
     return this.usersRepository.create(data);
@@ -28,7 +33,7 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {
-    return this.usersRepository.findOne({ email });
+    return this.usersRepository.findByEmail(email);
   }
 
   async updateProfile(id: string, updateData: any): Promise<UserDocument> {
@@ -52,19 +57,13 @@ export class UsersService {
   }
 
   async addFavorite(userId: string, mentorId: string): Promise<UserDocument> {
-    const objectId = new Types.ObjectId(mentorId);
-    const user = await this.usersRepository.update(userId, {
-      $addToSet: { favorite_mentors: objectId },
-    } as any);
+    const user = await this.usersRepository.addFavoriteMentor(userId, mentorId);
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
   async removeFavorite(userId: string, mentorId: string): Promise<UserDocument> {
-    const objectId = new Types.ObjectId(mentorId);
-    const user = await this.usersRepository.update(userId, {
-      $pull: { favorite_mentors: objectId },
-    } as any);
+    const user = await this.usersRepository.removeFavoriteMentor(userId, mentorId);
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
