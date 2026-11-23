@@ -11,7 +11,7 @@ This directory contains specialized AI agents designed to automate, orchestrate,
     │   └── pipeline-orchestrator.md   # Master orchestrator governing the entire multi-agent lifecycle
     │
     ├── planning/
-    │   └── task-batch-planner.md      # Decomposes tasks into <= 200-300 line verifiable batches
+    │   └── task-batch-planner.md      # Decomposes tasks into <= 100-250 line verifiable batches
     │
     ├── architecture/
     │   └── backend-architect-reviewer.md # Reviews NestJS code against architectural guidelines
@@ -31,7 +31,7 @@ This directory contains specialized AI agents designed to automate, orchestrate,
 
 ```mermaid
 flowchart TD
-    Orchestrator["pipeline-orchestrator\n(Master Supervisor)"] --> Planner["1. task-batch-planner\n(Cap: 200-300 lines/batch)"]
+    Orchestrator["pipeline-orchestrator\n(Master Supervisor)"] --> Planner["1. task-batch-planner\n(Cap: 100-250 lines/batch)"]
 
     subgraph BatchLoop ["Per-Batch Execution & Quality Gate"]
         Planner --> Implement["Implement Batch Changes"]
@@ -61,7 +61,7 @@ flowchart TD
 - **[`pipeline-orchestrator`](file:///c:/Users/altha/OneDrive/Documents/MentorQ/.agents/agents/orchestrator/pipeline-orchestrator.md)**: Coordinates the entire workflow. Ensures each batch passes architecture review before commit drafting, passes commit evaluation before execution, and passes PR evaluation before PR creation. Enforces the strict rule that **only the human user merges PRs to main**.
 
 ### 1. Planning (`planning/`)
-- **[`task-batch-planner`](file:///c:/Users/altha/OneDrive/Documents/MentorQ/.agents/agents/planning/task-batch-planner.md)**: Breaks down large feature implementations and refactoring phases into focused, self-contained batches capped at 100-200 lines of code changes.
+- **[`task-batch-planner`](file:///c:/Users/altha/OneDrive/Documents/MentorQ/.agents/agents/planning/task-batch-planner.md)**: Breaks down large feature implementations and refactoring phases into focused, self-contained batches capped at 100-250 lines of code changes.
 
 ### 2. Architecture & Quality (`architecture/`)
 - **[`backend-architect-reviewer`](file:///c:/Users/altha/OneDrive/Documents/MentorQ/.agents/agents/architecture/backend-architect-reviewer.md)**: Reviews backend NestJS code against Controller -> Service -> Repository 3-layer architecture, zero Mongoose document leakage, and EDA rules.
