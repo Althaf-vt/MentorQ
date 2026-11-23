@@ -3,6 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Admin, AdminSchema } from './schemas/admin.schema.js';
+import { AdminRepository } from './repositories/admin.repository.js';
+import { ADMIN_REPOSITORY } from './repositories/admin.repository.interface.js';
 import { AdminSeederService } from './services/admin-seeder.service.js';
 import { AdminAuthService } from './services/admin-auth.service.js';
 import { AdminAuthController } from './controllers/admin-auth.controller.js';
@@ -39,6 +41,10 @@ import { MetricsController } from './controllers/metrics.controller.js';
   ],
   controllers: [AdminAuthController, SettingsController, AdminUsersController, MetricsController],
   providers: [
+    {
+      provide: ADMIN_REPOSITORY,
+      useClass: AdminRepository,
+    },
     AdminSeederService, 
     AdminAuthService, 
     SettingsSeederService, 
