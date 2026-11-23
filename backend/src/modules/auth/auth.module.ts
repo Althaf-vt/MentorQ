@@ -7,6 +7,8 @@ import { AuthService } from './services/auth.service.js';
 import { AuthController } from './controllers/auth.controller.js';
 import { UsersModule } from '../users/users.module.js';
 import { Otp, OtpSchema } from './schemas/otp.schema.js';
+import { OtpRepository } from './repositories/otp.repository.js';
+import { OTP_REPOSITORY } from './repositories/otp.repository.interface.js';
 import { MailService } from './services/mail.service.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { GoogleStrategy } from './strategies/google.strategy.js';
@@ -25,7 +27,16 @@ import { GoogleStrategy } from './strategies/google.strategy.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, MailService, JwtStrategy, GoogleStrategy],
+  providers: [
+    AuthService,
+    MailService,
+    JwtStrategy,
+    GoogleStrategy,
+    {
+      provide: OTP_REPOSITORY,
+      useClass: OtpRepository,
+    },
+  ],
   exports: [AuthService, PassportModule, MailService],
 })
 export class AuthModule {}
