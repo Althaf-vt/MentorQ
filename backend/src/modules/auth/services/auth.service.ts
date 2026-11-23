@@ -4,7 +4,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../../users/services/users.service.js';
-import { UsersRepository } from '../../users/repositories/users.repository.js';
 import { Otp, OtpDocument } from '../schemas/otp.schema.js';
 import { MailService } from './mail.service.js';
 
@@ -12,7 +11,6 @@ import { MailService } from './mail.service.js';
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     @InjectModel(Otp.name) private readonly otpModel: Model<OtpDocument>,
@@ -25,7 +23,7 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const user = await this.usersRepository.create({
+    const user = await this.usersService.createUser({
       full_name: userData.fullName,
       email: userData.email,
       password_hash: hashedPassword,
@@ -106,9 +104,7 @@ export class AuthService {
         }
       }
 
-      await this.usersRepository.update(user._id.toString(), { is_verified: true });
-      // Fetch fresh user
-      const updatedUser = await this.usersService.findById(user._id.toString());
+      const updatedUser = await this.usersService.verifyUser(user._id.toString());
       tokenData = this.generateToken(updatedUser);
     }
 
@@ -145,7 +141,7 @@ export class AuthService {
     }
 
     if (!user) {
-      user = await this.usersRepository.create({
+      user = await this.usersService.createUser({
         full_name: profile.displayName,
         email: profile.emails[0].value,
         password_hash: 'OAUTH_USER', // Placeholder
@@ -154,7 +150,7 @@ export class AuthService {
         is_verified: true,
       });
     } else if (!user.is_verified) {
-      user = await this.usersRepository.update(user._id.toString(), { is_verified: true });
+      user = await this.usersService.verifyUser(user._id.toString());
     }
     return this.generateToken(user);
   }
