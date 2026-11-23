@@ -8,6 +8,7 @@ import {
 import { SessionsService } from '../../sessions/services/sessions.service.js';
 import { CHAT_EVENTS, ChatMessageSentEvent } from '../events/chat.events.js';
 import { MessageModel } from '../types/message.type.js';
+import { CHAT_ERROR_MESSAGES } from '../constants/chat.constants.js';
 
 @Injectable()
 export class MessagesService {
@@ -22,7 +23,7 @@ export class MessagesService {
     const session = await this.sessionsService.getSessionById(sessionId);
 
     if (!session) {
-      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, CHAT_ERROR_MESSAGES.SESSION_NOT_FOUND);
     }
 
     const sMentorId = session.mentorId;
@@ -30,7 +31,10 @@ export class MessagesService {
     const senderIdStr = senderId?.toString();
 
     if (sMentorId !== senderIdStr && sStudentId !== senderIdStr) {
-      throw new AppException(ErrorCode.UNAUTHORIZED_SESSION_PARTICIPANT, 'Cannot send message: user is not a participant in this session');
+      throw new AppException(
+        ErrorCode.UNAUTHORIZED_SESSION_PARTICIPANT,
+        CHAT_ERROR_MESSAGES.UNAUTHORIZED_PARTICIPANT,
+      );
     }
 
     const message = await this.messagesRepository.create({
