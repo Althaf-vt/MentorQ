@@ -11,6 +11,8 @@ export interface ISessionsRepository {
   findActiveByMentor(mentorId: string): Promise<SessionModel | null>;
   findActiveByStudent(studentId: string): Promise<SessionModel | null>;
   findStaleSessions(cutoff: Date): Promise<SessionModel[]>;
+  markEmpty(id: string): Promise<void>;
+  clearEmpty(id: string): Promise<void>;
   update(id: string, update: any): Promise<SessionModel | null>;
   count(query?: any): Promise<number>;
 }

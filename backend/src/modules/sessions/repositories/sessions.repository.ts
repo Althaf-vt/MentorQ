@@ -66,6 +66,14 @@ export class SessionsRepository implements ISessionsRepository {
     return SessionSchemaMapper.toDomainList(docs);
   }
 
+  async markEmpty(id: string): Promise<void> {
+    await this.sessionModel.findByIdAndUpdate(id, { last_empty_at: new Date() }).exec();
+  }
+
+  async clearEmpty(id: string): Promise<void> {
+    await this.sessionModel.findByIdAndUpdate(id, { $unset: { last_empty_at: 1 } }).exec();
+  }
+
   async update(id: string, update: any): Promise<SessionModel | null> {
     const updated = await this.sessionModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
     return updated ? SessionSchemaMapper.toDomain(updated) : null;
