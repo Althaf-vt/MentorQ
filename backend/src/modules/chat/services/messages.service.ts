@@ -1,5 +1,6 @@
-import { Injectable, Inject, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import {
   MESSAGES_REPOSITORY,
   type IMessagesRepository,
@@ -21,7 +22,7 @@ export class MessagesService {
     const session = await this.sessionsService.getSessionById(sessionId);
 
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found');
     }
 
     const sMentorId = session.mentorId;
@@ -29,7 +30,7 @@ export class MessagesService {
     const senderIdStr = senderId?.toString();
 
     if (sMentorId !== senderIdStr && sStudentId !== senderIdStr) {
-      throw new ForbiddenException('Cannot send message: user is not a participant in this session');
+      throw new AppException(ErrorCode.UNAUTHORIZED_SESSION_PARTICIPANT, 'Cannot send message: user is not a participant in this session');
     }
 
     const message = await this.messagesRepository.create({
