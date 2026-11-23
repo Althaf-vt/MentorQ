@@ -1,6 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { TicketsRepository } from '../repositories/tickets.repository.js';
+import {
+  TICKETS_REPOSITORY,
+  type ITicketsRepository,
+} from '../repositories/tickets.repository.interface.js';
 import { Ticket, TicketDocument } from '../schemas/ticket.schema.js';
 import {
   TICKET_EVENTS,
@@ -12,7 +15,8 @@ import {
 @Injectable()
 export class TicketsService {
   constructor(
-    private readonly ticketsRepository: TicketsRepository,
+    @Inject(TICKETS_REPOSITORY)
+    private readonly ticketsRepository: ITicketsRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -37,10 +41,7 @@ export class TicketsService {
   }
 
   async getPendingPool(): Promise<TicketDocument[]> {
-    return await this.ticketsRepository.find({
-      status: 'PENDING',
-      $or: [{ mentor_id: null }, { mentor_id: { $exists: false } }],
-    });
+    return this.ticketsRepository.findPendingPool();
   }
 
   async claimTicket(id: string, mentorId: string): Promise<TicketDocument> {
@@ -114,11 +115,11 @@ export class TicketsService {
   }
 
   async getStudentTickets(studentId: string): Promise<TicketDocument[]> {
-    return this.ticketsRepository.find({ student_id: studentId }, { createdAt: -1 });
+    return this.ticketsRepository.findByStudentId(studentId);
   }
 
   async getMentorTickets(mentorId: string): Promise<TicketDocument[]> {
-    return this.ticketsRepository.find({ mentor_id: mentorId });
+    return this.ticketsRepository.findByMentorId(mentorId);
   }
 
   async getQueuePosition(ticketId: string): Promise<number> {
@@ -126,7 +127,7 @@ export class TicketsService {
   }
 
   async getPendingTicketCount(): Promise<number> {
-    return this.ticketsRepository.count({ status: 'PENDING' });
+    return this.ticketsRepository.countPending();
   }
 }
 
