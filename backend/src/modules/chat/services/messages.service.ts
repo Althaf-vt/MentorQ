@@ -1,5 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { MessagesRepository } from '../repositories/messages.repository.js';
+import { Injectable, Inject, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  MESSAGES_REPOSITORY,
+  type IMessagesRepository,
+} from '../repositories/messages.repository.interface.js';
 import { SessionsService } from '../../sessions/services/sessions.service.js';
 import { SessionsGateway } from '../../sessions/gateways/sessions.gateway.js';
 import { MessageDocument } from '../schemas/message.schema.js';
@@ -7,7 +10,8 @@ import { MessageDocument } from '../schemas/message.schema.js';
 @Injectable()
 export class MessagesService {
   constructor(
-    private readonly messagesRepository: MessagesRepository,
+    @Inject(MESSAGES_REPOSITORY)
+    private readonly messagesRepository: IMessagesRepository,
     private readonly sessionsService: SessionsService,
     private readonly sessionsGateway: SessionsGateway,
   ) {}
