@@ -1,12 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
-export type MentorProfileDocument = MentorProfile & Document;
+export type MentorProfileDocument = MentorProfile &
+  Document & {
+    created_at?: Date;
+    updated_at?: Date;
+  };
 
-@Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, strict: false })
+@Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class MentorProfile {
-  @Prop({ type: MongooseSchema.Types.Mixed, ref: 'User', required: true, unique: true })
-  user_id: any;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true, unique: true })
+  user_id: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: [String], required: true })
   expertise_tags: string[];
