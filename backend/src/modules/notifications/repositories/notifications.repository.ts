@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification, NotificationDocument } from '../schemas/notification.schema.js';
+import { INotificationsRepository } from './notifications.repository.interface.js';
 
 @Injectable()
-export class NotificationsRepository {
+export class NotificationsRepository implements INotificationsRepository {
   constructor(
     @InjectModel(Notification.name) private readonly notificationModel: Model<NotificationDocument>,
   ) {}
