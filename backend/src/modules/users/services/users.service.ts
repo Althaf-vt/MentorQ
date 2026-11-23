@@ -7,6 +7,12 @@ import {
 import { User } from '../schemas/user.schema.js';
 import { UserModel } from '../types/user.type.js';
 import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
+import {
+  USER_ROLES,
+  USER_STATUS,
+  USER_ERROR_MESSAGES,
+  USER_POPULATE_FIELDS,
+} from '../constants/users.constants.js';
 
 @Injectable()
 export class UsersService {
@@ -22,7 +28,7 @@ export class UsersService {
   async verifyUser(id: string): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { is_verified: true });
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -30,7 +36,7 @@ export class UsersService {
   async findById(id: string): Promise<UserModel> {
     const user = await this.usersRepository.findById(id);
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -42,7 +48,7 @@ export class UsersService {
   async updateProfile(id: string, updateData: any): Promise<UserModel> {
     const user = await this.usersRepository.update(id, updateData);
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -50,7 +56,7 @@ export class UsersService {
   async updateAvatar(id: string, avatarUrl: string | null): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { avatar_url: avatarUrl });
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -62,7 +68,7 @@ export class UsersService {
   async addFavorite(userId: string, mentorId: string): Promise<UserModel> {
     const user = await this.usersRepository.addFavoriteMentor(userId, mentorId);
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -70,15 +76,15 @@ export class UsersService {
   async removeFavorite(userId: string, mentorId: string): Promise<UserModel> {
     const user = await this.usersRepository.removeFavoriteMentor(userId, mentorId);
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
 
   async findByIdWithFavorites(id: string): Promise<UserModel> {
-    const user = await this.usersRepository.findByIdPopulated(id, 'favorite_mentors');
+    const user = await this.usersRepository.findByIdPopulated(id, USER_POPULATE_FIELDS.FAVORITE_MENTORS);
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -106,7 +112,7 @@ export class UsersService {
   async updateUserStatus(id: string, status: string) {
     const user = await this.usersRepository.update(id, { status });
     if (!user) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
 
     return {
@@ -124,10 +130,10 @@ export class UsersService {
   }> {
     const [totalStudents, suspendedStudents, totalMentors, suspendedMentors] =
       await Promise.all([
-        this.usersRepository.countDocuments({ role: 'STUDENT' }),
-        this.usersRepository.countDocuments({ role: 'STUDENT', status: 'SUSPENDED' }),
-        this.usersRepository.countDocuments({ role: 'MENTOR' }),
-        this.usersRepository.countDocuments({ role: 'MENTOR', status: 'SUSPENDED' }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.STUDENT }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.STUDENT, status: USER_STATUS.SUSPENDED }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.MENTOR }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.MENTOR, status: USER_STATUS.SUSPENDED }),
       ]);
 
     return {
