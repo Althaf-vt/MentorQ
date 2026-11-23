@@ -5,7 +5,7 @@ import {
 } from '../repositories/messages.repository.interface.js';
 import { SessionsService } from '../../sessions/services/sessions.service.js';
 import { SessionsGateway } from '../../sessions/gateways/sessions.gateway.js';
-import { MessageDocument } from '../schemas/message.schema.js';
+import { MessageModel } from '../types/message.type.js';
 
 @Injectable()
 export class MessagesService {
@@ -16,7 +16,7 @@ export class MessagesService {
     private readonly sessionsGateway: SessionsGateway,
   ) {}
 
-  async sendMessage(sessionId: string, senderId: string, text: string): Promise<MessageDocument> {
+  async sendMessage(sessionId: string, senderId: string, text: string): Promise<MessageModel> {
     const session = await this.sessionsService.getSessionById(sessionId);
 
     if (!session) {
@@ -44,7 +44,7 @@ export class MessagesService {
     return message;
   }
 
-  async getSessionMessages(sessionId: string): Promise<MessageDocument[]> {
+  async getSessionMessages(sessionId: string): Promise<MessageModel[]> {
     return this.messagesRepository.findBySession(sessionId);
   }
 
