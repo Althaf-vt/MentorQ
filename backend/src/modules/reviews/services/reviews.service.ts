@@ -1,15 +1,19 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ReviewsRepository } from '../repositories/reviews.repository.js';
-import { SessionsRepository } from '../../sessions/repositories/sessions.repository.js';
-import { MentorProfilesRepository } from '../../mentor-profiles/repositories/mentor-profiles.repository.js';
+import { SessionsService } from '../../sessions/services/sessions.service.js';
 import { ReviewDocument } from '../schemas/review.schema.js';
+import {
+  REVIEW_EVENTS,
+  ReviewCreatedEvent,
+} from '../events/review.events.js';
 
 @Injectable()
 export class ReviewsService {
   constructor(
     private readonly reviewsRepository: ReviewsRepository,
-    private readonly sessionsRepository: SessionsRepository,
-    private readonly mentorProfilesRepository: MentorProfilesRepository,
+    private readonly sessionsService: SessionsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createReview(
@@ -18,16 +22,16 @@ export class ReviewsService {
     rating: number,
     feedbackText?: string,
   ): Promise<ReviewDocument> {
-    const session = await this.sessionsRepository.findById(sessionId);
+    const session = await this.sessionsService.getSessionById(sessionId);
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
-    if (session.student_id.toString() !== studentId) {
+    if (session.studentId !== studentId) {
       throw new BadRequestException('Only the student of this session can submit a review');
     }
 
-    if (session.session_status !== 'COMPLETED') {
+    if (session.sessionStatus !== 'COMPLETED') {
       throw new BadRequestException('Reviews can only be submitted for completed sessions');
     }
 
@@ -39,19 +43,24 @@ export class ReviewsService {
     const review = await this.reviewsRepository.create({
       session_id: sessionId as any,
       student_id: studentId as any,
-      mentor_id: session.mentor_id as any,
+      mentor_id: session.mentorId as any,
       rating,
       feedback_text: feedbackText,
     });
 
-    // Recalculate and update mentor's average rating
-    const mentorIdStr = session.mentor_id.toString();
+    // Recalculate average rating and emit domain event
+    const mentorIdStr = session.mentorId;
     const avgRating = await this.reviewsRepository.getAverageRatingForMentor(mentorIdStr);
-    
-    const profile = await this.mentorProfilesRepository.findByUserId(mentorIdStr);
-    if (profile) {
-      await this.mentorProfilesRepository.update(mentorIdStr, { rating_avg: avgRating });
-    }
+
+    this.eventEmitter.emit(
+      REVIEW_EVENTS.CREATED,
+      new ReviewCreatedEvent(
+        review._id.toString(),
+        mentorIdStr,
+        rating,
+        avgRating,
+      ),
+    );
 
     return review;
   }
