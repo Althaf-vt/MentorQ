@@ -1,14 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketsRepository } from '../repositories/tickets.repository.js';
 import { Ticket, TicketDocument } from '../schemas/ticket.schema.js';
-import { SessionsGateway } from '../../sessions/gateways/sessions.gateway.js';
+import {
+  TICKET_EVENTS,
+  TicketRequestedEvent,
+  TicketClaimedEvent,
+  TicketResolvedEvent,
+} from '../events/ticket.events.js';
 
 @Injectable()
 export class TicketsService {
   constructor(
     private readonly ticketsRepository: TicketsRepository,
-    @Inject(forwardRef(() => SessionsGateway))
-    private readonly sessionsGateway: SessionsGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createTicket(studentId: string, data: Partial<Ticket>): Promise<TicketDocument> {
@@ -18,7 +23,10 @@ export class TicketsService {
       status: 'PENDING',
       status_history: [{ status: 'PENDING', timestamp: new Date() }],
     });
-    this.sessionsGateway.emitStudentRequestedMentorship(ticket._id.toString());
+    this.eventEmitter.emit(
+      TICKET_EVENTS.REQUESTED,
+      new TicketRequestedEvent(ticket._id.toString()),
+    );
     return ticket;
   }
 
@@ -53,7 +61,10 @@ export class TicketsService {
       status_history: statusHistory,
     });
     if (!updated) throw new NotFoundException('Ticket not found during claim');
-    this.sessionsGateway.emitMentorClaimedTicket(ticket.student_id.toString(), ticket._id.toString());
+    this.eventEmitter.emit(
+      TICKET_EVENTS.CLAIMED,
+      new TicketClaimedEvent(ticket._id.toString(), ticket.student_id.toString()),
+    );
     return updated;
   }
 
@@ -77,7 +88,10 @@ export class TicketsService {
     
     if (!updated) throw new NotFoundException('Ticket not found during resolution');
     
-    this.sessionsGateway.emitTicketResolvedWithGuidance(ticketId, ticket.student_id.toString(), mentorId);
+    this.eventEmitter.emit(
+      TICKET_EVENTS.RESOLVED,
+      new TicketResolvedEvent(ticketId, ticket.student_id.toString(), mentorId),
+    );
     
     return updated;
   }
