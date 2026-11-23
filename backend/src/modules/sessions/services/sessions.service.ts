@@ -14,7 +14,6 @@ import {
   SessionEndedEvent,
 } from '../events/session-lifecycle.events.js';
 import {
-  SESSION_STATUS,
   SESSION_CONFIG,
   SESSION_ERROR_MESSAGES,
 } from '../constants/sessions.constants.js';
@@ -59,12 +58,11 @@ export class SessionsService {
     }
 
     const session = await this.sessionsRepository.create({
-      ticket_id: ticketId as any,
-      mentor_id: mentorId as any,
-      student_id: ticket.studentId as any,
-      allocated_minutes: ticket.requestedMinutes || SESSION_CONFIG.DEFAULT_ALLOCATED_MINUTES,
-      session_status: SESSION_STATUS.ACTIVE,
-      started_at: new Date(),
+      ticketId,
+      mentorId,
+      studentId: ticket.studentId,
+      allocatedMinutes: ticket.requestedMinutes || SESSION_CONFIG.DEFAULT_ALLOCATED_MINUTES,
+      startedAt: new Date(),
     });
 
     await this.ticketsService.updateTicketStatus(ticketId, TICKET_STATUS.ACTIVE);
@@ -96,11 +94,10 @@ export class SessionsService {
       (endedAt.getTime() - session.startedAt.getTime()) / (1000 * 60),
     );
 
-    const updatedSession = await this.sessionsRepository.update(sessionId, {
-      session_status: SESSION_STATUS.COMPLETED,
-      ended_at: endedAt,
-      actual_duration_minutes: actualDuration,
-      resolution_notes: resolutionNotes,
+    const updatedSession = await this.sessionsRepository.complete(sessionId, {
+      endedAt,
+      actualDurationMinutes: actualDuration,
+      resolutionNotes,
     });
 
     if (!updatedSession) {
@@ -159,7 +156,7 @@ export class SessionsService {
     };
   }
 
-  async getSessionCount(query: any = {}): Promise<number> {
+  async getSessionCount(query: Record<string, unknown> = {}): Promise<number> {
     return this.sessionsRepository.count(query);
   }
 

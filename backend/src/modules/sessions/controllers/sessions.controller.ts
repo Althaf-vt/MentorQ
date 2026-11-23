@@ -2,7 +2,9 @@ import { Controller, Post, Body, Param, Get, UseGuards, Request } from '@nestjs/
 import { SessionsService } from '../services/sessions.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { EndSessionDto } from '../dto/end-session.dto.js';
-import type { AuthenticatedRequest } from '../types/session-request.type.js';
+import { SessionResponseDto } from '../dto/session-response.dto.js';
+import { SessionDtoMapper } from '../mappers/session.dto-mapper.js';
+import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 @Controller('api/v1/sessions')
 @UseGuards(JwtAuthGuard)
@@ -13,23 +15,26 @@ export class SessionsController {
   async startSession(
     @Param('ticketId') ticketId: string,
     @Request() req: AuthenticatedRequest,
-  ) {
-    const userId = req.user.id.toString();
-    return this.sessionsService.startSession(ticketId, userId);
+  ): Promise<SessionResponseDto> {
+    const session = await this.sessionsService.startSession(ticketId, req.user.id);
+    return SessionDtoMapper.toResponseDto(session);
   }
 
   @Post(':ticketId/start')
   async startSessionAlt(
     @Param('ticketId') ticketId: string,
     @Request() req: AuthenticatedRequest,
-  ) {
-    const userId = req.user.id.toString();
-    return this.sessionsService.startSession(ticketId, userId);
+  ): Promise<SessionResponseDto> {
+    const session = await this.sessionsService.startSession(ticketId, req.user.id);
+    return SessionDtoMapper.toResponseDto(session);
   }
 
   @Get('ticket/:ticketId')
-  async getSessionByTicketId(@Param('ticketId') ticketId: string) {
-    return this.sessionsService.getSessionByTicketId(ticketId);
+  async getSessionByTicketId(
+    @Param('ticketId') ticketId: string,
+  ): Promise<SessionResponseDto | null> {
+    const session = await this.sessionsService.getSessionByTicketId(ticketId);
+    return session ? SessionDtoMapper.toResponseDto(session) : null;
   }
 
   @Post(':id/end')
@@ -37,18 +42,24 @@ export class SessionsController {
     @Param('id') id: string,
     @Body() endSessionDto: EndSessionDto,
     @Request() req: AuthenticatedRequest,
-  ) {
-    const userId = req.user.id.toString();
-    return this.sessionsService.endSession(id, endSessionDto.notes, userId);
+  ): Promise<SessionResponseDto> {
+    const session = await this.sessionsService.endSession(id, endSessionDto.notes, req.user.id);
+    return SessionDtoMapper.toResponseDto(session);
   }
 
   @Get('active/mentor')
-  async getActiveMentorSession(@Request() req: AuthenticatedRequest) {
-    return this.sessionsService.getActiveSessionByMentor(req.user.id);
+  async getActiveMentorSession(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<SessionResponseDto | null> {
+    const session = await this.sessionsService.getActiveSessionByMentor(req.user.id);
+    return session ? SessionDtoMapper.toResponseDto(session) : null;
   }
 
   @Get('active/student')
-  async getActiveStudentSession(@Request() req: AuthenticatedRequest) {
-    return this.sessionsService.getActiveSessionByStudent(req.user.id);
+  async getActiveStudentSession(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<SessionResponseDto | null> {
+    const session = await this.sessionsService.getActiveSessionByStudent(req.user.id);
+    return session ? SessionDtoMapper.toResponseDto(session) : null;
   }
 }
