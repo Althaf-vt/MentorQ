@@ -12,6 +12,11 @@ import {
   AdminVerifyOtpDto, 
   AdminResetPasswordDto 
 } from '../dto/admin-auth.dto.js';
+import {
+  ADMIN_CONFIG,
+  ADMIN_MESSAGES,
+  ADMIN_ERROR_MESSAGES,
+} from '../constants/admin.constants.js';
 
 @Injectable()
 export class AdminAuthService {
@@ -24,16 +29,16 @@ export class AdminAuthService {
   async login(credentials: AdminLoginDto): Promise<AdminTokenResponseDto> {
     const admin = await this.adminRepository.findByEmail(credentials.email);
     if (!admin) {
-      throw new AppException(ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, ADMIN_ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     if (admin.status === AdminStatus.SUSPENDED) {
-      throw new AppException(ErrorCode.ACCOUNT_SUSPENDED, 'Admin account is suspended');
+      throw new AppException(ErrorCode.ACCOUNT_SUSPENDED, ADMIN_ERROR_MESSAGES.ACCOUNT_SUSPENDED);
     }
 
     const isPasswordValid = await bcrypt.compare(credentials.password, admin.passwordHash);
     if (!isPasswordValid) {
-      throw new AppException(ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, ADMIN_ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     const payload = { sub: admin.id, email: admin.email, role: admin.role };
@@ -44,43 +49,43 @@ export class AdminAuthService {
     const admin = await this.adminRepository.findByEmail(data.email);
     if (!admin) {
       // Don't leak whether an email exists or not
-      return { message: 'If an account exists with this email, an OTP has been sent.' };
+      return { message: ADMIN_MESSAGES.OTP_SENT_MASKED };
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+    const otpExpiresAt = new Date(Date.now() + ADMIN_CONFIG.OTP_EXPIRY_MS);
 
     await this.adminRepository.setOtp(admin.id, otp, otpExpiresAt);
     await this.mailService.sendOtp(admin.email, otp);
 
-    return { message: 'If an account exists with this email, an OTP has been sent.' };
+    return { message: ADMIN_MESSAGES.OTP_SENT_MASKED };
   }
 
   async verifyOtp(data: AdminVerifyOtpDto) {
     const admin = await this.adminRepository.findByEmail(data.email);
     if (!admin) {
-      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, 'Invalid OTP');
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, ADMIN_ERROR_MESSAGES.INVALID_OTP);
     }
 
     if (!admin.otp || admin.otp !== data.otp) {
-      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, 'Invalid OTP');
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, ADMIN_ERROR_MESSAGES.INVALID_OTP);
     }
 
     if (!admin.otpExpiresAt || admin.otpExpiresAt < new Date()) {
-      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, 'OTP has expired');
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, ADMIN_ERROR_MESSAGES.OTP_EXPIRED);
     }
 
     // Generate a temporary reset token (e.g., valid for 15 mins)
     const resetToken = this.jwtService.sign(
-      { sub: admin.id, intent: 'reset_password' },
-      { expiresIn: '15m' },
+      { sub: admin.id, intent: ADMIN_CONFIG.RESET_TOKEN_INTENT },
+      { expiresIn: ADMIN_CONFIG.RESET_TOKEN_EXPIRY },
     );
 
     // Clear OTP after successful verification
     await this.adminRepository.clearOtp(admin.id);
 
     return { 
-      message: 'OTP verified successfully',
+      message: ADMIN_MESSAGES.OTP_VERIFIED,
       resetToken,
     };
   }
@@ -90,21 +95,21 @@ export class AdminAuthService {
     try {
       payload = this.jwtService.verify(data.token);
     } catch {
-      throw new AppException(ErrorCode.BAD_REQUEST, 'Invalid or expired reset token');
+      throw new AppException(ErrorCode.BAD_REQUEST, ADMIN_ERROR_MESSAGES.INVALID_OR_EXPIRED_RESET_TOKEN);
     }
 
-    if (payload.intent !== 'reset_password') {
-      throw new AppException(ErrorCode.BAD_REQUEST, 'Invalid token intent');
+    if (payload.intent !== ADMIN_CONFIG.RESET_TOKEN_INTENT) {
+      throw new AppException(ErrorCode.BAD_REQUEST, ADMIN_ERROR_MESSAGES.INVALID_TOKEN_INTENT);
     }
 
     const admin = await this.adminRepository.findById(payload.sub);
     if (!admin) {
-      throw new AppException(ErrorCode.USER_NOT_FOUND, 'Admin not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, ADMIN_ERROR_MESSAGES.ADMIN_NOT_FOUND);
     }
 
-    const password_hash = await bcrypt.hash(data.newPassword, 10);
+    const password_hash = await bcrypt.hash(data.newPassword, ADMIN_CONFIG.BCRYPT_SALT_ROUNDS);
     await this.adminRepository.updatePassword(admin.id, password_hash);
 
-    return { message: 'Password reset successfully' };
+    return { message: ADMIN_MESSAGES.PASSWORD_RESET_SUCCESS };
   }
 }
