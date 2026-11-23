@@ -8,6 +8,7 @@ import { SessionsService } from './services/sessions.service.js';
 import { SessionsController } from './controllers/sessions.controller.js';
 import { SessionsGateway } from './gateways/sessions.gateway.js';
 import { TicketEventsListener } from './events/ticket-events.listener.js';
+import { ChatEventsListener } from './events/chat-events.listener.js';
 import { TicketsModule } from '../tickets/tickets.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
@@ -31,7 +32,8 @@ import { UsersModule } from '../users/users.module.js';
     SessionsService,
     SessionsGateway,
     TicketEventsListener,
+    ChatEventsListener,
   ],
-  exports: [SessionsService, SessionsGateway],
+  exports: [SessionsService],
 })
 export class SessionsModule {}
