@@ -5,7 +5,7 @@ import {
   type IReviewsRepository,
 } from '../repositories/reviews.repository.interface.js';
 import { SessionsService } from '../../sessions/services/sessions.service.js';
-import { ReviewDocument } from '../schemas/review.schema.js';
+import { ReviewModel } from '../types/review.type.js';
 import {
   REVIEW_EVENTS,
   ReviewCreatedEvent,
@@ -25,7 +25,7 @@ export class ReviewsService {
     studentId: string,
     rating: number,
     feedbackText?: string,
-  ): Promise<ReviewDocument> {
+  ): Promise<ReviewModel> {
     const session = await this.sessionsService.getSessionById(sessionId);
     if (!session) {
       throw new NotFoundException('Session not found');
@@ -59,7 +59,7 @@ export class ReviewsService {
     this.eventEmitter.emit(
       REVIEW_EVENTS.CREATED,
       new ReviewCreatedEvent(
-        review._id.toString(),
+        review.id,
         mentorIdStr,
         rating,
         avgRating,
@@ -69,11 +69,11 @@ export class ReviewsService {
     return review;
   }
 
-  async getMentorReviews(mentorId: string): Promise<ReviewDocument[]> {
+  async getMentorReviews(mentorId: string): Promise<ReviewModel[]> {
     return this.reviewsRepository.findByMentor(mentorId);
   }
 
-  async getSessionReview(sessionId: string): Promise<ReviewDocument | null> {
+  async getSessionReview(sessionId: string): Promise<ReviewModel | null> {
     return this.reviewsRepository.findBySession(sessionId);
   }
 }
