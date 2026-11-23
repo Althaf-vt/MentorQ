@@ -1,9 +1,9 @@
-import { PlatformSettings, PlatformSettingsDocument } from '../schemas/settings.schema.js';
+import { PlatformSettingsModel, UpdatePlatformSettingsInput } from '../types/platform-settings.type.js';
 
 export const PLATFORM_SETTINGS_REPOSITORY = Symbol('PLATFORM_SETTINGS_REPOSITORY');
 
 export interface IPlatformSettingsRepository {
-  findSettings(): Promise<PlatformSettingsDocument | null>;
-  updateSettings(data: Partial<PlatformSettings>): Promise<PlatformSettingsDocument | null>;
-  createDefaultSettings(): Promise<PlatformSettingsDocument>;
+  findSettings(): Promise<PlatformSettingsModel | null>;
+  updateSettings(data: UpdatePlatformSettingsInput): Promise<PlatformSettingsModel | null>;
+  createDefaultSettings(): Promise<PlatformSettingsModel>;
 }
