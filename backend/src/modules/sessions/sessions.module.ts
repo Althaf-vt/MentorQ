@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { Session, SessionSchema } from './schemas/session.schema.js';
 import { SessionsRepository } from './repositories/sessions.repository.js';
+import { SESSIONS_REPOSITORY } from './repositories/sessions.repository.interface.js';
 import { SessionsService } from './services/sessions.service.js';
 import { SessionsController } from './controllers/sessions.controller.js';
 import { SessionsGateway } from './gateways/sessions.gateway.js';
@@ -22,7 +23,15 @@ import { UsersModule } from '../users/users.module.js';
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [SessionsController],
-  providers: [SessionsRepository, SessionsService, SessionsGateway, TicketEventsListener],
+  providers: [
+    {
+      provide: SESSIONS_REPOSITORY,
+      useClass: SessionsRepository,
+    },
+    SessionsService,
+    SessionsGateway,
+    TicketEventsListener,
+  ],
   exports: [SessionsService, SessionsGateway],
 })
 export class SessionsModule {}
