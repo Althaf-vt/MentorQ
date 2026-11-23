@@ -1,10 +1,11 @@
 import { Injectable, Inject, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   MESSAGES_REPOSITORY,
   type IMessagesRepository,
 } from '../repositories/messages.repository.interface.js';
 import { SessionsService } from '../../sessions/services/sessions.service.js';
-import { SessionsGateway } from '../../sessions/gateways/sessions.gateway.js';
+import { CHAT_EVENTS, ChatMessageSentEvent } from '../events/chat.events.js';
 import { MessageModel } from '../types/message.type.js';
 
 @Injectable()
@@ -13,7 +14,7 @@ export class MessagesService {
     @Inject(MESSAGES_REPOSITORY)
     private readonly messagesRepository: IMessagesRepository,
     private readonly sessionsService: SessionsService,
-    private readonly sessionsGateway: SessionsGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async sendMessage(sessionId: string, senderId: string, text: string): Promise<MessageModel> {
@@ -38,8 +39,11 @@ export class MessagesService {
       sent_at: new Date(),
     });
 
-    // Broadcast message to session room so participants receive it in real-time
-    this.sessionsGateway.emitNewMessage(sessionId, message);
+    // Broadcast message via domain event (decoupled from WebSocket gateway)
+    this.eventEmitter.emit(
+      CHAT_EVENTS.MESSAGE_SENT,
+      new ChatMessageSentEvent(sessionId, message),
+    );
 
     return message;
   }
