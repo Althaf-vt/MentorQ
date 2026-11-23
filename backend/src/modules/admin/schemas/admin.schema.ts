@@ -1,16 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { AdminRole, AdminStatus } from '../types/admin.type.js';
 
 export type AdminDocument = Admin & Document;
-
-export enum AdminRole {
-  ADMIN = 'ADMIN',
-}
-
-export enum AdminStatus {
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-}
+export { AdminRole, AdminStatus };
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class Admin {
