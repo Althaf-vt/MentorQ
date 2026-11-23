@@ -13,6 +13,11 @@ import {
   TicketClaimedEvent,
   TicketResolvedEvent,
 } from '../events/ticket.events.js';
+import {
+  TICKET_STATUS,
+  TICKET_FEEDBACK,
+  TICKET_ERROR_MESSAGES,
+} from '../constants/tickets.constants.js';
 
 @Injectable()
 export class TicketsService {
@@ -26,8 +31,8 @@ export class TicketsService {
     const ticket = await this.ticketsRepository.create({
       ...data,
       student_id: studentId as any,
-      status: 'PENDING',
-      status_history: [{ status: 'PENDING', timestamp: new Date() }],
+      status: TICKET_STATUS.PENDING,
+      status_history: [{ status: TICKET_STATUS.PENDING, timestamp: new Date() }],
     });
     this.eventEmitter.emit(
       TICKET_EVENTS.REQUESTED,
@@ -39,7 +44,7 @@ export class TicketsService {
   async getTicketById(id: string): Promise<TicketModel> {
     const ticket = await this.ticketsRepository.findById(id);
     if (!ticket) {
-      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found');
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND);
     }
     return ticket;
   }
@@ -50,23 +55,27 @@ export class TicketsService {
 
   async claimTicket(id: string, mentorId: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(id);
-    if (ticket.status !== 'PENDING') {
-      throw new AppException(ErrorCode.TICKET_NOT_PENDING, 'Ticket is not in PENDING status');
+    if (ticket.status !== TICKET_STATUS.PENDING) {
+      throw new AppException(ErrorCode.TICKET_NOT_PENDING, TICKET_ERROR_MESSAGES.NOT_PENDING);
     }
     if (ticket.mentorId) {
-      throw new AppException(ErrorCode.TICKET_ALREADY_CLAIMED, 'Ticket is already claimed');
+      throw new AppException(ErrorCode.TICKET_ALREADY_CLAIMED, TICKET_ERROR_MESSAGES.ALREADY_CLAIMED);
     }
 
     const statusHistory = ticket.statusHistory || [];
-    statusHistory.push({ status: 'APPROVED', timestamp: new Date(), feedback_note: 'Ticket claimed by mentor' });
+    statusHistory.push({
+      status: TICKET_STATUS.APPROVED,
+      timestamp: new Date(),
+      feedback_note: TICKET_FEEDBACK.CLAIMED_BY_MENTOR,
+    });
 
     const updated = await this.ticketsRepository.update(id, {
       mentor_id: mentorId,
-      status: 'APPROVED',
+      status: TICKET_STATUS.APPROVED,
       status_history: statusHistory,
     });
     if (!updated) {
-      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found during claim');
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND_DURING_CLAIM);
     }
     this.eventEmitter.emit(
       TICKET_EVENTS.CLAIMED,
@@ -77,24 +86,28 @@ export class TicketsService {
 
   async resolveWithGuidance(ticketId: string, mentorId: string, message: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(ticketId);
-    if (ticket.status !== 'APPROVED' && ticket.status !== 'ACTIVE') {
-      throw new AppException(ErrorCode.BAD_REQUEST, 'Ticket must be APPROVED or ACTIVE to resolve');
+    if (ticket.status !== TICKET_STATUS.APPROVED && ticket.status !== TICKET_STATUS.ACTIVE) {
+      throw new AppException(ErrorCode.BAD_REQUEST, TICKET_ERROR_MESSAGES.MUST_BE_APPROVED_OR_ACTIVE);
     }
     if (ticket.mentorId !== mentorId) {
-      throw new AppException(ErrorCode.FORBIDDEN, 'You are not the mentor for this ticket');
+      throw new AppException(ErrorCode.FORBIDDEN, TICKET_ERROR_MESSAGES.NOT_MENTOR_FOR_TICKET);
     }
 
     const statusHistory = ticket.statusHistory || [];
-    statusHistory.push({ status: 'COMPLETED', timestamp: new Date(), feedback_note: 'Resolved with guidance' });
+    statusHistory.push({
+      status: TICKET_STATUS.COMPLETED,
+      timestamp: new Date(),
+      feedback_note: TICKET_FEEDBACK.RESOLVED_WITH_GUIDANCE,
+    });
 
     const updated = await this.ticketsRepository.update(ticketId, {
-      status: 'COMPLETED',
+      status: TICKET_STATUS.COMPLETED,
       guidance_message: message,
       status_history: statusHistory,
     });
     
     if (!updated) {
-      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found during resolution');
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND_DURING_RESOLUTION);
     }
     
     this.eventEmitter.emit(
@@ -119,7 +132,7 @@ export class TicketsService {
       status_history: statusHistory,
     });
     if (!updated) {
-      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found during update');
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND_DURING_UPDATE);
     }
     return updated;
   }
