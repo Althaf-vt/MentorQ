@@ -1,5 +1,6 @@
-import { Injectable, Inject, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import {
   REVIEWS_REPOSITORY,
   type IReviewsRepository,
@@ -28,20 +29,20 @@ export class ReviewsService {
   ): Promise<ReviewModel> {
     const session = await this.sessionsService.getSessionById(sessionId);
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found');
     }
 
     if (session.studentId !== studentId) {
-      throw new BadRequestException('Only the student of this session can submit a review');
+      throw new AppException(ErrorCode.ONLY_STUDENT_CAN_REVIEW, 'Only the student of this session can submit a review');
     }
 
     if (session.sessionStatus !== 'COMPLETED') {
-      throw new BadRequestException('Reviews can only be submitted for completed sessions');
+      throw new AppException(ErrorCode.SESSION_NOT_COMPLETED, 'Reviews can only be submitted for completed sessions');
     }
 
     const existingReview = await this.reviewsRepository.findBySession(sessionId);
     if (existingReview) {
-      throw new ConflictException('A review has already been submitted for this session');
+      throw new AppException(ErrorCode.REVIEW_ALREADY_SUBMITTED, 'A review has already been submitted for this session');
     }
 
     const review = await this.reviewsRepository.create({
