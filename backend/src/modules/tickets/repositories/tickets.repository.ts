@@ -30,6 +30,10 @@ export class TicketsRepository {
     return this.ticketModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
 
+  async count(query: any = {}): Promise<number> {
+    return this.ticketModel.countDocuments(query).exec();
+  }
+
   async getQueuePosition(ticketId: string): Promise<number> {
     const ticket = await this.findById(ticketId);
     if (!ticket || ticket.status !== 'PENDING') return -1;
