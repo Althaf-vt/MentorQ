@@ -1,6 +1,7 @@
-import { Injectable, Inject, UnauthorizedException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import { UsersService } from '../../users/services/users.service.js';
 import { UserModel } from '../../users/types/user.type.js';
 import { OTP_REPOSITORY, type IOtpRepository } from '../repositories/otp.repository.interface.js';
@@ -22,7 +23,7 @@ export class AuthService {
   async register(userData: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(userData.email);
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, 'Email already registered');
     }
 
     const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -45,27 +46,27 @@ export class AuthService {
   async login(credentials: LoginDto): Promise<AuthTokenResponseDto> {
     const user = await this.usersService.findByEmail(credentials.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials');
     }
 
     if (credentials.expectedRole && credentials.expectedRole !== user.role) {
       if (credentials.expectedRole === 'MENTOR') {
-        throw new ForbiddenException('Mentor profile not accessed');
+        throw new AppException(ErrorCode.FORBIDDEN, 'Mentor profile not accessed');
       } else if (credentials.expectedRole === 'STUDENT') {
-        throw new NotFoundException('User not found');
+        throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
       } else {
-        throw new UnauthorizedException('Invalid role specified');
+        throw new AppException(ErrorCode.UNAUTHORIZED, 'Invalid role specified');
       }
     }
 
     const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, 'Invalid credentials');
     }
 
     if (!user.is_verified) {
       await this.sendOtp(user.email);
-      throw new UnauthorizedException('Please verify your email before logging in. A new verification code has been sent.');
+      throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED, 'Please verify your email before logging in. A new verification code has been sent.');
     }
 
     return this.generateToken(user);
@@ -84,7 +85,7 @@ export class AuthService {
   async verifyOtp(email: string, code: string, expectedRole?: string) {
     const otp = await this.otpRepository.findValidOtp(email, code);
     if (!otp || (otp.expiresAt || otp.expires_at) < new Date()) {
-      throw new UnauthorizedException('Invalid or expired OTP');
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, 'Invalid or expired OTP');
     }
 
     await this.otpRepository.markAsVerified(otp.id || otp._id);
@@ -94,11 +95,11 @@ export class AuthService {
     if (user) {
       if (expectedRole && user.role !== expectedRole) {
         if (expectedRole === 'MENTOR') {
-          throw new ForbiddenException('Mentor profile not accessed');
+          throw new AppException(ErrorCode.FORBIDDEN, 'Mentor profile not accessed');
         } else if (expectedRole === 'STUDENT') {
-          throw new NotFoundException('User not found');
+          throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
         } else {
-          throw new UnauthorizedException('Invalid role specified');
+          throw new AppException(ErrorCode.UNAUTHORIZED, 'Invalid role specified');
         }
       }
 
@@ -123,11 +124,11 @@ export class AuthService {
 
     if (user && expectedRole && user.role !== expectedRole) {
       if (expectedRole === 'MENTOR') {
-        throw new ForbiddenException('Mentor profile not accessed');
+        throw new AppException(ErrorCode.FORBIDDEN, 'Mentor profile not accessed');
       } else if (expectedRole === 'STUDENT') {
-        throw new NotFoundException('User not found');
+        throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
       } else {
-        throw new UnauthorizedException('Invalid role specified');
+        throw new AppException(ErrorCode.UNAUTHORIZED, 'Invalid role specified');
       }
     }
 
@@ -149,7 +150,7 @@ export class AuthService {
   async refreshToken(jwtUser: JwtUserPayload) {
     const user = await this.usersService.findById(jwtUser.id);
     if (!user) {
-      throw new UnauthorizedException('User no longer exists');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User no longer exists');
     }
     return this.generateToken(user);
   }
