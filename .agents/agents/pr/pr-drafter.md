@@ -31,7 +31,7 @@ Always strictly adhere to [`docs/general-rules/pr-rules/pr-rules.md`](file:///c:
 
 4. **Zero Meta Commentary & No Internal References:**
    - Never include meta statements like "derived from git log" or mention prompt instructions.
-   - Never reference local rule docs or paths like `docs/**`, `docs/general-rules/**`, or `.agents/**` in the PR body.
+   - Never reference local rule docs or paths like `docs/**`, `docs/general-rules/**`, or `.agents/pipeline-state.md` in the PR body.
 
 5. **PR Title Standard:**
    - Format: `<type>(<scope>): <concise high-level summary of the entire branch>`
@@ -39,7 +39,7 @@ Always strictly adhere to [`docs/general-rules/pr-rules/pr-rules.md`](file:///c:
 
 ## Output Structure
 
-Generate the PR using this exact standard structure:
+Generate the PR draft using this standard structure:
 
 ```markdown
 ### PR Title
