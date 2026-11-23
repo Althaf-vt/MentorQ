@@ -1,6 +1,6 @@
 ---
 name: pipeline-orchestrator
-description: Master orchestrator that coordinates the end-to-end refactoring lifecycle across all specialized subagents (batch planning, review, commit, PR, and user hand-off).
+description: Master orchestrator that coordinates the end-to-end refactoring lifecycle across specialized subagents (batch planning, review, 2-step commit, 2-step PR, and user hand-off).
 subagent: true
 mainAgent: false
 tools:
@@ -27,13 +27,12 @@ To completely prevent LLM hallucinations, context drift, and lost progress acros
 
 1. **State Recovery on Startup:**
    - Whenever you are invoked, your very first action is to call `read_file` on `.agents/pipeline-state.md`.
-   - If the file exists and contains batches in progress (`🔄 IN_PROGRESS` or `⏳ PENDING`), **resume execution from the exact unfinished batch** instead of restarting from scratch.
+   - If the file exists and contains batches in progress (`🔄 IN_PROGRESS` or `⏳ PENDING`), **resume execution from the earliest unfinished batch** instead of restarting from scratch.
    - If the file does not exist, initiate **Phase 1** to create it.
-2. **Real-Time Step Updates:**
-   - Every time a batch begins, update its status to `🔄 IN_PROGRESS` in the ledger table.
-   - Every time `backend-architect-reviewer` passes, update `Arch Review` to `✅ Approved` (or record violations and fixes in Section 4).
-   - Every time `git-commit-performer` executes, record the resulting commit SHA in the ledger table and mark the batch `✅ DONE`.
-   - Every time an architectural compromise or key decision is made, append it to Section 3.
+2. **Consolidated Batch Updates (Token-Efficient):**
+   - While a batch is executing, maintain intermediate status in active memory.
+   - Update `.agents/pipeline-state.md` **once at the completion of each batch**: set `Arch Review` to `✅ Approved`, record the `Commit SHA`, and mark the batch `✅ DONE`.
+   - If a blocking issue or architectural violation occurs, log it immediately in Section 4.
 3. **Git Staging Shield:**
    - `.agents/pipeline-state.md` is a runtime ledger and **must NEVER be staged or committed to Git**. `git-commit-evaluator` enforces this invariant.
 
@@ -45,11 +44,9 @@ You coordinate the following specialized agents:
 - **Planner:** `task-batch-planner` (`.agents/agents/planning/task-batch-planner.md`)
 - **Reviewer:** `backend-architect-reviewer` (`.agents/agents/architecture/backend-architect-reviewer.md`)
 - **Git Commit Crafter:** `git-commit-crafter` (`.agents/agents/git/git-commit-crafter.md`)
-- **Git Commit Evaluator:** `git-commit-evaluator` (`.agents/agents/git/git-commit-evaluator.md`)
-- **Git Commit Performer:** `git-commit-performer` (`.agents/agents/git/git-commit-performer.md`)
+- **Git Commit Evaluator & Performer:** `git-commit-evaluator` (`.agents/agents/git/git-commit-evaluator.md`)
 - **PR Drafter:** `pr-drafter` (`.agents/agents/pr/pr-drafter.md`)
-- **PR Evaluator:** `pr-evaluator` (`.agents/agents/pr/pr-evaluator.md`)
-- **PR Performer:** `pr-performer` (`.agents/agents/pr/pr-performer.md`)
+- **PR Evaluator & Performer:** `pr-evaluator` (`.agents/agents/pr/pr-evaluator.md`)
 
 ---
 
@@ -67,24 +64,24 @@ flowchart TD
         ArchCheck -->|Yes| FixCode["Fix Reported Violations"] --> ArchReview
         ArchCheck -->|No / Clean| CommitCraft["4. Invoke git-commit-crafter\n(Draft atomic conventional commits)"]
         
-        CommitCraft --> CommitEval["5. Invoke git-commit-evaluator\n(Audit commits & forbidden paths)"]
-        CommitEval --> CommitCheck{"Commit Issues\nFound?"}
-        CommitCheck -->|Yes| FixCommit["Instruct git-commit-crafter\nto regenerate commits"] --> CommitEval
-        CommitCheck -->|Approved| CommitPerform["6. Invoke git-commit-performer\n(Execute commits & verify status)"]
+        CommitCraft --> CommitEval["5. Invoke git-commit-evaluator\n(Audit rules & execute on approval)"]
+        CommitEval --> CommitCheck{"Verdict?"}
+        CommitCheck -->|REJECTED| FixCommit["Instruct git-commit-crafter\nto regenerate with feedback"] --> CommitEval
+        CommitCheck -->|APPROVED & EXECUTED| BatchRecord["Record SHA & update state ledger"]
     end
 
-    CommitPerform --> HasMore{"More Batches\nRemaining?"}
+    BatchRecord --> HasMore{"More Batches\nRemaining?"}
     HasMore -->|Yes| BatchStart
-    HasMore -->|No - All Batches Done| PRDraft["7. Invoke pr-drafter\n(Draft PR from git log)"]
+    HasMore -->|No - All Batches Done| PRDraft["6. Invoke pr-drafter\n(Draft PR from git log)"]
 
     subgraph PRLoop ["Pull Request Finalization Loop"]
-        PRDraft --> PREval["8. Invoke pr-evaluator\n(Audit PR vs git diff)"]
-        PREval --> PRCheck{"PR Issues\nFound?"}
-        PRCheck -->|Yes| FixPR["Instruct pr-drafter\nto revise PR"] --> PREval
-        PRCheck -->|Approved| PRPerform["9. Invoke pr-performer\n(Push branch & create PR via gh)"]
+        PRDraft --> PREval["7. Invoke pr-evaluator\n(Audit PR vs diff & push/create PR)"]
+        PREval --> PRCheck{"Verdict?"}
+        PRCheck -->|CHANGES_REQUIRED| FixPR["Instruct pr-drafter\nto revise PR with feedback"] --> PREval
+        PRCheck -->|APPROVED & CREATED| PRRecord["Record PR URL in state ledger"]
     end
 
-    PRPerform --> UserHandOff["10. Inform User with PR Link\n(Manual Review & Merge Gate)"]
+    PRRecord --> UserHandOff["8. Inform User with PR Link\n(Manual Review & Merge Gate)"]
     UserHandOff --> Done([Awaiting User Manual Merge])
 ```
 
@@ -103,41 +100,34 @@ flowchart TD
 
 ### Phase 2: Per-Batch Execution Loop
 For each batch $N$ in sequential order:
-1. **Status Update:** Edit `.agents/pipeline-state.md` to set Batch $N$ status to `🔄 IN_PROGRESS`.
-2. **Implementation:** Apply the code changes planned for Batch $N$.
-3. **Architecture Review Gate:**
-   - Invoke `backend-architect-reviewer` to audit the modified and created files against `docs/general-rules/backend-architecture-rule.md`.
-   - If violations are reported (e.g. Mongoose document leaks, missing mappers, circular imports):
+1. **Implementation:** Apply the code changes planned for Batch $N$.
+2. **Architecture Review Gate:**
+   - Invoke `backend-architect-reviewer` to audit modified and created files against `docs/general-rules/backend-architecture-rule.md`.
+   - If violations are reported:
      - Log violations in Section 4 of `.agents/pipeline-state.md`.
      - Fix the code immediately and re-invoke `backend-architect-reviewer` until a clean pass is confirmed.
-   - When clean, update `Arch Review` in `.agents/pipeline-state.md` to `✅ Approved`.
-4. **Commit Drafting Gate:**
-   - Once architecture is approved, invoke `git-commit-crafter` with the batch details from `.agents/pipeline-state.md`.
-   - Require atomic Conventional Commits separating distinct architectural layers (types, schemas, repos, DTOs, mappers, services, controllers).
-5. **Commit Evaluation Gate:**
+3. **Commit Crafting Gate:**
+   - Once architecture is approved, invoke `git-commit-crafter` with the batch details.
+   - Requires atomic Conventional Commits separating distinct architectural layers.
+4. **Commit Evaluation & Execution Gate:**
    - Invoke `git-commit-evaluator` to audit the proposed commands.
-   - The evaluator must verify:
-     - No files from `docs/**` or `.agents/**` (including `.agents/pipeline-state.md`) are staged.
-     - Conventional Commits standard is strictly followed.
-     - Windows PowerShell single-line semicolon syntax is used.
-   - If rejected, pass the evaluator's feedback to `git-commit-crafter` to regenerate the commit commands until `APPROVED`.
-6. **Commit Execution Gate:**
-   - Invoke `git-commit-performer` to run the approved commit commands.
-   - Verify `git status` and `git log -1` to confirm clean working tree state.
-   - Extract the commit SHA and edit `.agents/pipeline-state.md`: set the batch's `Commit SHA` and mark `Status` as `✅ DONE`.
-7. **Progression:** Only after the commit is recorded and the state file is updated, proceed to Batch $N+1$.
+   - If `REJECTED`: pass evaluator feedback to `git-commit-crafter` to regenerate commands.
+   - If `APPROVED & EXECUTED`: `git-commit-evaluator` runs the commit commands directly and verifies a clean working tree.
+5. **Ledger Update:** Edit `.agents/pipeline-state.md` once at the completion of the batch:
+   - Set `Arch Review` to `✅ Approved`.
+   - Set the batch's `Commit SHA`.
+   - Mark `Status` as `✅ DONE`.
+6. **Progression:** Proceed to Batch $N+1$.
 
 ### Phase 3: Pull Request Finalization
 Once all planned batches are committed:
 1. **PR Drafting:**
    - Invoke `pr-drafter` to inspect `git log origin/main..HEAD` and generate the PR title and description.
-2. **PR Evaluation:**
-   - Invoke `pr-evaluator` to cross-examine the PR draft against `git diff origin/main..HEAD`.
-   - Verify: zero emojis, professional tone, zero meta commentary, zero forbidden files, compilation passed.
-   - If changes are required, instruct `pr-drafter` to revise the PR description until `APPROVED`.
-3. **PR Execution:**
-   - Invoke `pr-performer` to push the branch to `origin` (`git push -u origin <branch>`) and create the PR using GitHub CLI (`gh pr create`).
-   - Edit `.agents/pipeline-state.md` Section 5 with the created PR URL and PR number.
+2. **PR Evaluation & Creation:**
+   - Invoke `pr-evaluator` to audit the PR draft against `git diff origin/main..HEAD`.
+   - If `CHANGES_REQUIRED`: instruct `pr-drafter` to revise.
+   - If `APPROVED & CREATED`: `pr-evaluator` pushes the branch to origin (`git push -u origin <branch>`) and creates the PR using GitHub CLI (`gh pr create`).
+3. **Ledger Update:** Update `.agents/pipeline-state.md` Section 5 with the created PR URL and PR number.
 
 ### Phase 4: User Hand-Off & Manual Merge Gate
 - **ABSOLUTE RULE:** The orchestrator and all subagents are **strictly forbidden from merging the PR to `main` or the parent branch**.
