@@ -5,6 +5,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { join } from 'path';
 import { User, UserSchema } from './schemas/user.schema.js';
 import { UsersRepository } from './repositories/users.repository.js';
+import { USERS_REPOSITORY } from './repositories/users.repository.interface.js';
 import { UsersService } from './services/users.service.js';
 import { UsersController } from './controllers/users.controller.js';
 
@@ -15,7 +16,13 @@ import { UsersController } from './controllers/users.controller.js';
     MulterModule.register({ dest: join(process.cwd(), 'uploads', 'avatars') }),
   ],
   controllers: [UsersController],
-  providers: [UsersService, UsersRepository],
+  providers: [
+    {
+      provide: USERS_REPOSITORY,
+      useClass: UsersRepository,
+    },
+    UsersService,
+  ],
   exports: [UsersService],
 })
 export class UsersModule {}
