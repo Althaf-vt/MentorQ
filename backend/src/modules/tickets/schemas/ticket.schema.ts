@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
+import type { TicketStatusHistory } from '../types/ticket.type.js';
 
 export type TicketDocument = Ticket & Document & { createdAt: Date; updatedAt: Date };
 
@@ -41,12 +42,12 @@ export class Ticket {
 
   @Prop([
     {
-      status: String,
+      status: { type: String, required: true },
       timestamp: { type: Date, default: Date.now },
-      feedback_note: String,
+      feedback_note: { type: String },
     },
   ])
-  status_history: any[];
+  status_history: TicketStatusHistory[];
 }
 
 export const TicketSchema = SchemaFactory.createForClass(Ticket);
