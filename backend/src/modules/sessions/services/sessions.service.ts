@@ -46,8 +46,8 @@ export class SessionsService {
     const session = await this.sessionsRepository.create({
       ticket_id: ticketId as any,
       mentor_id: mentorId as any,
-      student_id: ticket.student_id,
-      allocated_minutes: ticket.requested_minutes || 15,
+      student_id: ticket.studentId as any,
+      allocated_minutes: ticket.requestedMinutes || 15,
       session_status: 'ACTIVE',
       started_at: new Date(),
     });
@@ -58,7 +58,7 @@ export class SessionsService {
     this.sessionsGateway.emitFocusModeStarted({
       sessionId: session._id.toString(),
       ticketId,
-      studentId: ticket.student_id.toString(),
+      studentId: ticket.studentId,
       mentorId,
       startedAt: session.started_at,
       allocatedMinutes: session.allocated_minutes,
