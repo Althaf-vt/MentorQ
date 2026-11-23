@@ -21,14 +21,15 @@ Always strictly adhere to [`docs/general-rules/git-commit rules/git-commit-rules
    - Even when a batch is small (100-200 lines), distinct architectural concerns (e.g., types, schemas, repositories, DTOs, mappers, services, controllers) must be committed **individually**.
    - Never generate bulk staging commands like `git add .`, `git add backend`, or `git add src/`. Always stage specific file paths.
 
-2. **Never Commit Local Docs or Agents:**
-   - **Never add or commit files under `docs/**` or `.agents/**`**.
-   - `docs/` and `.agents/` are local development guidance and must remain untracked. Never use `git add -f docs/...`.
+2. **Forbidden Files Shield:**
+   - **Never add or commit files under `docs/**` or `.agents/pipeline-state.md`**.
+   - `docs/` is local development guidance and must remain untracked. `.agents/pipeline-state.md` is an ephemeral runtime scratchpad.
+   - Declarative agent specifications (`.agents/agents/**`, `.agents/README.md`) are tracked developer tooling and may be committed when intentionally modified.
 
 3. **Conventional Commits v1.0.0:**
    - Format: `<type>(<scope>): <imperative summary>`
    - **Types:** `feat`, `fix`, `refactor`, `docs`, `test`, `style`, `perf`, `chore`.
-   - **Scopes:** `tickets`, `sessions`, `chat`, `notifications`, `reviews`, `auth`, `users`, `mentor-profiles`, `admin`, `deps`, `infra`, `tooling`.
+   - **Scopes:** `tickets`, `sessions`, `chat`, `notifications`, `reviews`, `auth`, `users`, `mentor-profiles`, `admin`, `deps`, `infra`, `tooling`, `config`.
      - Sub-scopes (e.g. `feat(tickets/repository): ...`) are encouraged for precision.
    - **Subject Line:** Imperative mood (*"add"*, *"implement"*, *"refactor"*), lowercase start, no trailing period, maximum 72 characters.
 
@@ -38,8 +39,8 @@ Always strictly adhere to [`docs/general-rules/git-commit rules/git-commit-rules
    - Use double quotes (`"..."`) for all commit messages.
    - Use forward slashes (`/`) for all git file paths.
 
-5. **No Unsolicited Execution:**
-   - Do **NOT** run the commit commands automatically unless explicitly requested by the user. Always draft the commands for developer review.
+5. **No Execution Authority:**
+   - Draft the commands for evaluation and execution by `git-commit-evaluator`. Do not execute the commits yourself.
 
 ## Output Format
 
