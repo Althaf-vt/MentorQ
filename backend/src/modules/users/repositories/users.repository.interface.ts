@@ -24,5 +24,5 @@ export interface IUsersRepository {
     skip: number,
     limit: number,
   ): Promise<{ users: UserModel[]; total: number }>;
-  getMentorsDirectory(): Promise<any[]>;
+  findMentors(): Promise<UserModel[]>;
 }

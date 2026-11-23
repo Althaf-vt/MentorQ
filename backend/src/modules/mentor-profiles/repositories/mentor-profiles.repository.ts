@@ -47,6 +47,22 @@ export class MentorProfilesRepository implements IMentorProfilesRepository {
     return doc ? MentorProfileSchemaMapper.toDomain(doc) : null;
   }
 
+  async findByUserIds(userIds: string[]): Promise<MentorProfileModel[]> {
+    const objectIds = userIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    const filter: Record<string, unknown> = {
+      $or: [
+        { user_id: { $in: objectIds } },
+        { user_id: { $in: userIds } },
+      ],
+    };
+
+    const docs = await this.mentorProfileModel.find(filter).exec();
+    return MentorProfileSchemaMapper.toDomainList(docs as unknown as MentorProfileDocument[]);
+  }
+
   async upsertProfile(
     userId: string,
     updateData: UpdateMentorProfileInput,

@@ -13,6 +13,8 @@ import {
 import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
 import { AvatarStorageService } from './avatar-storage.service.js';
+import { MentorProfilesService } from '../../mentor-profiles/services/mentor-profiles.service.js';
+import { MentorProfileModel } from '../../mentor-profiles/types/mentor-profile.type.js';
 import {
   USER_ROLES,
   USER_STATUS,
@@ -26,6 +28,7 @@ export class UsersService {
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
     private readonly avatarStorageService: AvatarStorageService,
+    private readonly mentorProfilesService: MentorProfilesService,
   ) {}
 
   async createUser(data: CreateUserInput): Promise<UserModel> {
@@ -117,7 +120,18 @@ export class UsersService {
   }
 
   async getMentorsDirectory(): Promise<any[]> {
-    return this.usersRepository.getMentorsDirectory();
+    const mentors = await this.usersRepository.findMentors();
+    const mentorIds = mentors.map((m) => m.id);
+    const profiles = await this.mentorProfilesService.findByUserIds(mentorIds);
+    const profileMap = new Map<string, MentorProfileModel>();
+    for (const p of profiles) {
+      profileMap.set(p.userId, p);
+    }
+
+    return mentors.map((mentor) => ({
+      ...mentor,
+      mentorProfile: profileMap.get(mentor.id) || null,
+    }));
   }
 
   async listUsers(page: number = 1, limit: number = 10, role?: string) {

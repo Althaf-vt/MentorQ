@@ -39,6 +39,10 @@ export class MentorProfilesService {
     return profile;
   }
 
+  async findByUserIds(userIds: string[]): Promise<MentorProfileModel[]> {
+    return this.mentorProfilesRepository.findByUserIds(userIds);
+  }
+
   async updateProfile(userId: string, updateDto: UpdateMentorConfigDto): Promise<MentorProfileModel | null> {
     const updateInput: UpdateMentorProfileInput = {};
 

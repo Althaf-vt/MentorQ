@@ -9,6 +9,7 @@ export const MENTOR_PROFILES_REPOSITORY = Symbol('MENTOR_PROFILES_REPOSITORY');
 export interface IMentorProfilesRepository {
   create(profile: CreateMentorProfileInput): Promise<MentorProfileModel>;
   findByUserId(userId: string): Promise<MentorProfileModel | null>;
+  findByUserIds(userIds: string[]): Promise<MentorProfileModel[]>;
   upsertProfile(
     userId: string,
     updateData: UpdateMentorProfileInput,

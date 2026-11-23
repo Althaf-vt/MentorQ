@@ -130,34 +130,8 @@ export class UsersRepository implements IUsersRepository {
     return { users: UserSchemaMapper.toDomainList(users), total };
   }
 
-  async getMentorsDirectory(): Promise<any[]> {
-    return this.userModel
-      .aggregate([
-        { $match: { role: 'MENTOR' } },
-        { $project: { password_hash: 0 } },
-        {
-          $lookup: {
-            from: 'mentorprofiles',
-            let: { uId: { $toString: '$_id' } },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $or: [
-                      { $eq: ['$user_id', '$$uId'] },
-                      { $eq: ['$user_id', '$_id'] },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: 'mentorProfile',
-          },
-        },
-        {
-          $unwind: { path: '$mentorProfile', preserveNullAndEmptyArrays: true },
-        },
-      ])
-      .exec();
+  async findMentors(): Promise<UserModel[]> {
+    const docs = await this.userModel.find({ role: 'MENTOR' }).exec();
+    return UserSchemaMapper.toDomainList(docs);
   }
 }
