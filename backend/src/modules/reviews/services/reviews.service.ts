@@ -1,6 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ReviewsRepository } from '../repositories/reviews.repository.js';
+import {
+  REVIEWS_REPOSITORY,
+  type IReviewsRepository,
+} from '../repositories/reviews.repository.interface.js';
 import { SessionsService } from '../../sessions/services/sessions.service.js';
 import { ReviewDocument } from '../schemas/review.schema.js';
 import {
@@ -11,7 +14,8 @@ import {
 @Injectable()
 export class ReviewsService {
   constructor(
-    private readonly reviewsRepository: ReviewsRepository,
+    @Inject(REVIEWS_REPOSITORY)
+    private readonly reviewsRepository: IReviewsRepository,
     private readonly sessionsService: SessionsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
