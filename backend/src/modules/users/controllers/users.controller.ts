@@ -4,20 +4,21 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, unlinkSync } from 'fs';
+import { extname } from 'path';
 import { UsersService } from '../services/users.service.js';
+import { AvatarStorageService, AVATAR_DESTINATION } from '../services/avatar-storage.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
 import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
-const AVATAR_DEST = join(process.cwd(), 'uploads', 'avatars');
-
 @Controller('api/v1/users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly avatarStorageService: AvatarStorageService,
+  ) {}
 
   @Get('me')
   async getMe(@Req() req: AuthenticatedRequest) {
@@ -33,14 +34,12 @@ export class UsersController {
 
   @Post('favorites/:mentorId')
   async addFavorite(@Req() req: AuthenticatedRequest, @Param('mentorId') mentorId: string) {
-    // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.addFavorite(req.user.id, mentorId);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Delete('favorites/:mentorId')
   async removeFavorite(@Req() req: AuthenticatedRequest, @Param('mentorId') mentorId: string) {
-    // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.removeFavorite(req.user.id, mentorId);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
@@ -63,7 +62,7 @@ export class UsersController {
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: diskStorage({
-        destination: AVATAR_DEST,
+        destination: AVATAR_DESTINATION,
         filename: (_req, file, cb) => {
           const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
@@ -84,16 +83,10 @@ export class UsersController {
       throw new BadRequestException('No file uploaded');
     }
 
-    // Delete old avatar file if one exists
     const currentUser = await this.usersService.findById(req.user.id);
-    if (currentUser.avatarUrl) {
-      const oldPath = join(process.cwd(), currentUser.avatarUrl.replace(/^\//, ''));
-      if (existsSync(oldPath)) {
-        unlinkSync(oldPath);
-      }
-    }
+    this.avatarStorageService.deleteAvatarFile(currentUser.avatarUrl);
 
-    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    const avatarUrl = this.avatarStorageService.buildAvatarUrl(file.filename);
     const user = await this.usersService.updateAvatar(req.user.id, avatarUrl);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
@@ -102,13 +95,7 @@ export class UsersController {
   @Delete('me/avatar')
   async deleteAvatar(@Req() req: AuthenticatedRequest) {
     const currentUser = await this.usersService.findById(req.user.id);
-
-    if (currentUser.avatarUrl) {
-      const filePath = join(process.cwd(), currentUser.avatarUrl.replace(/^\//, ''));
-      if (existsSync(filePath)) {
-        unlinkSync(filePath);
-      }
-    }
+    this.avatarStorageService.deleteAvatarFile(currentUser.avatarUrl);
 
     const user = await this.usersService.updateAvatar(req.user.id, null);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
