@@ -14,25 +14,35 @@ export interface UserModel {
   avatarUrl?: string;
   socialLinks?: SocialLinks;
   isOnline: boolean;
-  favoriteMentors: string[];
+  favoriteMentors: (string | UserModel)[];
   createdAt?: Date;
   updatedAt?: Date;
 
   // Compatibility aliases for consumers transitioning across phases
-  _id?: any;
+  _id: string;
   full_name?: string;
   password_hash: string;
   is_verified?: boolean;
   avatar_url?: string;
-  favorite_mentors?: any[];
+  favorite_mentors?: (string | UserModel)[];
 }
 
 export interface UserSummaryDto {
   id: string;
-  full_name: string;
+  fullName: string;
+  avatarUrl?: string;
+  role: string;
+  isOnline: boolean;
+}
+
+export interface UserResponseDto {
+  id: string;
+  fullName: string;
   email: string;
   role: string;
   status: string;
-  is_verified: boolean;
-  created_at: Date;
+  isVerified: boolean;
+  avatarUrl?: string;
+  socialLinks?: SocialLinks;
+  isOnline: boolean;
 }
