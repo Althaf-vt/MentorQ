@@ -2,8 +2,11 @@ import { Injectable, Inject, UnauthorizedException, ConflictException, Forbidden
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../../users/services/users.service.js';
+import { UserModel } from '../../users/types/user.type.js';
 import { OTP_REPOSITORY, type IOtpRepository } from '../repositories/otp.repository.interface.js';
 import { MailService } from './mail.service.js';
+import { AuthDtoMapper } from '../mappers/auth.dto-mapper.js';
+import { AuthTokenResponseDto } from '../types/auth.type.js';
 
 @Injectable()
 export class AuthService {
@@ -78,11 +81,11 @@ export class AuthService {
 
   async verifyOtp(email: string, code: string, expectedRole?: string) {
     const otp = await this.otpRepository.findValidOtp(email, code);
-    if (!otp || otp.expires_at < new Date()) {
+    if (!otp || (otp.expiresAt || otp.expires_at) < new Date()) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
 
-    await this.otpRepository.markAsVerified(otp._id.toString());
+    await this.otpRepository.markAsVerified(otp.id || otp._id);
 
     const user = await this.usersService.findByEmail(email);
     let tokenData = {};
@@ -97,7 +100,7 @@ export class AuthService {
         }
       }
 
-      const updatedUser = await this.usersService.verifyUser(user._id.toString());
+      const updatedUser = await this.usersService.verifyUser(user.id || user._id);
       tokenData = this.generateToken(updatedUser);
     }
 
@@ -107,17 +110,10 @@ export class AuthService {
     };
   }
 
-  private generateToken(user: any) {
-    const payload = { sub: user._id, email: user.email, role: user.role };
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user._id,
-        fullName: user.full_name,
-        email: user.email,
-        role: user.role,
-      },
-    };
+  private generateToken(user: UserModel): AuthTokenResponseDto {
+    const id = user.id || user._id;
+    const payload = { sub: id, email: user.email, role: user.role };
+    return AuthDtoMapper.toTokenResponse(this.jwtService.sign(payload), user);
   }
 
   async validateGoogleUser(profile: any, expectedRole?: string) {
@@ -143,7 +139,7 @@ export class AuthService {
         is_verified: true,
       });
     } else if (!user.is_verified) {
-      user = await this.usersService.verifyUser(user._id.toString());
+      user = await this.usersService.verifyUser(user.id || user._id);
     }
     return this.generateToken(user);
   }
