@@ -9,22 +9,9 @@ import { existsSync, unlinkSync } from 'fs';
 import { UsersService } from '../services/users.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
+import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 
 const AVATAR_DEST = join(process.cwd(), 'uploads', 'avatars');
-
-/** Shared helper to serialise the user document for the API response. */
-function serialiseUser(user: any) {
-  return {
-    id: user._id,
-    fullName: user.full_name,
-    email: user.email,
-    role: user.role,
-    avatarUrl: user.avatar_url,
-    socialLinks: user.social_links,
-    favoriteMentors: user.favorite_mentors || [],
-    isOnline: user.is_online || false,
-  };
-}
 
 @Controller('api/v1/users')
 @UseGuards(JwtAuthGuard)
@@ -34,35 +21,35 @@ export class UsersController {
   @Get('me')
   async getMe(@Req() req: any) {
     const user = await this.usersService.findById(req.user.id);
-    return { status: 'success', data: serialiseUser(user) };
+    return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Patch('me')
   async updateMe(@Req() req: any, @Body() updateData: UpdateUserDto) {
     const user = await this.usersService.updateProfile(req.user.id, updateData);
-    return { status: 'success', data: serialiseUser(user) };
+    return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Post('favorites/:mentorId')
   async addFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
     // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.addFavorite(req.user.id, mentorId);
-    return { status: 'success', data: serialiseUser(user) };
+    return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Delete('favorites/:mentorId')
   async removeFavorite(@Req() req: any, @Param('mentorId') mentorId: string) {
     // req.user.id is the authenticated STUDENT — mentorId is from the URL param
     const user = await this.usersService.removeFavorite(req.user.id, mentorId);
-    return { status: 'success', data: serialiseUser(user) };
+    return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Get('me/favorites')
   async getMyFavorites(@Req() req: any) {
     const user = await this.usersService.findByIdWithFavorites(req.user.id);
     // favorite_mentors is now populated with full User documents
-    const populatedFavorites = (user.favorite_mentors || []).map((m: any) =>
-      m && m._id ? serialiseUser(m) : m,
+    const populatedFavorites = (user.favoriteMentors || []).map((m: any) =>
+      m && (m.id || m._id) ? UserDtoMapper.toResponseDto(m) : m,
     );
     return { status: 'success', data: populatedFavorites };
   }
@@ -70,9 +57,8 @@ export class UsersController {
   @Get('mentors/directory')
   async getMentorsDirectory() {
     const directory = await this.usersService.getMentorsDirectory();
-    // Map raw aggregate documents through serialiseUser to format keys (e.g. full_name -> fullName)
     const mapped = directory.map(d => ({
-      ...serialiseUser(d),
+      ...UserDtoMapper.toResponseDto(d),
       mentorProfile: d.mentorProfile
     }));
     return { status: 'success', data: mapped };
@@ -106,8 +92,8 @@ export class UsersController {
 
     // Delete old avatar file if one exists
     const currentUser = await this.usersService.findById(req.user.id);
-    if (currentUser.avatar_url) {
-      const oldPath = join(process.cwd(), currentUser.avatar_url.replace(/^\//, ''));
+    if (currentUser.avatarUrl) {
+      const oldPath = join(process.cwd(), currentUser.avatarUrl.replace(/^\//, ''));
       if (existsSync(oldPath)) {
         unlinkSync(oldPath);
       }
@@ -115,7 +101,7 @@ export class UsersController {
 
     const avatarUrl = `/uploads/avatars/${file.filename}`;
     const user = await this.usersService.updateAvatar(req.user.id, avatarUrl);
-    return { status: 'success', data: serialiseUser(user) };
+    return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   // ---- Avatar Delete -------------------------------------------------------
@@ -123,15 +109,15 @@ export class UsersController {
   async deleteAvatar(@Req() req: any) {
     const currentUser = await this.usersService.findById(req.user.id);
 
-    if (currentUser.avatar_url) {
-      const filePath = join(process.cwd(), currentUser.avatar_url.replace(/^\//, ''));
+    if (currentUser.avatarUrl) {
+      const filePath = join(process.cwd(), currentUser.avatarUrl.replace(/^\//, ''));
       if (existsSync(filePath)) {
         unlinkSync(filePath);
       }
     }
 
     const user = await this.usersService.updateAvatar(req.user.id, null);
-    return { status: 'success', data: serialiseUser(user) };
+    return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 }
 
