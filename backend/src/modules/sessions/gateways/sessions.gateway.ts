@@ -115,7 +115,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
       // Unset last_empty_at since someone joined
       try {
         await this.sessionsRepository.update(sessionId, { $unset: { last_empty_at: 1 } });
-      } catch (err) {}
+      } catch {}
     }
     return { event: 'joined', data: sessionId };
   }
@@ -132,7 +132,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
         if (sockets.length === 0) {
           await this.sessionsRepository.update(sessionId, { last_empty_at: new Date() });
         }
-      } catch (err) {}
+      } catch {}
     }
     return { event: 'left', data: sessionId };
   }
