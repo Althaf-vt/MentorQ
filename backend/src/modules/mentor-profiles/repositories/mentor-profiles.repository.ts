@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { MentorProfile, MentorProfileDocument } from '../schemas/mentor-profile.schema.js';
+import { IMentorProfilesRepository } from './mentor-profiles.repository.interface.js';
 
 @Injectable()
-export class MentorProfilesRepository {
+export class MentorProfilesRepository implements IMentorProfilesRepository {
   constructor(
     @InjectModel(MentorProfile.name) private readonly mentorProfileModel: Model<MentorProfileDocument>,
   ) {}
