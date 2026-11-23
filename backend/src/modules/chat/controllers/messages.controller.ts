@@ -2,7 +2,12 @@ import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/
 import { MessagesService } from '../services/messages.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { SendMessageDto } from '../dto/send-message.dto.js';
-import type { AuthenticatedRequest } from '../types/chat-request.type.js';
+import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
+import { MessageDtoMapper } from '../mappers/message.dto-mapper.js';
+import {
+  MessageResponseDto,
+  MessageActionResponseDto,
+} from '../dto/message-response.dto.js';
 
 @Controller('api/v1/chat')
 @UseGuards(JwtAuthGuard)
@@ -14,25 +19,27 @@ export class MessagesController {
     @Param('sessionId') sessionId: string,
     @Request() req: AuthenticatedRequest,
     @Body() sendMessageDto: SendMessageDto,
-  ) {
-    return this.messagesService.sendMessage(
+  ): Promise<MessageResponseDto> {
+    const message = await this.messagesService.sendMessage(
       sessionId,
       req.user.id,
       sendMessageDto.message_text,
     );
+    return MessageDtoMapper.toResponseDto(message);
   }
 
   @Get('session/:sessionId')
-  async getSessionMessages(@Param('sessionId') sessionId: string) {
-    return this.messagesService.getSessionMessages(sessionId);
+  async getSessionMessages(@Param('sessionId') sessionId: string): Promise<MessageResponseDto[]> {
+    const messages = await this.messagesService.getSessionMessages(sessionId);
+    return MessageDtoMapper.toResponseDtoList(messages);
   }
 
   @Post('session/:sessionId/read')
   async markAsRead(
     @Param('sessionId') sessionId: string,
     @Request() req: AuthenticatedRequest,
-  ) {
+  ): Promise<MessageActionResponseDto> {
     await this.messagesService.markAsRead(sessionId, req.user.id);
-    return { success: true };
+    return MessageDtoMapper.toActionResponse(true);
   }
 }
