@@ -1,4 +1,5 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import {
   USERS_REPOSITORY,
   type IUsersRepository,
@@ -21,7 +22,7 @@ export class UsersService {
   async verifyUser(id: string): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { is_verified: true });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     return user;
   }
@@ -29,7 +30,7 @@ export class UsersService {
   async findById(id: string): Promise<UserModel> {
     const user = await this.usersRepository.findById(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     return user;
   }
@@ -41,7 +42,7 @@ export class UsersService {
   async updateProfile(id: string, updateData: any): Promise<UserModel> {
     const user = await this.usersRepository.update(id, updateData);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     return user;
   }
@@ -49,7 +50,7 @@ export class UsersService {
   async updateAvatar(id: string, avatarUrl: string | null): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { avatar_url: avatarUrl });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     return user;
   }
@@ -60,20 +61,24 @@ export class UsersService {
 
   async addFavorite(userId: string, mentorId: string): Promise<UserModel> {
     const user = await this.usersRepository.addFavoriteMentor(userId, mentorId);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+    }
     return user;
   }
 
   async removeFavorite(userId: string, mentorId: string): Promise<UserModel> {
     const user = await this.usersRepository.removeFavoriteMentor(userId, mentorId);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
+    }
     return user;
   }
 
   async findByIdWithFavorites(id: string): Promise<UserModel> {
     const user = await this.usersRepository.findByIdPopulated(id, 'favorite_mentors');
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
     return user;
   }
@@ -101,7 +106,7 @@ export class UsersService {
   async updateUserStatus(id: string, status: string) {
     const user = await this.usersRepository.update(id, { status });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, 'User not found');
     }
 
     return {
