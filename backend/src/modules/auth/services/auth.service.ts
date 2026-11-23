@@ -6,7 +6,9 @@ import { UserModel } from '../../users/types/user.type.js';
 import { OTP_REPOSITORY, type IOtpRepository } from '../repositories/otp.repository.interface.js';
 import { MailService } from './mail.service.js';
 import { AuthDtoMapper } from '../mappers/auth.dto-mapper.js';
-import { AuthTokenResponseDto } from '../types/auth.type.js';
+import { AuthTokenResponseDto, JwtUserPayload } from '../types/auth.type.js';
+import { RegisterDto } from '../dto/register.dto.js';
+import { LoginDto } from '../dto/login.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +19,7 @@ export class AuthService {
     @Inject(OTP_REPOSITORY) private readonly otpRepository: IOtpRepository,
   ) {}
 
-  async register(userData: any) {
+  async register(userData: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(userData.email);
     if (existingUser) {
       throw new ConflictException('Email already registered');
@@ -40,7 +42,7 @@ export class AuthService {
     };
   }
 
-  async login(credentials: any) {
+  async login(credentials: LoginDto): Promise<AuthTokenResponseDto> {
     const user = await this.usersService.findByEmail(credentials.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -144,7 +146,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async refreshToken(jwtUser: { id: string; email: string; role: string }) {
+  async refreshToken(jwtUser: JwtUserPayload) {
     const user = await this.usersService.findById(jwtUser.id);
     if (!user) {
       throw new UnauthorizedException('User no longer exists');
