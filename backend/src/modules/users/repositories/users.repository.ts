@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, UpdateQuery } from 'mongoose';
+import { Model, Types, UpdateQuery } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema.js';
+import { IUsersRepository } from './users.repository.interface.js';
 
 @Injectable()
-export class UsersRepository {
+export class UsersRepository implements IUsersRepository {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
@@ -22,12 +23,34 @@ export class UsersRepository {
     return this.userModel.findById(id).exec();
   }
 
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
   async findByIdPopulated(id: string, populateField: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).populate(populateField).exec();
   }
 
   async update(id: string, update: UpdateQuery<UserDocument>): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
+  }
+
+  async addFavoriteMentor(userId: string, mentorId: string): Promise<UserDocument | null> {
+    const objectId = new Types.ObjectId(mentorId);
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { $addToSet: { favorite_mentors: objectId } },
+      { returnDocument: 'after' },
+    ).exec();
+  }
+
+  async removeFavoriteMentor(userId: string, mentorId: string): Promise<UserDocument | null> {
+    const objectId = new Types.ObjectId(mentorId);
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { $pull: { favorite_mentors: objectId } },
+      { returnDocument: 'after' },
+    ).exec();
   }
 
   async countDocuments(query: any): Promise<number> {
