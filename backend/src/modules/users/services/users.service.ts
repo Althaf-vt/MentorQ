@@ -1,11 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { UsersRepository } from '../repositories/users.repository.js';
-import { UserDocument } from '../schemas/user.schema.js';
+import { User, UserDocument } from '../schemas/user.schema.js';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
+
+  async createUser(data: Partial<User>): Promise<UserDocument> {
+    return this.usersRepository.create(data);
+  }
+
+  async verifyUser(id: string): Promise<UserDocument> {
+    const user = await this.usersRepository.update(id, { is_verified: true });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
 
   async findById(id: string): Promise<UserDocument> {
     const user = await this.usersRepository.findById(id);
