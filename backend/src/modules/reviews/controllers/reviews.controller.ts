@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ReviewsService } from '../services/reviews.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
+import { CreateReviewDto } from '../dto/create-review.dto.js';
 
 @Controller('api/v1/reviews')
 export class ReviewsController {
@@ -9,12 +10,15 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async createReview(
-    @Body('sessionId') sessionId: string,
-    @Body('rating') rating: number,
-    @Body('feedbackText') feedbackText: string,
+    @Body() createReviewDto: CreateReviewDto,
     @Request() req: any,
   ) {
-    return this.reviewsService.createReview(sessionId, req.user.id, rating, feedbackText);
+    return this.reviewsService.createReview(
+      createReviewDto.sessionId,
+      req.user.id,
+      createReviewDto.rating,
+      createReviewDto.feedbackText,
+    );
   }
 
   @Get('mentor/:mentorId')
