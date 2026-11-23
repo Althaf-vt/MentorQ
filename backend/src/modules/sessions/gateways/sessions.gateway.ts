@@ -10,8 +10,6 @@ import {
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../../auth/services/auth.service.js';
 import { SessionsService } from '../services/sessions.service.js';
-import { NotificationsService } from '../../notifications/services/notifications.service.js';
-import { NotificationType } from '../../notifications/schemas/notification.schema.js';
 import { UsersService } from '../../users/services/users.service.js';
 
 @WebSocketGateway({
@@ -26,7 +24,6 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   constructor(
     private readonly authService: AuthService,
     private readonly sessionsService: SessionsService,
-    private readonly notificationsService: NotificationsService,
     private readonly usersService: UsersService,
   ) {}
 
@@ -197,51 +194,17 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     // Also notify queue and session listeners
     this.emitQueueUpdate({ type: 'TICKET_ACTIVE', ticketId: payload.ticketId });
     this.emitSessionUpdate(payload.sessionId, { type: 'SESSION_STARTED', ...eventData });
-
-    // Save Notifications to DB
-    this.notificationsService.createNotification(
-      payload.mentorId,
-      'MENTOR',
-      'Focus Mode Started',
-      'Your focus mode session has started.',
-      NotificationType.SESSION
-    ).catch(console.error);
-
-    this.notificationsService.createNotification(
-      payload.studentId,
-      'STUDENT',
-      'Focus Mode Started',
-      'Your focus mode session has started.',
-      NotificationType.SESSION
-    ).catch(console.error);
   }
 
   emitStudentRequestedMentorship(ticketId: string) {
     if (!this.server) return;
     this.server.emit('student_requested_mentorship', { ticketId });
-
-    // Broadcast notification (recipientId null)
-    this.notificationsService.createNotification(
-      null as any,
-      'MENTOR',
-      'New Mentorship Request',
-      'A new mentorship request is available.',
-      NotificationType.TICKET
-    ).catch(console.error);
   }
 
   emitMentorClaimedTicket(studentId: string, ticketId: string) {
     if (!this.server) return;
     this.server.to(`student_${studentId}`).emit('mentor_claimed_ticket', { ticketId });
     this.server.to(`user_${studentId}`).emit('mentor_claimed_ticket', { ticketId });
-
-    this.notificationsService.createNotification(
-      studentId,
-      'STUDENT',
-      'Ticket Claimed',
-      'A mentor has claimed your ticket.',
-      NotificationType.TICKET
-    ).catch(console.error);
   }
 
   emitTicketResolvedWithGuidance(ticketId: string, studentId: string, mentorId: string) {
@@ -253,14 +216,6 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.to(`user_${studentId}`).emit('ticket_resolved_guidance', data);
 
     this.emitQueueUpdate({ type: 'TICKET_COMPLETED', ticketId });
-
-    this.notificationsService.createNotification(
-      studentId,
-      'STUDENT',
-      'Ticket Resolved',
-      'Your mentor has resolved your request with guidance.',
-      NotificationType.TICKET
-    ).catch(console.error);
   }
 
   // Method to emit updates to a specific session room

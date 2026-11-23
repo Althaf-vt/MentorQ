@@ -12,7 +12,6 @@ import { ChatEventsListener } from './events/chat-events.listener.js';
 import { SessionEventsListener } from './events/session-events.listener.js';
 import { TicketsModule } from '../tickets/tickets.module.js';
 import { AuthModule } from '../auth/auth.module.js';
-import { NotificationsModule } from '../notifications/notifications.module.js';
 import { UsersModule } from '../users/users.module.js';
 
 @Module({
@@ -20,7 +19,6 @@ import { UsersModule } from '../users/users.module.js';
     MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
     TicketsModule,
     AuthModule,
-    NotificationsModule,
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
