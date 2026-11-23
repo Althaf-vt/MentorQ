@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { MentorProfilesRepository } from '../repositories/mentor-profiles.repository.js';
+import { Injectable, Inject } from '@nestjs/common';
+import {
+  MENTOR_PROFILES_REPOSITORY,
+  type IMentorProfilesRepository,
+} from '../repositories/mentor-profiles.repository.interface.js';
 import { MentorProfileDocument } from '../schemas/mentor-profile.schema.js';
 
 @Injectable()
 export class MentorProfilesService {
-  constructor(private readonly mentorProfilesRepository: MentorProfilesRepository) {}
+  constructor(
+    @Inject(MENTOR_PROFILES_REPOSITORY)
+    private readonly mentorProfilesRepository: IMentorProfilesRepository,
+  ) {}
 
   async findByUserId(userId: string): Promise<MentorProfileDocument | any> {
     const profile = await this.mentorProfilesRepository.findByUserId(userId);
