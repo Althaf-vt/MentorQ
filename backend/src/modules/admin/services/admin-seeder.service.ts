@@ -1,7 +1,7 @@
 import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { AdminRole, AdminStatus } from '../schemas/admin.schema.js';
+import { AdminRole, AdminStatus } from '../types/admin.type.js';
 import { ADMIN_REPOSITORY, type IAdminRepository } from '../repositories/admin.repository.interface.js';
 
 @Injectable()
@@ -29,11 +29,11 @@ export class AdminSeederService implements OnModuleInit {
     const existingAdmin = await this.adminRepository.findByEmail(adminEmail);
 
     if (!existingAdmin) {
-      const password_hash = await bcrypt.hash(adminPassword, 10);
+      const passwordHash = await bcrypt.hash(adminPassword, 10);
 
       await this.adminRepository.createAdmin({
         email: adminEmail,
-        password_hash,
+        passwordHash,
         role: AdminRole.ADMIN,
         status: AdminStatus.ACTIVE,
       });

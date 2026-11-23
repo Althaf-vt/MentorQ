@@ -1,9 +1,10 @@
 import { Injectable, Inject, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { AdminStatus } from '../schemas/admin.schema.js';
 import { MailService } from '../../auth/services/mail.service.js';
 import { ADMIN_REPOSITORY, type IAdminRepository } from '../repositories/admin.repository.interface.js';
+import { AdminDtoMapper } from '../mappers/admin.dto-mapper.js';
+import { AdminStatus, AdminTokenResponseDto } from '../types/admin.type.js';
 import { 
   AdminLoginDto, 
   AdminForgotPasswordDto, 
@@ -19,7 +20,7 @@ export class AdminAuthService {
     private readonly mailService: MailService,
   ) {}
 
-  async login(credentials: AdminLoginDto) {
+  async login(credentials: AdminLoginDto): Promise<AdminTokenResponseDto> {
     const admin = await this.adminRepository.findByEmail(credentials.email);
     if (!admin) {
       throw new UnauthorizedException('Invalid credentials');
@@ -29,21 +30,13 @@ export class AdminAuthService {
       throw new UnauthorizedException('Admin account is suspended');
     }
 
-    const isPasswordValid = await bcrypt.compare(credentials.password, admin.password_hash);
+    const isPasswordValid = await bcrypt.compare(credentials.password, admin.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: admin._id, email: admin.email, role: admin.role };
-    return {
-      access_token: this.jwtService.sign(payload),
-      admin: {
-        id: admin._id,
-        email: admin.email,
-        role: admin.role,
-        status: admin.status,
-      },
-    };
+    const payload = { sub: admin.id, email: admin.email, role: admin.role };
+    return AdminDtoMapper.toTokenResponse(this.jwtService.sign(payload), admin);
   }
 
   async forgotPassword(data: AdminForgotPasswordDto) {
@@ -56,7 +49,7 @@ export class AdminAuthService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
 
-    await this.adminRepository.setOtp(admin._id.toString(), otp, otpExpiresAt);
+    await this.adminRepository.setOtp(admin.id, otp, otpExpiresAt);
     await this.mailService.sendOtp(admin.email, otp);
 
     return { message: 'If an account exists with this email, an OTP has been sent.' };
@@ -78,12 +71,12 @@ export class AdminAuthService {
 
     // Generate a temporary reset token (e.g., valid for 15 mins)
     const resetToken = this.jwtService.sign(
-      { sub: admin._id, intent: 'reset_password' },
+      { sub: admin.id, intent: 'reset_password' },
       { expiresIn: '15m' },
     );
 
     // Clear OTP after successful verification
-    await this.adminRepository.clearOtp(admin._id.toString());
+    await this.adminRepository.clearOtp(admin.id);
 
     return { 
       message: 'OTP verified successfully',
@@ -109,7 +102,7 @@ export class AdminAuthService {
     }
 
     const password_hash = await bcrypt.hash(data.newPassword, 10);
-    await this.adminRepository.updatePassword(admin._id.toString(), password_hash);
+    await this.adminRepository.updatePassword(admin.id, password_hash);
 
     return { message: 'Password reset successfully' };
   }
