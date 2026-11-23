@@ -1,25 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { PlatformSettings, PlatformSettingsDocument } from '../schemas/settings.schema.js';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { PlatformSettingsDocument } from '../schemas/settings.schema.js';
 import { UpdateSettingsDto } from '../dto/settings.dto.js';
+import {
+  PLATFORM_SETTINGS_REPOSITORY,
+  type IPlatformSettingsRepository,
+} from '../repositories/platform-settings.repository.interface.js';
 
 @Injectable()
 export class SettingsService {
   constructor(
-    @InjectModel(PlatformSettings.name) private readonly settingsModel: Model<PlatformSettingsDocument>,
+    @Inject(PLATFORM_SETTINGS_REPOSITORY)
+    private readonly settingsRepository: IPlatformSettingsRepository,
   ) {}
 
-  async getSettings() {
-    const settings = await this.settingsModel.findOne();
+  async getSettings(): Promise<PlatformSettingsDocument> {
+    const settings = await this.settingsRepository.findSettings();
     if (!settings) {
       throw new NotFoundException('Platform settings not found');
     }
     return settings;
   }
 
-  async updateSettings(updateDto: UpdateSettingsDto) {
-    const settings = await this.settingsModel.findOneAndUpdate({}, updateDto, { new: true });
+  async updateSettings(updateDto: UpdateSettingsDto): Promise<PlatformSettingsDocument> {
+    const settings = await this.settingsRepository.updateSettings(updateDto);
     if (!settings) {
       throw new NotFoundException('Platform settings not found');
     }
