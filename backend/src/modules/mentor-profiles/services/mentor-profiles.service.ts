@@ -3,7 +3,7 @@ import {
   MENTOR_PROFILES_REPOSITORY,
   type IMentorProfilesRepository,
 } from '../repositories/mentor-profiles.repository.interface.js';
-import { MentorProfileDocument } from '../schemas/mentor-profile.schema.js';
+import { MentorProfileModel } from '../types/mentor-profile.type.js';
 
 @Injectable()
 export class MentorProfilesService {
@@ -12,17 +12,18 @@ export class MentorProfilesService {
     private readonly mentorProfilesRepository: IMentorProfilesRepository,
   ) {}
 
-  async findByUserId(userId: string): Promise<MentorProfileDocument | any> {
+  async findByUserId(userId: string): Promise<MentorProfileModel> {
     const profile = await this.mentorProfilesRepository.findByUserId(userId);
     if (!profile) {
       return {
-        user_id: userId,
-        expertise_tags: [],
-        daily_available_minutes: 90,
-        remaining_minutes_today: 90,
-        is_online: true,
-        rating_avg: 0,
-        operating_hours: {
+        id: '',
+        userId,
+        expertiseTags: [],
+        dailyAvailableMinutes: 90,
+        remainingMinutesToday: 90,
+        isOnline: true,
+        ratingAvg: 0,
+        operatingHours: {
           start: '09:00 AM',
           end: '06:00 PM',
           timezone: 'Asia/Kolkata',
@@ -32,7 +33,7 @@ export class MentorProfilesService {
     return profile;
   }
 
-  async updateProfile(userId: string, updateData: any): Promise<MentorProfileDocument | any> {
+  async updateProfile(userId: string, updateData: any): Promise<MentorProfileModel | null> {
     const updatePayload: any = {};
     
     if (updateData.isOnline !== undefined) {
@@ -59,11 +60,10 @@ export class MentorProfilesService {
       operatingHours: ""
     };
 
-    const profile = await this.mentorProfilesRepository.update(userId, updatePayload);
-    return profile;
+    return this.mentorProfilesRepository.update(userId, updatePayload);
   }
 
-  async getOnlineMentors(): Promise<MentorProfileDocument[]> {
+  async getOnlineMentors(): Promise<MentorProfileModel[]> {
     return this.mentorProfilesRepository.findAllOnline();
   }
 
