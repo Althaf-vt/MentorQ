@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Ticket, TicketDocument } from '../schemas/ticket.schema.js';
+import { ITicketsRepository } from './tickets.repository.interface.js';
 
 @Injectable()
-export class TicketsRepository {
+export class TicketsRepository implements ITicketsRepository {
   constructor(
     @InjectModel(Ticket.name) private readonly ticketModel: Model<TicketDocument>,
   ) {}
@@ -14,24 +15,40 @@ export class TicketsRepository {
     return newTicket.save();
   }
 
-  async findOne(query: any): Promise<TicketDocument | null> {
-    return this.ticketModel.findOne(query).exec();
-  }
-
   async findById(id: string): Promise<TicketDocument | null> {
     return this.ticketModel.findById(id).exec();
   }
 
-  async find(query: any, sort: any = { createdAt: 1 }): Promise<TicketDocument[]> {
-    return this.ticketModel.find(query).sort(sort).exec();
+  async findPendingPool(): Promise<TicketDocument[]> {
+    return this.ticketModel
+      .find({
+        status: 'PENDING',
+        $or: [{ mentor_id: null }, { mentor_id: { $exists: false } }],
+      })
+      .sort({ createdAt: 1 })
+      .exec();
+  }
+
+  async findByStudentId(studentId: string): Promise<TicketDocument[]> {
+    return this.ticketModel
+      .find({ student_id: studentId as any })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async findByMentorId(mentorId: string): Promise<TicketDocument[]> {
+    return this.ticketModel
+      .find({ mentor_id: mentorId as any })
+      .sort({ createdAt: 1 })
+      .exec();
   }
 
   async update(id: string, update: any): Promise<TicketDocument | null> {
     return this.ticketModel.findByIdAndUpdate(id, update, { returnDocument: 'after' }).exec();
   }
 
-  async count(query: any = {}): Promise<number> {
-    return this.ticketModel.countDocuments(query).exec();
+  async countPending(): Promise<number> {
+    return this.ticketModel.countDocuments({ status: 'PENDING' }).exec();
   }
 
   async getQueuePosition(ticketId: string): Promise<number> {
