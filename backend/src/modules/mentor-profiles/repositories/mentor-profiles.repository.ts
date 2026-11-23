@@ -12,9 +12,14 @@ export class MentorProfilesRepository implements IMentorProfilesRepository {
     @InjectModel(MentorProfile.name) private readonly mentorProfileModel: Model<MentorProfileDocument>,
   ) {}
 
-  private buildUserFilter(userId: string) {
+  private buildUserFilter(userId: string): Record<string, unknown> {
     if (Types.ObjectId.isValid(userId)) {
-      return { $or: [{ user_id: userId }, { user_id: new Types.ObjectId(userId) }] };
+      return {
+        $or: [
+          { user_id: new Types.ObjectId(userId) },
+          { user_id: userId },
+        ],
+      };
     }
     return { user_id: userId };
   }
@@ -54,7 +59,7 @@ export class MentorProfilesRepository implements IMentorProfilesRepository {
 
     // 3. If no existing document, perform a safe upsert matching user_id
     const upserted = await this.mentorProfileModel.findOneAndUpdate(
-      { user_id: new Types.ObjectId(userId) },
+      { user_id: new Types.ObjectId(userId) } as any,
       {
         ...updateQuery,
         $setOnInsert: {
@@ -73,7 +78,7 @@ export class MentorProfilesRepository implements IMentorProfilesRepository {
       },
       { upsert: true, returnDocument: 'after' },
     ).exec();
-    return upserted ? MentorProfileSchemaMapper.toDomain(upserted) : null;
+    return upserted ? MentorProfileSchemaMapper.toDomain(upserted as MentorProfileDocument) : null;
   }
 
   async findAllOnline(): Promise<MentorProfileModel[]> {

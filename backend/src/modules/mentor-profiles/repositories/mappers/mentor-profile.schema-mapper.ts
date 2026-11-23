@@ -4,7 +4,7 @@ import { MentorProfileModel } from '../../types/mentor-profile.type.js';
 export class MentorProfileSchemaMapper {
   static toDomain(doc: MentorProfileDocument): MentorProfileModel {
     const rawUserId = doc.user_id;
-    const userId = rawUserId?._id?.toString?.() || rawUserId?.toString?.() || String(rawUserId);
+    const userId = rawUserId?.toString() ?? String(rawUserId);
 
     return {
       id: doc._id.toString(),
@@ -19,8 +19,8 @@ export class MentorProfileSchemaMapper {
         end: '06:00 PM',
         timezone: 'Asia/Kolkata',
       },
-      createdAt: (doc as any).created_at,
-      updatedAt: (doc as any).updated_at,
+      createdAt: doc.created_at,
+      updatedAt: doc.updated_at,
     };
   }
 
