@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { SessionsRepository } from '../repositories/sessions.repository.js';
 import { TicketsService } from '../../tickets/services/tickets.service.js';
 import { SessionDocument } from '../schemas/session.schema.js';
+import { SessionSummary } from '../types/session-summary.type.js';
 import { SessionsGateway } from '../gateways/sessions.gateway.js';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -108,6 +109,20 @@ export class SessionsService {
 
   async getActiveSessionByStudent(studentId: string): Promise<SessionDocument | null> {
     return this.sessionsRepository.findActiveByStudent(studentId);
+  }
+
+  async getSessionById(sessionId: string): Promise<SessionSummary | null> {
+    const session = await this.sessionsRepository.findById(sessionId);
+    if (!session) return null;
+    return {
+      id: session._id.toString(),
+      ticketId: session.ticket_id.toString(),
+      mentorId: session.mentor_id.toString(),
+      studentId: session.student_id.toString(),
+      sessionStatus: session.session_status,
+      startedAt: session.started_at,
+      allocatedMinutes: session.allocated_minutes,
+    };
   }
 
   async getSessionByTicketId(ticketId: string): Promise<SessionDocument | null> {
