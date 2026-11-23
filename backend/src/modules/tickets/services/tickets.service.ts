@@ -124,5 +124,9 @@ export class TicketsService {
   async getQueuePosition(ticketId: string): Promise<number> {
     return this.ticketsRepository.getQueuePosition(ticketId);
   }
+
+  async getPendingTicketCount(): Promise<number> {
+    return this.ticketsRepository.count({ status: 'PENDING' });
+  }
 }
 
