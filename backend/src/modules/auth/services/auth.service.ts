@@ -7,6 +7,7 @@ import { UserModel } from '../../users/types/user.type.js';
 import { OTP_REPOSITORY, type IOtpRepository } from '../repositories/otp.repository.interface.js';
 import { MailService } from './mail.service.js';
 import { AuthDtoMapper } from '../mappers/auth.dto-mapper.js';
+import { RoleVerificationPolicy } from '../policies/role-verification.policy.js';
 import { AuthTokenResponseDto, JwtUserPayload } from '../types/auth.type.js';
 import { RegisterDto } from '../dto/register.dto.js';
 import { LoginDto } from '../dto/login.dto.js';
@@ -55,15 +56,7 @@ export class AuthService {
       throw new AppException(ErrorCode.INVALID_CREDENTIALS, AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    if (credentials.expectedRole && credentials.expectedRole !== user.role) {
-      if (credentials.expectedRole === USER_ROLES.MENTOR) {
-        throw new AppException(ErrorCode.FORBIDDEN, AUTH_ERROR_MESSAGES.MENTOR_NOT_ACCESSED);
-      } else if (credentials.expectedRole === USER_ROLES.STUDENT) {
-        throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NOT_FOUND);
-      } else {
-        throw new AppException(ErrorCode.UNAUTHORIZED, AUTH_ERROR_MESSAGES.INVALID_ROLE);
-      }
-    }
+    RoleVerificationPolicy.assertRoleMatches(user.role, credentials.expectedRole);
 
     const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash);
     if (!isPasswordValid) {
@@ -99,15 +92,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     let tokenData = {};
     if (user) {
-      if (expectedRole && user.role !== expectedRole) {
-        if (expectedRole === USER_ROLES.MENTOR) {
-          throw new AppException(ErrorCode.FORBIDDEN, AUTH_ERROR_MESSAGES.MENTOR_NOT_ACCESSED);
-        } else if (expectedRole === USER_ROLES.STUDENT) {
-          throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NOT_FOUND);
-        } else {
-          throw new AppException(ErrorCode.UNAUTHORIZED, AUTH_ERROR_MESSAGES.INVALID_ROLE);
-        }
-      }
+      RoleVerificationPolicy.assertRoleMatches(user.role, expectedRole);
 
       const updatedUser = await this.usersService.verifyUser(user.id || user._id);
       tokenData = this.generateToken(updatedUser);
@@ -128,14 +113,8 @@ export class AuthService {
   async validateGoogleUser(profile: any, expectedRole?: string) {
     let user = await this.usersService.findByEmail(profile.emails[0].value);
 
-    if (user && expectedRole && user.role !== expectedRole) {
-      if (expectedRole === USER_ROLES.MENTOR) {
-        throw new AppException(ErrorCode.FORBIDDEN, AUTH_ERROR_MESSAGES.MENTOR_NOT_ACCESSED);
-      } else if (expectedRole === USER_ROLES.STUDENT) {
-        throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NOT_FOUND);
-      } else {
-        throw new AppException(ErrorCode.UNAUTHORIZED, AUTH_ERROR_MESSAGES.INVALID_ROLE);
-      }
+    if (user) {
+      RoleVerificationPolicy.assertRoleMatches(user.role, expectedRole);
     }
 
     if (!user) {
