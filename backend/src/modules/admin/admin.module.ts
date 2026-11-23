@@ -10,6 +10,8 @@ import { AdminAuthService } from './services/admin-auth.service.js';
 import { AdminAuthController } from './controllers/admin-auth.controller.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { PlatformSettings, PlatformSettingsSchema } from './schemas/settings.schema.js';
+import { PlatformSettingsRepository } from './repositories/platform-settings.repository.js';
+import { PLATFORM_SETTINGS_REPOSITORY } from './repositories/platform-settings.repository.interface.js';
 import { SettingsSeederService } from './services/settings-seeder.service.js';
 import { SettingsService } from './services/settings.service.js';
 import { SettingsController } from './controllers/settings.controller.js';
@@ -44,6 +46,10 @@ import { MetricsController } from './controllers/metrics.controller.js';
     {
       provide: ADMIN_REPOSITORY,
       useClass: AdminRepository,
+    },
+    {
+      provide: PLATFORM_SETTINGS_REPOSITORY,
+      useClass: PlatformSettingsRepository,
     },
     AdminSeederService, 
     AdminAuthService, 
