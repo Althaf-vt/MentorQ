@@ -1,96 +1,118 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { TicketsRepository } from '../repositories/tickets.repository.js';
-import { Ticket, TicketDocument } from '../schemas/ticket.schema.js';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
+import {
+  TICKETS_REPOSITORY,
+  type ITicketsRepository,
+} from '../repositories/tickets.repository.interface.js';
+import { Ticket } from '../schemas/ticket.schema.js';
+import { TicketModel } from '../types/ticket.type.js';
 import {
   TICKET_EVENTS,
   TicketRequestedEvent,
   TicketClaimedEvent,
   TicketResolvedEvent,
 } from '../events/ticket.events.js';
+import {
+  TICKET_STATUS,
+  TICKET_FEEDBACK,
+  TICKET_ERROR_MESSAGES,
+} from '../constants/tickets.constants.js';
 
 @Injectable()
 export class TicketsService {
   constructor(
-    private readonly ticketsRepository: TicketsRepository,
+    @Inject(TICKETS_REPOSITORY)
+    private readonly ticketsRepository: ITicketsRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createTicket(studentId: string, data: Partial<Ticket>): Promise<TicketDocument> {
+  async createTicket(studentId: string, data: Partial<Ticket>): Promise<TicketModel> {
     const ticket = await this.ticketsRepository.create({
       ...data,
       student_id: studentId as any,
-      status: 'PENDING',
-      status_history: [{ status: 'PENDING', timestamp: new Date() }],
+      status: TICKET_STATUS.PENDING,
+      status_history: [{ status: TICKET_STATUS.PENDING, timestamp: new Date() }],
     });
     this.eventEmitter.emit(
       TICKET_EVENTS.REQUESTED,
-      new TicketRequestedEvent(ticket._id.toString()),
+      new TicketRequestedEvent(ticket.id),
     );
     return ticket;
   }
 
-  async getTicketById(id: string): Promise<TicketDocument> {
+  async getTicketById(id: string): Promise<TicketModel> {
     const ticket = await this.ticketsRepository.findById(id);
-    if (!ticket) throw new NotFoundException('Ticket not found');
+    if (!ticket) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND);
+    }
     return ticket;
   }
 
-  async getPendingPool(): Promise<TicketDocument[]> {
-    return await this.ticketsRepository.find({
-      status: 'PENDING',
-      $or: [{ mentor_id: null }, { mentor_id: { $exists: false } }],
-    });
+  async getPendingPool(): Promise<TicketModel[]> {
+    return this.ticketsRepository.findPendingPool();
   }
 
-  async claimTicket(id: string, mentorId: string): Promise<TicketDocument> {
+  async claimTicket(id: string, mentorId: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(id);
-    if (ticket.status !== 'PENDING') {
-      throw new BadRequestException('Ticket is not in PENDING status');
+    if (ticket.status !== TICKET_STATUS.PENDING) {
+      throw new AppException(ErrorCode.TICKET_NOT_PENDING, TICKET_ERROR_MESSAGES.NOT_PENDING);
     }
-    if (ticket.mentor_id) {
-      throw new BadRequestException('Ticket is already claimed');
+    if (ticket.mentorId) {
+      throw new AppException(ErrorCode.TICKET_ALREADY_CLAIMED, TICKET_ERROR_MESSAGES.ALREADY_CLAIMED);
     }
 
-    const statusHistory = ticket.status_history || [];
-    statusHistory.push({ status: 'APPROVED', timestamp: new Date(), feedback_note: 'Ticket claimed by mentor' });
+    const statusHistory = ticket.statusHistory || [];
+    statusHistory.push({
+      status: TICKET_STATUS.APPROVED,
+      timestamp: new Date(),
+      feedback_note: TICKET_FEEDBACK.CLAIMED_BY_MENTOR,
+    });
 
     const updated = await this.ticketsRepository.update(id, {
       mentor_id: mentorId,
-      status: 'APPROVED',
+      status: TICKET_STATUS.APPROVED,
       status_history: statusHistory,
     });
-    if (!updated) throw new NotFoundException('Ticket not found during claim');
+    if (!updated) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND_DURING_CLAIM);
+    }
     this.eventEmitter.emit(
       TICKET_EVENTS.CLAIMED,
-      new TicketClaimedEvent(ticket._id.toString(), ticket.student_id.toString()),
+      new TicketClaimedEvent(ticket.id, ticket.studentId),
     );
     return updated;
   }
 
-  async resolveWithGuidance(ticketId: string, mentorId: string, message: string): Promise<TicketDocument> {
+  async resolveWithGuidance(ticketId: string, mentorId: string, message: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(ticketId);
-    if (ticket.status !== 'APPROVED' && ticket.status !== 'ACTIVE') {
-      throw new BadRequestException('Ticket must be APPROVED or ACTIVE to resolve');
+    if (ticket.status !== TICKET_STATUS.APPROVED && ticket.status !== TICKET_STATUS.ACTIVE) {
+      throw new AppException(ErrorCode.BAD_REQUEST, TICKET_ERROR_MESSAGES.MUST_BE_APPROVED_OR_ACTIVE);
     }
-    if (ticket.mentor_id?.toString() !== mentorId) {
-      throw new BadRequestException('You are not the mentor for this ticket');
+    if (ticket.mentorId !== mentorId) {
+      throw new AppException(ErrorCode.FORBIDDEN, TICKET_ERROR_MESSAGES.NOT_MENTOR_FOR_TICKET);
     }
 
-    const statusHistory = ticket.status_history || [];
-    statusHistory.push({ status: 'COMPLETED', timestamp: new Date(), feedback_note: 'Resolved with guidance' });
+    const statusHistory = ticket.statusHistory || [];
+    statusHistory.push({
+      status: TICKET_STATUS.COMPLETED,
+      timestamp: new Date(),
+      feedback_note: TICKET_FEEDBACK.RESOLVED_WITH_GUIDANCE,
+    });
 
     const updated = await this.ticketsRepository.update(ticketId, {
-      status: 'COMPLETED',
+      status: TICKET_STATUS.COMPLETED,
       guidance_message: message,
       status_history: statusHistory,
     });
     
-    if (!updated) throw new NotFoundException('Ticket not found during resolution');
+    if (!updated) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND_DURING_RESOLUTION);
+    }
     
     this.eventEmitter.emit(
       TICKET_EVENTS.RESOLVED,
-      new TicketResolvedEvent(ticketId, ticket.student_id.toString(), mentorId),
+      new TicketResolvedEvent(ticketId, ticket.studentId, mentorId),
     );
     
     return updated;
@@ -100,25 +122,27 @@ export class TicketsService {
     id: string,
     status: string,
     feedbackNote?: string,
-  ): Promise<TicketDocument> {
+  ): Promise<TicketModel> {
     const ticket = await this.getTicketById(id);
-    const statusHistory = ticket.status_history || [];
+    const statusHistory = ticket.statusHistory || [];
     statusHistory.push({ status, timestamp: new Date(), feedback_note: feedbackNote });
 
     const updated = await this.ticketsRepository.update(id, {
       status,
       status_history: statusHistory,
     });
-    if (!updated) throw new NotFoundException('Ticket not found during update');
+    if (!updated) {
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND_DURING_UPDATE);
+    }
     return updated;
   }
 
-  async getStudentTickets(studentId: string): Promise<TicketDocument[]> {
-    return this.ticketsRepository.find({ student_id: studentId }, { createdAt: -1 });
+  async getStudentTickets(studentId: string): Promise<TicketModel[]> {
+    return this.ticketsRepository.findByStudentId(studentId);
   }
 
-  async getMentorTickets(mentorId: string): Promise<TicketDocument[]> {
-    return this.ticketsRepository.find({ mentor_id: mentorId });
+  async getMentorTickets(mentorId: string): Promise<TicketModel[]> {
+    return this.ticketsRepository.findByMentorId(mentorId);
   }
 
   async getQueuePosition(ticketId: string): Promise<number> {
@@ -126,7 +150,7 @@ export class TicketsService {
   }
 
   async getPendingTicketCount(): Promise<number> {
-    return this.ticketsRepository.count({ status: 'PENDING' });
+    return this.ticketsRepository.countPending();
   }
 }
 

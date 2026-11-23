@@ -1,14 +1,16 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { PlatformSettings, PlatformSettingsDocument } from '../schemas/settings.schema.js';
+import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  PLATFORM_SETTINGS_REPOSITORY,
+  type IPlatformSettingsRepository,
+} from '../repositories/platform-settings.repository.interface.js';
 
 @Injectable()
 export class SettingsSeederService implements OnModuleInit {
   private readonly logger = new Logger(SettingsSeederService.name);
 
   constructor(
-    @InjectModel(PlatformSettings.name) private readonly settingsModel: Model<PlatformSettingsDocument>,
+    @Inject(PLATFORM_SETTINGS_REPOSITORY)
+    private readonly settingsRepository: IPlatformSettingsRepository,
   ) {}
 
   async onModuleInit() {
@@ -16,11 +18,10 @@ export class SettingsSeederService implements OnModuleInit {
   }
 
   private async seedSettings() {
-    const existingSettings = await this.settingsModel.findOne();
+    const existingSettings = await this.settingsRepository.findSettings();
 
     if (!existingSettings) {
-      const defaultSettings = new this.settingsModel({});
-      await defaultSettings.save();
+      await this.settingsRepository.createDefaultSettings();
       this.logger.log('Platform settings seeded with default values.');
     } else {
       this.logger.log('Platform settings already exist. Seeding skipped.');

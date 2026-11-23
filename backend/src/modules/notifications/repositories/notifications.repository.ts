@@ -2,20 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification, NotificationDocument } from '../schemas/notification.schema.js';
+import { INotificationsRepository } from './notifications.repository.interface.js';
+import { NotificationModel } from '../types/notification.type.js';
+import { NotificationSchemaMapper } from './mappers/notification.schema-mapper.js';
 
 @Injectable()
-export class NotificationsRepository {
+export class NotificationsRepository implements INotificationsRepository {
   constructor(
     @InjectModel(Notification.name) private readonly notificationModel: Model<NotificationDocument>,
   ) {}
 
-  async create(notification: Partial<Notification>): Promise<NotificationDocument> {
+  async create(notification: Partial<Notification>): Promise<NotificationModel> {
     const newNotification = new this.notificationModel(notification);
-    return newNotification.save();
+    const saved = await newNotification.save();
+    return NotificationSchemaMapper.toDomain(saved);
   }
 
-  async findByUser(userId: string, role: string): Promise<NotificationDocument[]> {
-    return this.notificationModel
+  async findByUser(userId: string, role: string): Promise<NotificationModel[]> {
+    const docs = await this.notificationModel
       .find({
         $or: [
           { recipientId: userId as any, role },
@@ -25,10 +29,11 @@ export class NotificationsRepository {
       })
       .sort({ createdAt: -1 })
       .exec();
+    return NotificationSchemaMapper.toDomainList(docs);
   }
 
-  async markAsRead(notificationId: string, userId: string): Promise<NotificationDocument | null> {
-    return this.notificationModel.findOneAndUpdate(
+  async markAsRead(notificationId: string, userId: string): Promise<NotificationModel | null> {
+    const updated = await this.notificationModel.findOneAndUpdate(
       {
         _id: notificationId,
         $or: [
@@ -40,10 +45,11 @@ export class NotificationsRepository {
       { isRead: true },
       { returnDocument: 'after' },
     );
+    return updated ? NotificationSchemaMapper.toDomain(updated) : null;
   }
 
-  async markAllAsRead(userId: string, role: string): Promise<any> {
-    return this.notificationModel.updateMany(
+  async markAllAsRead(userId: string, role: string): Promise<number> {
+    const res = await this.notificationModel.updateMany(
       {
         role,
         isRead: false,
@@ -55,5 +61,6 @@ export class NotificationsRepository {
       },
       { isRead: true },
     );
+    return res.modifiedCount;
   }
 }

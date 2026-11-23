@@ -1,11 +1,21 @@
-import { Injectable, UnauthorizedException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import { UsersService } from '../../users/services/users.service.js';
-import { Otp, OtpDocument } from '../schemas/otp.schema.js';
+import { UserModel } from '../../users/types/user.type.js';
+import { OTP_REPOSITORY, type IOtpRepository } from '../repositories/otp.repository.interface.js';
 import { MailService } from './mail.service.js';
+import { AuthDtoMapper } from '../mappers/auth.dto-mapper.js';
+import { AuthTokenResponseDto, JwtUserPayload } from '../types/auth.type.js';
+import { RegisterDto } from '../dto/register.dto.js';
+import { LoginDto } from '../dto/login.dto.js';
+import { USER_ROLES } from '../../users/constants/users.constants.js';
+import {
+  AUTH_CONFIG,
+  AUTH_MESSAGES,
+  AUTH_ERROR_MESSAGES,
+} from '../constants/auth.constants.js';
 
 @Injectable()
 export class AuthService {
@@ -13,56 +23,56 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-    @InjectModel(Otp.name) private readonly otpModel: Model<OtpDocument>,
+    @Inject(OTP_REPOSITORY) private readonly otpRepository: IOtpRepository,
   ) {}
 
-  async register(userData: any) {
+  async register(userData: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(userData.email);
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, AUTH_ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
     }
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const hashedPassword = await bcrypt.hash(userData.password, AUTH_CONFIG.BCRYPT_SALT_ROUNDS);
     const user = await this.usersService.createUser({
       full_name: userData.fullName,
       email: userData.email,
       password_hash: hashedPassword,
-      role: userData.role || 'STUDENT',
+      role: userData.role || USER_ROLES.STUDENT,
       is_verified: false,
     });
 
     await this.sendOtp(user.email);
 
     return {
-      message: 'Registration successful. OTP sent to email.',
+      message: AUTH_MESSAGES.REGISTRATION_SUCCESS,
       email: user.email,
     };
   }
 
-  async login(credentials: any) {
+  async login(credentials: LoginDto): Promise<AuthTokenResponseDto> {
     const user = await this.usersService.findByEmail(credentials.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     if (credentials.expectedRole && credentials.expectedRole !== user.role) {
-      if (credentials.expectedRole === 'MENTOR') {
-        throw new ForbiddenException('Mentor profile not accessed');
-      } else if (credentials.expectedRole === 'STUDENT') {
-        throw new NotFoundException('User not found');
+      if (credentials.expectedRole === USER_ROLES.MENTOR) {
+        throw new AppException(ErrorCode.FORBIDDEN, AUTH_ERROR_MESSAGES.MENTOR_NOT_ACCESSED);
+      } else if (credentials.expectedRole === USER_ROLES.STUDENT) {
+        throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NOT_FOUND);
       } else {
-        throw new UnauthorizedException('Invalid role specified');
+        throw new AppException(ErrorCode.UNAUTHORIZED, AUTH_ERROR_MESSAGES.INVALID_ROLE);
       }
     }
 
     const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS, AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     if (!user.is_verified) {
       await this.sendOtp(user.email);
-      throw new UnauthorizedException('Please verify your email before logging in. A new verification code has been sent.');
+      throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED, AUTH_ERROR_MESSAGES.EMAIL_NOT_VERIFIED);
     }
 
     return this.generateToken(user);
@@ -70,73 +80,61 @@ export class AuthService {
 
   async sendOtp(email: string) {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const expiresAt = new Date(Date.now() + AUTH_CONFIG.OTP_EXPIRY_MS);
 
-    await this.otpModel.findOneAndUpdate(
-      { email },
-      { otp_code: otpCode, expires_at: expiresAt, is_verified: false },
-      { upsert: true, returnDocument: 'after' },
-    );
+    await this.otpRepository.upsertOtp(email, otpCode, expiresAt);
 
     await this.mailService.sendOtp(email, otpCode);
-    return { message: 'OTP sent successfully' };
+    return { message: AUTH_MESSAGES.OTP_SENT };
   }
 
   async verifyOtp(email: string, code: string, expectedRole?: string) {
-    const otp = await this.otpModel.findOne({ email, otp_code: code });
-    if (!otp || otp.expires_at < new Date()) {
-      throw new UnauthorizedException('Invalid or expired OTP');
+    const otp = await this.otpRepository.findValidOtp(email, code);
+    if (!otp || (otp.expiresAt || otp.expires_at) < new Date()) {
+      throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, AUTH_ERROR_MESSAGES.INVALID_OR_EXPIRED_OTP);
     }
 
-    otp.is_verified = true;
-    await otp.save();
+    await this.otpRepository.markAsVerified(otp.id || otp._id);
 
     const user = await this.usersService.findByEmail(email);
     let tokenData = {};
     if (user) {
       if (expectedRole && user.role !== expectedRole) {
-        if (expectedRole === 'MENTOR') {
-          throw new ForbiddenException('Mentor profile not accessed');
-        } else if (expectedRole === 'STUDENT') {
-          throw new NotFoundException('User not found');
+        if (expectedRole === USER_ROLES.MENTOR) {
+          throw new AppException(ErrorCode.FORBIDDEN, AUTH_ERROR_MESSAGES.MENTOR_NOT_ACCESSED);
+        } else if (expectedRole === USER_ROLES.STUDENT) {
+          throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NOT_FOUND);
         } else {
-          throw new UnauthorizedException('Invalid role specified');
+          throw new AppException(ErrorCode.UNAUTHORIZED, AUTH_ERROR_MESSAGES.INVALID_ROLE);
         }
       }
 
-      const updatedUser = await this.usersService.verifyUser(user._id.toString());
+      const updatedUser = await this.usersService.verifyUser(user.id || user._id);
       tokenData = this.generateToken(updatedUser);
     }
 
     return {
-      message: 'OTP verified successfully',
+      message: AUTH_MESSAGES.OTP_VERIFIED,
       ...tokenData,
     };
   }
 
-  private generateToken(user: any) {
-    const payload = { sub: user._id, email: user.email, role: user.role };
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user._id,
-        fullName: user.full_name,
-        email: user.email,
-        role: user.role,
-      },
-    };
+  private generateToken(user: UserModel): AuthTokenResponseDto {
+    const id = user.id || user._id;
+    const payload = { sub: id, email: user.email, role: user.role };
+    return AuthDtoMapper.toTokenResponse(this.jwtService.sign(payload), user);
   }
 
   async validateGoogleUser(profile: any, expectedRole?: string) {
     let user = await this.usersService.findByEmail(profile.emails[0].value);
 
     if (user && expectedRole && user.role !== expectedRole) {
-      if (expectedRole === 'MENTOR') {
-        throw new ForbiddenException('Mentor profile not accessed');
-      } else if (expectedRole === 'STUDENT') {
-        throw new NotFoundException('User not found');
+      if (expectedRole === USER_ROLES.MENTOR) {
+        throw new AppException(ErrorCode.FORBIDDEN, AUTH_ERROR_MESSAGES.MENTOR_NOT_ACCESSED);
+      } else if (expectedRole === USER_ROLES.STUDENT) {
+        throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NOT_FOUND);
       } else {
-        throw new UnauthorizedException('Invalid role specified');
+        throw new AppException(ErrorCode.UNAUTHORIZED, AUTH_ERROR_MESSAGES.INVALID_ROLE);
       }
     }
 
@@ -144,21 +142,21 @@ export class AuthService {
       user = await this.usersService.createUser({
         full_name: profile.displayName,
         email: profile.emails[0].value,
-        password_hash: 'OAUTH_USER', // Placeholder
+        password_hash: AUTH_CONFIG.OAUTH_PASSWORD_PLACEHOLDER,
         avatar_url: profile.photos[0]?.value,
-        role: expectedRole || 'STUDENT',
+        role: expectedRole || USER_ROLES.STUDENT,
         is_verified: true,
       });
     } else if (!user.is_verified) {
-      user = await this.usersService.verifyUser(user._id.toString());
+      user = await this.usersService.verifyUser(user.id || user._id);
     }
     return this.generateToken(user);
   }
 
-  async refreshToken(jwtUser: { id: string; email: string; role: string }) {
+  async refreshToken(jwtUser: JwtUserPayload) {
     const user = await this.usersService.findById(jwtUser.id);
     if (!user) {
-      throw new UnauthorizedException('User no longer exists');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NO_LONGER_EXISTS);
     }
     return this.generateToken(user);
   }
@@ -167,7 +165,7 @@ export class AuthService {
     try {
       const payload = this.jwtService.verify(token);
       return this.usersService.findById(payload.sub);
-    } catch (err) {
+    } catch {
       return null;
     }
   }

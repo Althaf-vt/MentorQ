@@ -1,48 +1,62 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Types } from 'mongoose';
-import { UsersRepository } from '../repositories/users.repository.js';
-import { User, UserDocument } from '../schemas/user.schema.js';
+import { Injectable, Inject } from '@nestjs/common';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
+import {
+  USERS_REPOSITORY,
+  type IUsersRepository,
+} from '../repositories/users.repository.interface.js';
+import { User } from '../schemas/user.schema.js';
+import { UserModel } from '../types/user.type.js';
+import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
+import {
+  USER_ROLES,
+  USER_STATUS,
+  USER_ERROR_MESSAGES,
+  USER_POPULATE_FIELDS,
+} from '../constants/users.constants.js';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    @Inject(USERS_REPOSITORY)
+    private readonly usersRepository: IUsersRepository,
+  ) {}
 
-  async createUser(data: Partial<User>): Promise<UserDocument> {
+  async createUser(data: Partial<User>): Promise<UserModel> {
     return this.usersRepository.create(data);
   }
 
-  async verifyUser(id: string): Promise<UserDocument> {
+  async verifyUser(id: string): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { is_verified: true });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
 
-  async findById(id: string): Promise<UserDocument> {
+  async findById(id: string): Promise<UserModel> {
     const user = await this.usersRepository.findById(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
 
-  async findByEmail(email: string): Promise<UserDocument | null> {
-    return this.usersRepository.findOne({ email });
+  async findByEmail(email: string): Promise<UserModel | null> {
+    return this.usersRepository.findByEmail(email);
   }
 
-  async updateProfile(id: string, updateData: any): Promise<UserDocument> {
+  async updateProfile(id: string, updateData: any): Promise<UserModel> {
     const user = await this.usersRepository.update(id, updateData);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
 
-  async updateAvatar(id: string, avatarUrl: string | null): Promise<UserDocument> {
+  async updateAvatar(id: string, avatarUrl: string | null): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { avatar_url: avatarUrl });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -51,28 +65,26 @@ export class UsersService {
     await this.usersRepository.update(id, { is_online: isOnline });
   }
 
-  async addFavorite(userId: string, mentorId: string): Promise<UserDocument> {
-    const objectId = new Types.ObjectId(mentorId);
-    const user = await this.usersRepository.update(userId, {
-      $addToSet: { favorite_mentors: objectId },
-    } as any);
-    if (!user) throw new NotFoundException('User not found');
-    return user;
-  }
-
-  async removeFavorite(userId: string, mentorId: string): Promise<UserDocument> {
-    const objectId = new Types.ObjectId(mentorId);
-    const user = await this.usersRepository.update(userId, {
-      $pull: { favorite_mentors: objectId },
-    } as any);
-    if (!user) throw new NotFoundException('User not found');
-    return user;
-  }
-
-  async findByIdWithFavorites(id: string): Promise<UserDocument> {
-    const user = await this.usersRepository.findByIdPopulated(id, 'favorite_mentors');
+  async addFavorite(userId: string, mentorId: string): Promise<UserModel> {
+    const user = await this.usersRepository.addFavoriteMentor(userId, mentorId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
+    }
+    return user;
+  }
+
+  async removeFavorite(userId: string, mentorId: string): Promise<UserModel> {
+    const user = await this.usersRepository.removeFavoriteMentor(userId, mentorId);
+    if (!user) {
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
+    }
+    return user;
+  }
+
+  async findByIdWithFavorites(id: string): Promise<UserModel> {
+    const user = await this.usersRepository.findByIdPopulated(id, USER_POPULATE_FIELDS.FAVORITE_MENTORS);
+    if (!user) {
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
     return user;
   }
@@ -87,15 +99,7 @@ export class UsersService {
     const { users, total } = await this.usersRepository.findPaginated(query, skip, limit);
 
     return {
-      data: users.map(user => ({
-        id: user._id,
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        is_verified: user.is_verified,
-        created_at: (user as any).created_at || user.get('created_at'),
-      })),
+      data: UserDtoMapper.toSummaryDtoList(users),
       meta: {
         total,
         page,
@@ -108,12 +112,12 @@ export class UsersService {
   async updateUserStatus(id: string, status: string) {
     const user = await this.usersRepository.update(id, { status });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new AppException(ErrorCode.USER_NOT_FOUND, USER_ERROR_MESSAGES.NOT_FOUND);
     }
 
     return {
-      id: user._id,
-      full_name: user.full_name,
+      id: user.id,
+      full_name: user.fullName,
       email: user.email,
       role: user.role,
       status: user.status,
@@ -126,10 +130,10 @@ export class UsersService {
   }> {
     const [totalStudents, suspendedStudents, totalMentors, suspendedMentors] =
       await Promise.all([
-        this.usersRepository.countDocuments({ role: 'STUDENT' }),
-        this.usersRepository.countDocuments({ role: 'STUDENT', status: 'SUSPENDED' }),
-        this.usersRepository.countDocuments({ role: 'MENTOR' }),
-        this.usersRepository.countDocuments({ role: 'MENTOR', status: 'SUSPENDED' }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.STUDENT }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.STUDENT, status: USER_STATUS.SUSPENDED }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.MENTOR }),
+        this.usersRepository.countDocuments({ role: USER_ROLES.MENTOR, status: USER_STATUS.SUSPENDED }),
       ]);
 
     return {

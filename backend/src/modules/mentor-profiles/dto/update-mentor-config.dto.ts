@@ -15,7 +15,7 @@ export class IsBeforeEndTimeConstraint implements ValidatorConstraintInterface {
     return false;
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Start time must be before end time.';
   }
 }
@@ -45,7 +45,7 @@ export class IsWithinOperatingHoursConstraint implements ValidatorConstraintInte
     return dailyAvailability <= totalMinutes;
   }
 
-  defaultMessage(args: ValidationArguments) {
+  defaultMessage(_args: ValidationArguments) {
     return 'Daily availability cannot exceed total operating hours window.';
   }
 }

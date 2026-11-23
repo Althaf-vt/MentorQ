@@ -17,7 +17,7 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @Length(2, 50, { message: 'Full name must be between 2 and 50 characters.' })
-  @Matches(/^[a-zA-Z\s'\-]+$/, { message: 'Full name can only contain letters, spaces, hyphens, and apostrophes.' })
+  @Matches(/^[a-zA-Z\s'-]+$/, { message: 'Full name can only contain letters, spaces, hyphens, and apostrophes.' })
   fullName?: string;
 
   @IsOptional()

@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { Notification, NotificationSchema } from './schemas/notification.schema.js';
 import { NotificationsRepository } from './repositories/notifications.repository.js';
+import { NOTIFICATIONS_REPOSITORY } from './repositories/notifications.repository.interface.js';
 import { NotificationsService } from './services/notifications.service.js';
 import { NotificationsController } from './controllers/notifications.controller.js';
 
@@ -12,7 +13,13 @@ import { NotificationsController } from './controllers/notifications.controller.
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsRepository, NotificationsService],
+  providers: [
+    {
+      provide: NOTIFICATIONS_REPOSITORY,
+      useClass: NotificationsRepository,
+    },
+    NotificationsService,
+  ],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

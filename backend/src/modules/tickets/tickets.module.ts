@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { Ticket, TicketSchema } from './schemas/ticket.schema.js';
 import { TicketsRepository } from './repositories/tickets.repository.js';
+import { TICKETS_REPOSITORY } from './repositories/tickets.repository.interface.js';
 import { TicketsService } from './services/tickets.service.js';
 import { TicketsController } from './controllers/tickets.controller.js';
 
@@ -12,7 +13,13 @@ import { TicketsController } from './controllers/tickets.controller.js';
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [TicketsController],
-  providers: [TicketsRepository, TicketsService],
+  providers: [
+    {
+      provide: TICKETS_REPOSITORY,
+      useClass: TicketsRepository,
+    },
+    TicketsService,
+  ],
   exports: [TicketsService],
 })
 export class TicketsModule {}

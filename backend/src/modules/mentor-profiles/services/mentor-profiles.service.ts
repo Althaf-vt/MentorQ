@@ -1,32 +1,40 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { MentorProfilesRepository } from '../repositories/mentor-profiles.repository.js';
-import { MentorProfileDocument } from '../schemas/mentor-profile.schema.js';
+import { Injectable, Inject } from '@nestjs/common';
+import {
+  MENTOR_PROFILES_REPOSITORY,
+  type IMentorProfilesRepository,
+} from '../repositories/mentor-profiles.repository.interface.js';
+import { MentorProfileModel } from '../types/mentor-profile.type.js';
+import { MENTOR_PROFILE_DEFAULTS } from '../constants/mentor-profiles.constants.js';
 
 @Injectable()
 export class MentorProfilesService {
-  constructor(private readonly mentorProfilesRepository: MentorProfilesRepository) {}
+  constructor(
+    @Inject(MENTOR_PROFILES_REPOSITORY)
+    private readonly mentorProfilesRepository: IMentorProfilesRepository,
+  ) {}
 
-  async findByUserId(userId: string): Promise<MentorProfileDocument | any> {
+  async findByUserId(userId: string): Promise<MentorProfileModel> {
     const profile = await this.mentorProfilesRepository.findByUserId(userId);
     if (!profile) {
       return {
-        user_id: userId,
-        expertise_tags: [],
-        daily_available_minutes: 90,
-        remaining_minutes_today: 90,
-        is_online: true,
-        rating_avg: 0,
-        operating_hours: {
-          start: '09:00 AM',
-          end: '06:00 PM',
-          timezone: 'Asia/Kolkata',
+        id: '',
+        userId,
+        expertiseTags: [],
+        dailyAvailableMinutes: MENTOR_PROFILE_DEFAULTS.DAILY_AVAILABLE_MINUTES,
+        remainingMinutesToday: MENTOR_PROFILE_DEFAULTS.REMAINING_MINUTES_TODAY,
+        isOnline: MENTOR_PROFILE_DEFAULTS.IS_ONLINE,
+        ratingAvg: MENTOR_PROFILE_DEFAULTS.RATING_AVG,
+        operatingHours: {
+          start: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_START,
+          end: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_END,
+          timezone: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_TIMEZONE,
         },
       };
     }
     return profile;
   }
 
-  async updateProfile(userId: string, updateData: any): Promise<MentorProfileDocument | any> {
+  async updateProfile(userId: string, updateData: any): Promise<MentorProfileModel | null> {
     const updatePayload: any = {};
     
     if (updateData.isOnline !== undefined) {
@@ -53,11 +61,10 @@ export class MentorProfilesService {
       operatingHours: ""
     };
 
-    const profile = await this.mentorProfilesRepository.update(userId, updatePayload);
-    return profile;
+    return this.mentorProfilesRepository.update(userId, updatePayload);
   }
 
-  async getOnlineMentors(): Promise<MentorProfileDocument[]> {
+  async getOnlineMentors(): Promise<MentorProfileModel[]> {
     return this.mentorProfilesRepository.findAllOnline();
   }
 

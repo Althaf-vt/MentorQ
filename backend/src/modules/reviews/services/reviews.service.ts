@@ -1,17 +1,24 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ReviewsRepository } from '../repositories/reviews.repository.js';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
+import {
+  REVIEWS_REPOSITORY,
+  type IReviewsRepository,
+} from '../repositories/reviews.repository.interface.js';
 import { SessionsService } from '../../sessions/services/sessions.service.js';
-import { ReviewDocument } from '../schemas/review.schema.js';
+import { ReviewModel } from '../types/review.type.js';
 import {
   REVIEW_EVENTS,
   ReviewCreatedEvent,
 } from '../events/review.events.js';
+import { SESSION_STATUS } from '../../sessions/constants/sessions.constants.js';
+import { REVIEW_ERROR_MESSAGES } from '../constants/reviews.constants.js';
 
 @Injectable()
 export class ReviewsService {
   constructor(
-    private readonly reviewsRepository: ReviewsRepository,
+    @Inject(REVIEWS_REPOSITORY)
+    private readonly reviewsRepository: IReviewsRepository,
     private readonly sessionsService: SessionsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -21,23 +28,23 @@ export class ReviewsService {
     studentId: string,
     rating: number,
     feedbackText?: string,
-  ): Promise<ReviewDocument> {
+  ): Promise<ReviewModel> {
     const session = await this.sessionsService.getSessionById(sessionId);
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, REVIEW_ERROR_MESSAGES.SESSION_NOT_FOUND);
     }
 
     if (session.studentId !== studentId) {
-      throw new BadRequestException('Only the student of this session can submit a review');
+      throw new AppException(ErrorCode.ONLY_STUDENT_CAN_REVIEW, REVIEW_ERROR_MESSAGES.ONLY_STUDENT_CAN_REVIEW);
     }
 
-    if (session.sessionStatus !== 'COMPLETED') {
-      throw new BadRequestException('Reviews can only be submitted for completed sessions');
+    if (session.sessionStatus !== SESSION_STATUS.COMPLETED) {
+      throw new AppException(ErrorCode.SESSION_NOT_COMPLETED, REVIEW_ERROR_MESSAGES.SESSION_NOT_COMPLETED);
     }
 
     const existingReview = await this.reviewsRepository.findBySession(sessionId);
     if (existingReview) {
-      throw new ConflictException('A review has already been submitted for this session');
+      throw new AppException(ErrorCode.REVIEW_ALREADY_SUBMITTED, REVIEW_ERROR_MESSAGES.REVIEW_ALREADY_SUBMITTED);
     }
 
     const review = await this.reviewsRepository.create({
@@ -55,7 +62,7 @@ export class ReviewsService {
     this.eventEmitter.emit(
       REVIEW_EVENTS.CREATED,
       new ReviewCreatedEvent(
-        review._id.toString(),
+        review.id,
         mentorIdStr,
         rating,
         avgRating,
@@ -65,11 +72,11 @@ export class ReviewsService {
     return review;
   }
 
-  async getMentorReviews(mentorId: string): Promise<ReviewDocument[]> {
+  async getMentorReviews(mentorId: string): Promise<ReviewModel[]> {
     return this.reviewsRepository.findByMentor(mentorId);
   }
 
-  async getSessionReview(sessionId: string): Promise<ReviewDocument | null> {
+  async getSessionReview(sessionId: string): Promise<ReviewModel | null> {
     return this.reviewsRepository.findBySession(sessionId);
   }
 }

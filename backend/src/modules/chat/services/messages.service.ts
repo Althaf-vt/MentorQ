@@ -1,22 +1,29 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { MessagesRepository } from '../repositories/messages.repository.js';
+import { Injectable, Inject } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
+import {
+  MESSAGES_REPOSITORY,
+  type IMessagesRepository,
+} from '../repositories/messages.repository.interface.js';
 import { SessionsService } from '../../sessions/services/sessions.service.js';
-import { SessionsGateway } from '../../sessions/gateways/sessions.gateway.js';
-import { MessageDocument } from '../schemas/message.schema.js';
+import { CHAT_EVENTS, ChatMessageSentEvent } from '../events/chat.events.js';
+import { MessageModel } from '../types/message.type.js';
+import { CHAT_ERROR_MESSAGES } from '../constants/chat.constants.js';
 
 @Injectable()
 export class MessagesService {
   constructor(
-    private readonly messagesRepository: MessagesRepository,
+    @Inject(MESSAGES_REPOSITORY)
+    private readonly messagesRepository: IMessagesRepository,
     private readonly sessionsService: SessionsService,
-    private readonly sessionsGateway: SessionsGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async sendMessage(sessionId: string, senderId: string, text: string): Promise<MessageDocument> {
+  async sendMessage(sessionId: string, senderId: string, text: string): Promise<MessageModel> {
     const session = await this.sessionsService.getSessionById(sessionId);
 
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, CHAT_ERROR_MESSAGES.SESSION_NOT_FOUND);
     }
 
     const sMentorId = session.mentorId;
@@ -24,7 +31,10 @@ export class MessagesService {
     const senderIdStr = senderId?.toString();
 
     if (sMentorId !== senderIdStr && sStudentId !== senderIdStr) {
-      throw new ForbiddenException('Cannot send message: user is not a participant in this session');
+      throw new AppException(
+        ErrorCode.UNAUTHORIZED_SESSION_PARTICIPANT,
+        CHAT_ERROR_MESSAGES.UNAUTHORIZED_PARTICIPANT,
+      );
     }
 
     const message = await this.messagesRepository.create({
@@ -34,13 +44,16 @@ export class MessagesService {
       sent_at: new Date(),
     });
 
-    // Broadcast message to session room so participants receive it in real-time
-    this.sessionsGateway.emitNewMessage(sessionId, message);
+    // Broadcast message via domain event (decoupled from WebSocket gateway)
+    this.eventEmitter.emit(
+      CHAT_EVENTS.MESSAGE_SENT,
+      new ChatMessageSentEvent(sessionId, message),
+    );
 
     return message;
   }
 
-  async getSessionMessages(sessionId: string): Promise<MessageDocument[]> {
+  async getSessionMessages(sessionId: string): Promise<MessageModel[]> {
     return this.messagesRepository.findBySession(sessionId);
   }
 

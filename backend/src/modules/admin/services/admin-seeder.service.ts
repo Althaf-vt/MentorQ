@@ -1,16 +1,15 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { Admin, AdminDocument, AdminRole, AdminStatus } from '../schemas/admin.schema.js';
+import { AdminRole, AdminStatus } from '../types/admin.type.js';
+import { ADMIN_REPOSITORY, type IAdminRepository } from '../repositories/admin.repository.interface.js';
 
 @Injectable()
 export class AdminSeederService implements OnModuleInit {
   private readonly logger = new Logger(AdminSeederService.name);
 
   constructor(
-    @InjectModel(Admin.name) private readonly adminModel: Model<AdminDocument>,
+    @Inject(ADMIN_REPOSITORY) private readonly adminRepository: IAdminRepository,
     private readonly configService: ConfigService,
   ) {}
 
@@ -27,19 +26,18 @@ export class AdminSeederService implements OnModuleInit {
       return;
     }
 
-    const existingAdmin = await this.adminModel.findOne({ email: adminEmail });
+    const existingAdmin = await this.adminRepository.findByEmail(adminEmail);
 
     if (!existingAdmin) {
-      const password_hash = await bcrypt.hash(adminPassword, 10);
+      const passwordHash = await bcrypt.hash(adminPassword, 10);
 
-      const admin = new this.adminModel({
+      await this.adminRepository.createAdmin({
         email: adminEmail,
-        password_hash,
+        passwordHash,
         role: AdminRole.ADMIN,
         status: AdminStatus.ACTIVE,
       });
 
-      await admin.save();
       this.logger.log(`Admin created successfully for email: ${adminEmail}`);
     } else {
       this.logger.log('Admin already exists. Seeding skipped.');
