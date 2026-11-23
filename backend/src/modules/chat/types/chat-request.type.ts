@@ -1,9 +1,7 @@
-export interface AuthenticatedUserPayload {
-  id: string;
-  email?: string;
-  role?: string;
-}
+import type {
+  AuthenticatedRequest,
+  AuthenticatedUser,
+} from '../../../common/types/authenticated-request.type.js';
 
-export interface AuthenticatedRequest {
-  user: AuthenticatedUserPayload;
-}
+export type AuthenticatedUserPayload = AuthenticatedUser;
+export type { AuthenticatedRequest, AuthenticatedUser };
