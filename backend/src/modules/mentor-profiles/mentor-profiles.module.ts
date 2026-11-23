@@ -5,6 +5,7 @@ import { MentorProfile, MentorProfileSchema } from './schemas/mentor-profile.sch
 import { MentorProfilesRepository } from './repositories/mentor-profiles.repository.js';
 import { MentorProfilesService } from './services/mentor-profiles.service.js';
 import { MentorProfilesController } from './controllers/mentor-profiles.controller.js';
+import { MentorProfilesListener } from './events/mentor-profiles.listener.js';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { MentorProfilesController } from './controllers/mentor-profiles.controll
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [MentorProfilesController],
-  providers: [MentorProfilesService, MentorProfilesRepository],
-  exports: [MentorProfilesService, MentorProfilesRepository],
+  providers: [MentorProfilesService, MentorProfilesRepository, MentorProfilesListener],
+  exports: [MentorProfilesService],
 })
 export class MentorProfilesModule {}
