@@ -13,6 +13,12 @@ import {
   SessionFocusStartedEvent,
   SessionEndedEvent,
 } from '../events/session-lifecycle.events.js';
+import {
+  SESSION_STATUS,
+  SESSION_CONFIG,
+  SESSION_ERROR_MESSAGES,
+} from '../constants/sessions.constants.js';
+import { TICKET_STATUS, TICKET_ERROR_MESSAGES } from '../../tickets/constants/tickets.constants.js';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
@@ -27,7 +33,7 @@ export class SessionsService {
   async startSession(ticketId: string, mentorId: string): Promise<SessionModel> {
     const ticket = await this.ticketsService.getTicketById(ticketId);
     if (!ticket) {
-      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found');
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, TICKET_ERROR_MESSAGES.NOT_FOUND);
     }
 
     // If an active session already exists for this ticket, re-emit start and return it idempotently
@@ -48,7 +54,7 @@ export class SessionsService {
     }
 
     // If ticket is pending, claim it first
-    if (ticket.status === 'PENDING') {
+    if (ticket.status === TICKET_STATUS.PENDING) {
       await this.ticketsService.claimTicket(ticketId, mentorId);
     }
 
@@ -56,12 +62,12 @@ export class SessionsService {
       ticket_id: ticketId as any,
       mentor_id: mentorId as any,
       student_id: ticket.studentId as any,
-      allocated_minutes: ticket.requestedMinutes || 15,
-      session_status: 'ACTIVE',
+      allocated_minutes: ticket.requestedMinutes || SESSION_CONFIG.DEFAULT_ALLOCATED_MINUTES,
+      session_status: SESSION_STATUS.ACTIVE,
       started_at: new Date(),
     });
 
-    await this.ticketsService.updateTicketStatus(ticketId, 'ACTIVE');
+    await this.ticketsService.updateTicketStatus(ticketId, TICKET_STATUS.ACTIVE);
 
     // Notify student and ticket rooms in real time via domain event
     this.eventEmitter.emit(
@@ -82,7 +88,7 @@ export class SessionsService {
   async endSession(sessionId: string, resolutionNotes?: string, userId?: string): Promise<SessionModel> {
     const session = await this.sessionsRepository.findById(sessionId);
     if (!session) {
-      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, SESSION_ERROR_MESSAGES.NOT_FOUND);
     }
 
     const endedAt = new Date();
@@ -91,19 +97,19 @@ export class SessionsService {
     );
 
     const updatedSession = await this.sessionsRepository.update(sessionId, {
-      session_status: 'COMPLETED',
+      session_status: SESSION_STATUS.COMPLETED,
       ended_at: endedAt,
       actual_duration_minutes: actualDuration,
       resolution_notes: resolutionNotes,
     });
 
     if (!updatedSession) {
-      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found during update');
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, SESSION_ERROR_MESSAGES.NOT_FOUND_DURING_UPDATE);
     }
 
     await this.ticketsService.updateTicketStatus(
       session.ticketId,
-      'COMPLETED',
+      TICKET_STATUS.COMPLETED,
       resolutionNotes,
     );
 
@@ -165,13 +171,13 @@ export class SessionsService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleCronStaleSessions() {
-    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const fifteenMinsAgo = new Date(Date.now() - SESSION_CONFIG.STALE_INACTIVITY_THRESHOLD_MS);
     const staleSessions = await this.sessionsRepository.findStaleSessions(fifteenMinsAgo);
 
     for (const session of staleSessions) {
       await this.endSession(
         session.id,
-        'Automatically abandoned due to inactivity',
+        SESSION_CONFIG.ABANDONED_REASON,
       );
       console.log(`Abandoned session ${session.id} closed by Cron Job.`);
     }
