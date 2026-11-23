@@ -19,7 +19,7 @@ export class WsJwtGuard implements CanActivate {
 
       client.user = user;
       return true;
-    } catch (err) {
+    } catch {
       return false;
     }
   }
