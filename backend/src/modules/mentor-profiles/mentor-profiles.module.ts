@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { MentorProfile, MentorProfileSchema } from './schemas/mentor-profile.schema.js';
 import { MentorProfilesRepository } from './repositories/mentor-profiles.repository.js';
+import { MENTOR_PROFILES_REPOSITORY } from './repositories/mentor-profiles.repository.interface.js';
 import { MentorProfilesService } from './services/mentor-profiles.service.js';
 import { MentorProfilesController } from './controllers/mentor-profiles.controller.js';
 import { MentorProfilesListener } from './events/mentor-profiles.listener.js';
@@ -13,7 +14,14 @@ import { MentorProfilesListener } from './events/mentor-profiles.listener.js';
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [MentorProfilesController],
-  providers: [MentorProfilesService, MentorProfilesRepository, MentorProfilesListener],
+  providers: [
+    {
+      provide: MENTOR_PROFILES_REPOSITORY,
+      useClass: MentorProfilesRepository,
+    },
+    MentorProfilesService,
+    MentorProfilesListener,
+  ],
   exports: [MentorProfilesService],
 })
 export class MentorProfilesModule {}
