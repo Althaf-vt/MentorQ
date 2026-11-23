@@ -1,4 +1,5 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   SESSIONS_REPOSITORY,
   type ISessionsRepository,
@@ -6,7 +7,11 @@ import {
 import { TicketsService } from '../../tickets/services/tickets.service.js';
 import { SessionModel } from '../types/session.type.js';
 import { SessionSummary } from '../types/session-summary.type.js';
-import { SessionsGateway } from '../gateways/sessions.gateway.js';
+import {
+  SESSION_EVENTS,
+  SessionFocusStartedEvent,
+  SessionEndedEvent,
+} from '../events/session-lifecycle.events.js';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
@@ -15,7 +20,7 @@ export class SessionsService {
     @Inject(SESSIONS_REPOSITORY)
     private readonly sessionsRepository: ISessionsRepository,
     private readonly ticketsService: TicketsService,
-    private readonly sessionsGateway: SessionsGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async startSession(ticketId: string, mentorId: string): Promise<SessionModel> {
@@ -27,14 +32,17 @@ export class SessionsService {
     // If an active session already exists for this ticket, re-emit start and return it idempotently
     const existingSession = await this.sessionsRepository.findActiveByTicketId(ticketId);
     if (existingSession) {
-      this.sessionsGateway.emitFocusModeStarted({
-        sessionId: existingSession.id,
-        ticketId,
-        studentId: existingSession.studentId,
-        mentorId: existingSession.mentorId,
-        startedAt: existingSession.startedAt,
-        allocatedMinutes: existingSession.allocatedMinutes,
-      });
+      this.eventEmitter.emit(
+        SESSION_EVENTS.FOCUS_STARTED,
+        new SessionFocusStartedEvent({
+          sessionId: existingSession.id,
+          ticketId,
+          studentId: existingSession.studentId,
+          mentorId: existingSession.mentorId,
+          startedAt: existingSession.startedAt,
+          allocatedMinutes: existingSession.allocatedMinutes,
+        }),
+      );
       return existingSession;
     }
 
@@ -54,15 +62,18 @@ export class SessionsService {
 
     await this.ticketsService.updateTicketStatus(ticketId, 'ACTIVE');
 
-    // Notify student and ticket rooms in real time that Focus Mode has started
-    this.sessionsGateway.emitFocusModeStarted({
-      sessionId: session.id,
-      ticketId,
-      studentId: ticket.studentId,
-      mentorId,
-      startedAt: session.startedAt,
-      allocatedMinutes: session.allocatedMinutes,
-    });
+    // Notify student and ticket rooms in real time via domain event
+    this.eventEmitter.emit(
+      SESSION_EVENTS.FOCUS_STARTED,
+      new SessionFocusStartedEvent({
+        sessionId: session.id,
+        ticketId,
+        studentId: ticket.studentId,
+        mentorId,
+        startedAt: session.startedAt,
+        allocatedMinutes: session.allocatedMinutes,
+      }),
+    );
 
     return session;
   }
@@ -98,10 +109,21 @@ export class SessionsService {
       endedByRole = mentorIdStr === userId ? 'MENTOR' : 'STUDENT';
     }
 
-    // Notify session participants that session ended
-    this.sessionsGateway.emitSessionEnded(sessionId, resolutionNotes, userId, endedByRole);
+    // Notify session participants via domain event
+    this.eventEmitter.emit(
+      SESSION_EVENTS.ENDED,
+      new SessionEndedEvent(sessionId, resolutionNotes, userId, endedByRole),
+    );
 
     return updatedSession;
+  }
+
+  async recordEmptySession(sessionId: string): Promise<void> {
+    await this.sessionsRepository.markEmpty(sessionId);
+  }
+
+  async clearEmptySession(sessionId: string): Promise<void> {
+    await this.sessionsRepository.clearEmpty(sessionId);
   }
 
   async getActiveSessionByMentor(mentorId: string): Promise<SessionModel | null> {
