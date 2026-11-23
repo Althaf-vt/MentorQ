@@ -4,7 +4,7 @@ import {
   type ISessionsRepository,
 } from '../repositories/sessions.repository.interface.js';
 import { TicketsService } from '../../tickets/services/tickets.service.js';
-import { SessionDocument } from '../schemas/session.schema.js';
+import { SessionModel } from '../types/session.type.js';
 import { SessionSummary } from '../types/session-summary.type.js';
 import { SessionsGateway } from '../gateways/sessions.gateway.js';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -18,7 +18,7 @@ export class SessionsService {
     private readonly sessionsGateway: SessionsGateway,
   ) {}
 
-  async startSession(ticketId: string, mentorId: string): Promise<SessionDocument> {
+  async startSession(ticketId: string, mentorId: string): Promise<SessionModel> {
     const ticket = await this.ticketsService.getTicketById(ticketId);
     if (!ticket) {
       throw new NotFoundException('Ticket not found');
@@ -28,12 +28,12 @@ export class SessionsService {
     const existingSession = await this.sessionsRepository.findActiveByTicketId(ticketId);
     if (existingSession) {
       this.sessionsGateway.emitFocusModeStarted({
-        sessionId: existingSession._id.toString(),
+        sessionId: existingSession.id,
         ticketId,
-        studentId: existingSession.student_id.toString(),
-        mentorId: existingSession.mentor_id.toString(),
-        startedAt: existingSession.started_at,
-        allocatedMinutes: existingSession.allocated_minutes,
+        studentId: existingSession.studentId,
+        mentorId: existingSession.mentorId,
+        startedAt: existingSession.startedAt,
+        allocatedMinutes: existingSession.allocatedMinutes,
       });
       return existingSession;
     }
@@ -56,24 +56,24 @@ export class SessionsService {
 
     // Notify student and ticket rooms in real time that Focus Mode has started
     this.sessionsGateway.emitFocusModeStarted({
-      sessionId: session._id.toString(),
+      sessionId: session.id,
       ticketId,
       studentId: ticket.studentId,
       mentorId,
-      startedAt: session.started_at,
-      allocatedMinutes: session.allocated_minutes,
+      startedAt: session.startedAt,
+      allocatedMinutes: session.allocatedMinutes,
     });
 
     return session;
   }
 
-  async endSession(sessionId: string, resolutionNotes?: string, userId?: string): Promise<SessionDocument> {
+  async endSession(sessionId: string, resolutionNotes?: string, userId?: string): Promise<SessionModel> {
     const session = await this.sessionsRepository.findById(sessionId);
     if (!session) throw new NotFoundException('Session not found');
 
     const endedAt = new Date();
     const actualDuration = Math.ceil(
-      (endedAt.getTime() - session.started_at.getTime()) / (1000 * 60),
+      (endedAt.getTime() - session.startedAt.getTime()) / (1000 * 60),
     );
 
     const updatedSession = await this.sessionsRepository.update(sessionId, {
@@ -86,7 +86,7 @@ export class SessionsService {
     if (!updatedSession) throw new NotFoundException('Session not found during update');
 
     await this.ticketsService.updateTicketStatus(
-      session.ticket_id.toString(),
+      session.ticketId,
       'COMPLETED',
       resolutionNotes,
     );
@@ -94,7 +94,7 @@ export class SessionsService {
     // Determine who initiated session completion
     let endedByRole: 'MENTOR' | 'STUDENT' | undefined;
     if (userId) {
-      const mentorIdStr = (session.mentor_id as any)?._id?.toString?.() || session.mentor_id?.toString();
+      const mentorIdStr = session.mentorId;
       endedByRole = mentorIdStr === userId ? 'MENTOR' : 'STUDENT';
     }
 
@@ -104,11 +104,11 @@ export class SessionsService {
     return updatedSession;
   }
 
-  async getActiveSessionByMentor(mentorId: string): Promise<SessionDocument | null> {
+  async getActiveSessionByMentor(mentorId: string): Promise<SessionModel | null> {
     return this.sessionsRepository.findActiveByMentor(mentorId);
   }
 
-  async getActiveSessionByStudent(studentId: string): Promise<SessionDocument | null> {
+  async getActiveSessionByStudent(studentId: string): Promise<SessionModel | null> {
     return this.sessionsRepository.findActiveByStudent(studentId);
   }
 
@@ -116,13 +116,13 @@ export class SessionsService {
     const session = await this.sessionsRepository.findById(sessionId);
     if (!session) return null;
     return {
-      id: session._id.toString(),
-      ticketId: session.ticket_id.toString(),
-      mentorId: session.mentor_id.toString(),
-      studentId: session.student_id.toString(),
-      sessionStatus: session.session_status,
-      startedAt: session.started_at,
-      allocatedMinutes: session.allocated_minutes,
+      id: session.id,
+      ticketId: session.ticketId,
+      mentorId: session.mentorId,
+      studentId: session.studentId,
+      sessionStatus: session.sessionStatus,
+      startedAt: session.startedAt,
+      allocatedMinutes: session.allocatedMinutes,
     };
   }
 
@@ -130,7 +130,7 @@ export class SessionsService {
     return this.sessionsRepository.count(query);
   }
 
-  async getSessionByTicketId(ticketId: string): Promise<SessionDocument | null> {
+  async getSessionByTicketId(ticketId: string): Promise<SessionModel | null> {
     const active = await this.sessionsRepository.findActiveByTicketId(ticketId);
     if (active) return active;
     return this.sessionsRepository.findByTicketId(ticketId);
@@ -143,10 +143,10 @@ export class SessionsService {
 
     for (const session of staleSessions) {
       await this.endSession(
-        session._id.toString(),
+        session.id,
         'Automatically abandoned due to inactivity',
       );
-      console.log(`Abandoned session ${session._id} closed by Cron Job.`);
+      console.log(`Abandoned session ${session.id} closed by Cron Job.`);
     }
   }
 }
