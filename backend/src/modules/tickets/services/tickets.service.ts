@@ -4,7 +4,8 @@ import {
   TICKETS_REPOSITORY,
   type ITicketsRepository,
 } from '../repositories/tickets.repository.interface.js';
-import { Ticket, TicketDocument } from '../schemas/ticket.schema.js';
+import { Ticket } from '../schemas/ticket.schema.js';
+import { TicketModel } from '../types/ticket.type.js';
 import {
   TICKET_EVENTS,
   TicketRequestedEvent,
@@ -20,7 +21,7 @@ export class TicketsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createTicket(studentId: string, data: Partial<Ticket>): Promise<TicketDocument> {
+  async createTicket(studentId: string, data: Partial<Ticket>): Promise<TicketModel> {
     const ticket = await this.ticketsRepository.create({
       ...data,
       student_id: studentId as any,
@@ -29,31 +30,31 @@ export class TicketsService {
     });
     this.eventEmitter.emit(
       TICKET_EVENTS.REQUESTED,
-      new TicketRequestedEvent(ticket._id.toString()),
+      new TicketRequestedEvent(ticket.id),
     );
     return ticket;
   }
 
-  async getTicketById(id: string): Promise<TicketDocument> {
+  async getTicketById(id: string): Promise<TicketModel> {
     const ticket = await this.ticketsRepository.findById(id);
     if (!ticket) throw new NotFoundException('Ticket not found');
     return ticket;
   }
 
-  async getPendingPool(): Promise<TicketDocument[]> {
+  async getPendingPool(): Promise<TicketModel[]> {
     return this.ticketsRepository.findPendingPool();
   }
 
-  async claimTicket(id: string, mentorId: string): Promise<TicketDocument> {
+  async claimTicket(id: string, mentorId: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(id);
     if (ticket.status !== 'PENDING') {
       throw new BadRequestException('Ticket is not in PENDING status');
     }
-    if (ticket.mentor_id) {
+    if (ticket.mentorId) {
       throw new BadRequestException('Ticket is already claimed');
     }
 
-    const statusHistory = ticket.status_history || [];
+    const statusHistory = ticket.statusHistory || [];
     statusHistory.push({ status: 'APPROVED', timestamp: new Date(), feedback_note: 'Ticket claimed by mentor' });
 
     const updated = await this.ticketsRepository.update(id, {
@@ -64,21 +65,21 @@ export class TicketsService {
     if (!updated) throw new NotFoundException('Ticket not found during claim');
     this.eventEmitter.emit(
       TICKET_EVENTS.CLAIMED,
-      new TicketClaimedEvent(ticket._id.toString(), ticket.student_id.toString()),
+      new TicketClaimedEvent(ticket.id, ticket.studentId),
     );
     return updated;
   }
 
-  async resolveWithGuidance(ticketId: string, mentorId: string, message: string): Promise<TicketDocument> {
+  async resolveWithGuidance(ticketId: string, mentorId: string, message: string): Promise<TicketModel> {
     const ticket = await this.getTicketById(ticketId);
     if (ticket.status !== 'APPROVED' && ticket.status !== 'ACTIVE') {
       throw new BadRequestException('Ticket must be APPROVED or ACTIVE to resolve');
     }
-    if (ticket.mentor_id?.toString() !== mentorId) {
+    if (ticket.mentorId !== mentorId) {
       throw new BadRequestException('You are not the mentor for this ticket');
     }
 
-    const statusHistory = ticket.status_history || [];
+    const statusHistory = ticket.statusHistory || [];
     statusHistory.push({ status: 'COMPLETED', timestamp: new Date(), feedback_note: 'Resolved with guidance' });
 
     const updated = await this.ticketsRepository.update(ticketId, {
@@ -91,7 +92,7 @@ export class TicketsService {
     
     this.eventEmitter.emit(
       TICKET_EVENTS.RESOLVED,
-      new TicketResolvedEvent(ticketId, ticket.student_id.toString(), mentorId),
+      new TicketResolvedEvent(ticketId, ticket.studentId, mentorId),
     );
     
     return updated;
@@ -101,9 +102,9 @@ export class TicketsService {
     id: string,
     status: string,
     feedbackNote?: string,
-  ): Promise<TicketDocument> {
+  ): Promise<TicketModel> {
     const ticket = await this.getTicketById(id);
-    const statusHistory = ticket.status_history || [];
+    const statusHistory = ticket.statusHistory || [];
     statusHistory.push({ status, timestamp: new Date(), feedback_note: feedbackNote });
 
     const updated = await this.ticketsRepository.update(id, {
@@ -114,11 +115,11 @@ export class TicketsService {
     return updated;
   }
 
-  async getStudentTickets(studentId: string): Promise<TicketDocument[]> {
+  async getStudentTickets(studentId: string): Promise<TicketModel[]> {
     return this.ticketsRepository.findByStudentId(studentId);
   }
 
-  async getMentorTickets(mentorId: string): Promise<TicketDocument[]> {
+  async getMentorTickets(mentorId: string): Promise<TicketModel[]> {
     return this.ticketsRepository.findByMentorId(mentorId);
   }
 
