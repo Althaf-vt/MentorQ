@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Review, ReviewDocument } from '../schemas/review.schema.js';
 import { IReviewsRepository } from './reviews.repository.interface.js';
+import { ReviewModel } from '../types/review.type.js';
+import { ReviewSchemaMapper } from './mappers/review.schema-mapper.js';
 
 @Injectable()
 export class ReviewsRepository implements IReviewsRepository {
@@ -10,20 +12,23 @@ export class ReviewsRepository implements IReviewsRepository {
     @InjectModel(Review.name) private readonly reviewModel: Model<ReviewDocument>,
   ) {}
 
-  async create(review: Partial<Review>): Promise<ReviewDocument> {
+  async create(review: Partial<Review>): Promise<ReviewModel> {
     const newReview = new this.reviewModel(review);
-    return newReview.save();
+    const saved = await newReview.save();
+    return ReviewSchemaMapper.toDomain(saved);
   }
 
-  async findByMentor(mentorId: string): Promise<ReviewDocument[]> {
-    return this.reviewModel
+  async findByMentor(mentorId: string): Promise<ReviewModel[]> {
+    const docs = await this.reviewModel
       .find({ mentor_id: mentorId as any })
       .sort({ createdAt: -1 })
       .exec();
+    return ReviewSchemaMapper.toDomainList(docs);
   }
 
-  async findBySession(sessionId: string): Promise<ReviewDocument | null> {
-    return this.reviewModel.findOne({ session_id: sessionId as any }).exec();
+  async findBySession(sessionId: string): Promise<ReviewModel | null> {
+    const doc = await this.reviewModel.findOne({ session_id: sessionId as any }).exec();
+    return doc ? ReviewSchemaMapper.toDomain(doc) : null;
   }
 
   async getAverageRatingForMentor(mentorId: string): Promise<number> {
