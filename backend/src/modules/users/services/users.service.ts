@@ -3,7 +3,9 @@ import {
   USERS_REPOSITORY,
   type IUsersRepository,
 } from '../repositories/users.repository.interface.js';
-import { User, UserDocument } from '../schemas/user.schema.js';
+import { User } from '../schemas/user.schema.js';
+import { UserModel } from '../types/user.type.js';
+import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 
 @Injectable()
 export class UsersService {
@@ -12,11 +14,11 @@ export class UsersService {
     private readonly usersRepository: IUsersRepository,
   ) {}
 
-  async createUser(data: Partial<User>): Promise<UserDocument> {
+  async createUser(data: Partial<User>): Promise<UserModel> {
     return this.usersRepository.create(data);
   }
 
-  async verifyUser(id: string): Promise<UserDocument> {
+  async verifyUser(id: string): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { is_verified: true });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -24,7 +26,7 @@ export class UsersService {
     return user;
   }
 
-  async findById(id: string): Promise<UserDocument> {
+  async findById(id: string): Promise<UserModel> {
     const user = await this.usersRepository.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -32,11 +34,11 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<UserDocument | null> {
+  async findByEmail(email: string): Promise<UserModel | null> {
     return this.usersRepository.findByEmail(email);
   }
 
-  async updateProfile(id: string, updateData: any): Promise<UserDocument> {
+  async updateProfile(id: string, updateData: any): Promise<UserModel> {
     const user = await this.usersRepository.update(id, updateData);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -44,7 +46,7 @@ export class UsersService {
     return user;
   }
 
-  async updateAvatar(id: string, avatarUrl: string | null): Promise<UserDocument> {
+  async updateAvatar(id: string, avatarUrl: string | null): Promise<UserModel> {
     const user = await this.usersRepository.update(id, { avatar_url: avatarUrl });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -56,19 +58,19 @@ export class UsersService {
     await this.usersRepository.update(id, { is_online: isOnline });
   }
 
-  async addFavorite(userId: string, mentorId: string): Promise<UserDocument> {
+  async addFavorite(userId: string, mentorId: string): Promise<UserModel> {
     const user = await this.usersRepository.addFavoriteMentor(userId, mentorId);
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  async removeFavorite(userId: string, mentorId: string): Promise<UserDocument> {
+  async removeFavorite(userId: string, mentorId: string): Promise<UserModel> {
     const user = await this.usersRepository.removeFavoriteMentor(userId, mentorId);
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  async findByIdWithFavorites(id: string): Promise<UserDocument> {
+  async findByIdWithFavorites(id: string): Promise<UserModel> {
     const user = await this.usersRepository.findByIdPopulated(id, 'favorite_mentors');
     if (!user) {
       throw new NotFoundException('User not found');
@@ -86,15 +88,7 @@ export class UsersService {
     const { users, total } = await this.usersRepository.findPaginated(query, skip, limit);
 
     return {
-      data: users.map(user => ({
-        id: user._id,
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        is_verified: user.is_verified,
-        created_at: (user as any).created_at || user.get('created_at'),
-      })),
+      data: UserDtoMapper.toSummaryDtoList(users),
       meta: {
         total,
         page,
@@ -111,8 +105,8 @@ export class UsersService {
     }
 
     return {
-      id: user._id,
-      full_name: user.full_name,
+      id: user.id,
+      full_name: user.fullName,
       email: user.email,
       role: user.role,
       status: user.status,
