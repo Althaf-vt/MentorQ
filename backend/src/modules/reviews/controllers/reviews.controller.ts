@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/
 import { ReviewsService } from '../services/reviews.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { CreateReviewDto } from '../dto/create-review.dto.js';
+import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 @Controller('api/v1/reviews')
 export class ReviewsController {
@@ -11,7 +12,7 @@ export class ReviewsController {
   @Post()
   async createReview(
     @Body() createReviewDto: CreateReviewDto,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     return this.reviewsService.createReview(
       createReviewDto.sessionId,

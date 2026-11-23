@@ -6,6 +6,7 @@ import * as express from 'express';
 import { RegisterDto } from '../dto/register.dto.js';
 import { LoginDto } from '../dto/login.dto.js';
 import { SendOtpDto, VerifyOtpDto } from '../dto/otp.dto.js';
+import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 export class GoogleAuthGuardWithState extends AuthGuard('google') {
   getAuthenticateOptions(context: ExecutionContext) {
@@ -45,7 +46,7 @@ export class AuthController {
 
   @Post('refresh')
   @UseGuards(AuthGuard('jwt'))
-  async refreshToken(@Req() req: any) {
+  async refreshToken(@Req() req: AuthenticatedRequest) {
     return this.authService.refreshToken(req.user);
   }
 
