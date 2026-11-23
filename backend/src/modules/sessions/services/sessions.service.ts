@@ -1,5 +1,6 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import {
   SESSIONS_REPOSITORY,
   type ISessionsRepository,
@@ -26,7 +27,7 @@ export class SessionsService {
   async startSession(ticketId: string, mentorId: string): Promise<SessionModel> {
     const ticket = await this.ticketsService.getTicketById(ticketId);
     if (!ticket) {
-      throw new NotFoundException('Ticket not found');
+      throw new AppException(ErrorCode.TICKET_NOT_FOUND, 'Ticket not found');
     }
 
     // If an active session already exists for this ticket, re-emit start and return it idempotently
@@ -80,7 +81,9 @@ export class SessionsService {
 
   async endSession(sessionId: string, resolutionNotes?: string, userId?: string): Promise<SessionModel> {
     const session = await this.sessionsRepository.findById(sessionId);
-    if (!session) throw new NotFoundException('Session not found');
+    if (!session) {
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found');
+    }
 
     const endedAt = new Date();
     const actualDuration = Math.ceil(
@@ -94,7 +97,9 @@ export class SessionsService {
       resolution_notes: resolutionNotes,
     });
 
-    if (!updatedSession) throw new NotFoundException('Session not found during update');
+    if (!updatedSession) {
+      throw new AppException(ErrorCode.SESSION_NOT_FOUND, 'Session not found during update');
+    }
 
     await this.ticketsService.updateTicketStatus(
       session.ticketId,
