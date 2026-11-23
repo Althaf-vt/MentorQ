@@ -4,6 +4,7 @@ import {
   type IMentorProfilesRepository,
 } from '../repositories/mentor-profiles.repository.interface.js';
 import { MentorProfileModel } from '../types/mentor-profile.type.js';
+import { MENTOR_PROFILE_DEFAULTS } from '../constants/mentor-profiles.constants.js';
 
 @Injectable()
 export class MentorProfilesService {
@@ -19,14 +20,14 @@ export class MentorProfilesService {
         id: '',
         userId,
         expertiseTags: [],
-        dailyAvailableMinutes: 90,
-        remainingMinutesToday: 90,
-        isOnline: true,
-        ratingAvg: 0,
+        dailyAvailableMinutes: MENTOR_PROFILE_DEFAULTS.DAILY_AVAILABLE_MINUTES,
+        remainingMinutesToday: MENTOR_PROFILE_DEFAULTS.REMAINING_MINUTES_TODAY,
+        isOnline: MENTOR_PROFILE_DEFAULTS.IS_ONLINE,
+        ratingAvg: MENTOR_PROFILE_DEFAULTS.RATING_AVG,
         operatingHours: {
-          start: '09:00 AM',
-          end: '06:00 PM',
-          timezone: 'Asia/Kolkata',
+          start: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_START,
+          end: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_END,
+          timezone: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_TIMEZONE,
         },
       };
     }
