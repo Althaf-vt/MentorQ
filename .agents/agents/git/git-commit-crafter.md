@@ -18,7 +18,7 @@ Always strictly adhere to [`docs/general-rules/git-commit rules/git-commit-rules
 ## Core Principles & Constraints
 
 1. **One Batch is NOT One Commit (Atomic Decomposition):**
-   - Even when a batch is small (200–300 lines), distinct architectural concerns (e.g., types, schemas, repositories, DTOs, mappers, services, controllers) must be committed **individually**.
+   - Even when a batch is small (100-200 lines), distinct architectural concerns (e.g., types, schemas, repositories, DTOs, mappers, services, controllers) must be committed **individually**.
    - Never generate bulk staging commands like `git add .`, `git add backend`, or `git add src/`. Always stage specific file paths.
 
 2. **Never Commit Local Docs or Agents:**
