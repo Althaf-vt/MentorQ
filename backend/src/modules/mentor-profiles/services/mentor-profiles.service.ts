@@ -3,8 +3,13 @@ import {
   MENTOR_PROFILES_REPOSITORY,
   type IMentorProfilesRepository,
 } from '../repositories/mentor-profiles.repository.interface.js';
-import { MentorProfileModel } from '../types/mentor-profile.type.js';
+import {
+  MentorProfileModel,
+  CreateMentorProfileInput,
+  UpdateMentorProfileInput,
+} from '../types/mentor-profile.type.js';
 import { MENTOR_PROFILE_DEFAULTS } from '../constants/mentor-profiles.constants.js';
+import { UpdateMentorConfigDto } from '../dto/update-mentor-config.dto.js';
 
 @Injectable()
 export class MentorProfilesService {
@@ -34,34 +39,45 @@ export class MentorProfilesService {
     return profile;
   }
 
-  async updateProfile(userId: string, updateData: any): Promise<MentorProfileModel | null> {
-    const updatePayload: any = {};
-    
-    if (updateData.isOnline !== undefined) {
-      updatePayload.is_online = updateData.isOnline;
+  async findByUserIds(userIds: string[]): Promise<MentorProfileModel[]> {
+    return this.mentorProfilesRepository.findByUserIds(userIds);
+  }
+
+  async updateProfile(userId: string, updateDto: UpdateMentorConfigDto): Promise<MentorProfileModel | null> {
+    const updateInput: UpdateMentorProfileInput = {};
+
+    if (updateDto.isOnline !== undefined) {
+      updateInput.isOnline = updateDto.isOnline;
     }
-    if (updateData.dailyAvailability !== undefined) {
-      updatePayload.daily_available_minutes = updateData.dailyAvailability;
+    if (updateDto.dailyAvailability !== undefined) {
+      updateInput.dailyAvailableMinutes = updateDto.dailyAvailability;
     }
-    if (updateData.operatingHours) {
-      updatePayload.operating_hours = {
-        start: updateData.operatingHours.startTime,
-        end: updateData.operatingHours.endTime,
-        timezone: updateData.operatingHours.timezone,
+    if (updateDto.operatingHours) {
+      updateInput.operatingHours = {
+        start: updateDto.operatingHours.startTime,
+        end: updateDto.operatingHours.endTime,
+        timezone: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_TIMEZONE,
       };
     }
-    if (updateData.expertiseTags) {
-      updatePayload.expertise_tags = updateData.expertiseTags;
+    if (updateDto.expertiseTags) {
+      updateInput.expertiseTags = updateDto.expertiseTags;
     }
 
-    updatePayload.$unset = {
-      isAvailable: "",
-      is_available: "",
-      dailyAvailability: "",
-      operatingHours: ""
+    const defaultInput: CreateMentorProfileInput = {
+      userId,
+      expertiseTags: updateInput.expertiseTags || [],
+      dailyAvailableMinutes: updateInput.dailyAvailableMinutes ?? MENTOR_PROFILE_DEFAULTS.DAILY_AVAILABLE_MINUTES,
+      remainingMinutesToday: MENTOR_PROFILE_DEFAULTS.REMAINING_MINUTES_TODAY,
+      isOnline: updateInput.isOnline ?? MENTOR_PROFILE_DEFAULTS.IS_ONLINE,
+      ratingAvg: MENTOR_PROFILE_DEFAULTS.RATING_AVG,
+      operatingHours: updateInput.operatingHours || {
+        start: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_START,
+        end: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_END,
+        timezone: MENTOR_PROFILE_DEFAULTS.OPERATING_HOURS_TIMEZONE,
+      },
     };
 
-    return this.mentorProfilesRepository.update(userId, updatePayload);
+    return this.mentorProfilesRepository.upsertProfile(userId, updateInput, defaultInput);
   }
 
   async getOnlineMentors(): Promise<MentorProfileModel[]> {
@@ -69,6 +85,6 @@ export class MentorProfilesService {
   }
 
   async updateRating(userId: string, ratingAvg: number): Promise<void> {
-    await this.mentorProfilesRepository.update(userId, { rating_avg: ratingAvg });
+    await this.mentorProfilesRepository.updateRating(userId, ratingAvg);
   }
 }

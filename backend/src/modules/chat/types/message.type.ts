@@ -1,3 +1,10 @@
+export interface CreateMessageInput {
+  sessionId: string;
+  senderId: string;
+  messageText: string;
+  sentAt?: Date;
+}
+
 export interface MessageModel {
   id: string;
   sessionId: string;

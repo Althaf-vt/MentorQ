@@ -3,8 +3,7 @@ import {
   NOTIFICATIONS_REPOSITORY,
   type INotificationsRepository,
 } from '../repositories/notifications.repository.interface.js';
-import { NotificationType } from '../schemas/notification.schema.js';
-import { NotificationModel } from '../types/notification.type.js';
+import { NotificationType, NotificationModel } from '../types/notification.type.js';
 
 @Injectable()
 export class NotificationsService {
@@ -14,14 +13,14 @@ export class NotificationsService {
   ) {}
 
   async createNotification(
-    recipientId: string,
+    recipientId: string | null,
     role: string,
     title: string,
     message: string,
     type: NotificationType = NotificationType.SYSTEM,
   ): Promise<NotificationModel> {
     return this.notificationsRepository.create({
-      recipientId: recipientId as any,
+      recipientId,
       role,
       title,
       message,

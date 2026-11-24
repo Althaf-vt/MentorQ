@@ -1,14 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
+import { NotificationType } from '../types/notification.type.js';
 
+export { NotificationType };
 export type NotificationDocument = Notification & Document & { createdAt: Date; updatedAt: Date };
-
-export enum NotificationType {
-  SYSTEM = 'SYSTEM',
-  TICKET = 'TICKET',
-  SESSION = 'SESSION',
-  REVIEW = 'REVIEW',
-}
 
 @Schema({ timestamps: true })
 export class Notification {
@@ -24,7 +19,7 @@ export class Notification {
   @Prop({ required: true })
   message: string;
 
-  @Prop({ type: String, enum: Object.values(NotificationType), default: NotificationType.SYSTEM })
+  @Prop({ required: true, enum: Object.values(NotificationType), default: NotificationType.SYSTEM })
   type: NotificationType;
 
   @Prop({ default: false })

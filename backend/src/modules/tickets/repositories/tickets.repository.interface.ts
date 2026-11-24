@@ -1,15 +1,32 @@
-import { Ticket } from '../schemas/ticket.schema.js';
-import { TicketModel } from '../types/ticket.type.js';
+import {
+  TicketModel,
+  CreateTicketInput,
+  TicketStatusHistoryItem,
+} from '../types/ticket.type.js';
 
 export const TICKETS_REPOSITORY = Symbol('TICKETS_REPOSITORY');
 
 export interface ITicketsRepository {
-  create(ticket: Partial<Ticket>): Promise<TicketModel>;
+  create(input: CreateTicketInput): Promise<TicketModel>;
   findById(id: string): Promise<TicketModel | null>;
   findPendingPool(): Promise<TicketModel[]>;
   findByStudentId(studentId: string): Promise<TicketModel[]>;
   findByMentorId(mentorId: string): Promise<TicketModel[]>;
-  update(id: string, update: any): Promise<TicketModel | null>;
+  claimTicket(
+    id: string,
+    mentorId: string,
+    historyEntry: TicketStatusHistoryItem,
+  ): Promise<TicketModel | null>;
+  resolveTicketWithGuidance(
+    id: string,
+    guidanceMessage: string,
+    historyEntry: TicketStatusHistoryItem,
+  ): Promise<TicketModel | null>;
+  updateTicketStatus(
+    id: string,
+    status: string,
+    historyEntry?: TicketStatusHistoryItem,
+  ): Promise<TicketModel | null>;
   countPending(): Promise<number>;
   getQueuePosition(ticketId: string): Promise<number>;
 }

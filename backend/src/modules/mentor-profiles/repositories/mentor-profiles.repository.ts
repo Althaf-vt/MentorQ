@@ -3,7 +3,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { MentorProfile, MentorProfileDocument } from '../schemas/mentor-profile.schema.js';
 import { IMentorProfilesRepository } from './mentor-profiles.repository.interface.js';
-import { MentorProfileModel } from '../types/mentor-profile.type.js';
+import {
+  MentorProfileModel,
+  CreateMentorProfileInput,
+  UpdateMentorProfileInput,
+} from '../types/mentor-profile.type.js';
 import { MentorProfileSchemaMapper } from './mappers/mentor-profile.schema-mapper.js';
 
 @Injectable()
@@ -24,8 +28,16 @@ export class MentorProfilesRepository implements IMentorProfilesRepository {
     return { user_id: userId };
   }
 
-  async create(profile: Partial<MentorProfile>): Promise<MentorProfileModel> {
-    const newProfile = new this.mentorProfileModel(profile);
+  async create(profile: CreateMentorProfileInput): Promise<MentorProfileModel> {
+    const newProfile = new this.mentorProfileModel({
+      user_id: Types.ObjectId.isValid(profile.userId) ? new Types.ObjectId(profile.userId) : profile.userId,
+      expertise_tags: profile.expertiseTags || [],
+      daily_available_minutes: profile.dailyAvailableMinutes,
+      remaining_minutes_today: profile.remainingMinutesToday,
+      is_online: profile.isOnline ?? true,
+      rating_avg: profile.ratingAvg ?? 0,
+      operating_hours: profile.operatingHours,
+    });
     const saved = await newProfile.save();
     return MentorProfileSchemaMapper.toDomain(saved);
   }
@@ -35,50 +47,72 @@ export class MentorProfilesRepository implements IMentorProfilesRepository {
     return doc ? MentorProfileSchemaMapper.toDomain(doc) : null;
   }
 
-  async update(userId: string, update: any): Promise<MentorProfileModel | null> {
-    // 1. Look for existing profile matching either string or ObjectId
-    const existing = await this.mentorProfileModel.findOne(this.buildUserFilter(userId)).exec();
+  async findByUserIds(userIds: string[]): Promise<MentorProfileModel[]> {
+    const objectIds = userIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
 
-    // 2. Separate _id and $unset so we never attempt to overwrite user_id or _id
-    const { _id, $unset, ...cleanUpdate } = update as any;
-    delete (cleanUpdate as any).user_id;
+    const filter: Record<string, unknown> = {
+      $or: [
+        { user_id: { $in: objectIds } },
+        { user_id: { $in: userIds } },
+      ],
+    };
 
-    const updateQuery: any = { $set: cleanUpdate };
-    if ($unset) {
-      updateQuery.$unset = $unset;
-    }
+    const docs = await this.mentorProfileModel.find(filter).exec();
+    return MentorProfileSchemaMapper.toDomainList(docs as unknown as MentorProfileDocument[]);
+  }
+
+  async upsertProfile(
+    userId: string,
+    updateData: UpdateMentorProfileInput,
+    defaults: CreateMentorProfileInput,
+  ): Promise<MentorProfileModel | null> {
+    const filter = this.buildUserFilter(userId);
+    const existing = await this.mentorProfileModel.findOne(filter).exec();
+
+    const cleanUpdate: Record<string, unknown> = {};
+    if (updateData.isOnline !== undefined) cleanUpdate.is_online = updateData.isOnline;
+    if (updateData.dailyAvailableMinutes !== undefined) cleanUpdate.daily_available_minutes = updateData.dailyAvailableMinutes;
+    if (updateData.remainingMinutesToday !== undefined) cleanUpdate.remaining_minutes_today = updateData.remainingMinutesToday;
+    if (updateData.expertiseTags !== undefined) cleanUpdate.expertise_tags = updateData.expertiseTags;
+    if (updateData.operatingHours !== undefined) cleanUpdate.operating_hours = updateData.operatingHours;
+    if (updateData.ratingAvg !== undefined) cleanUpdate.rating_avg = updateData.ratingAvg;
 
     if (existing) {
       const updated = await this.mentorProfileModel.findByIdAndUpdate(
         existing._id,
-        updateQuery,
+        { $set: cleanUpdate },
         { returnDocument: 'after' },
       ).exec();
       return updated ? MentorProfileSchemaMapper.toDomain(updated) : null;
     }
 
-    // 3. If no existing document, perform a safe upsert matching user_id
+    const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : userId;
     const upserted = await this.mentorProfileModel.findOneAndUpdate(
-      { user_id: new Types.ObjectId(userId) } as any,
+      filter,
       {
-        ...updateQuery,
+        $set: cleanUpdate,
         $setOnInsert: {
-          user_id: new Types.ObjectId(userId),
-          expertise_tags: cleanUpdate.expertise_tags || [],
-          daily_available_minutes: cleanUpdate.daily_available_minutes ?? 90,
-          remaining_minutes_today: cleanUpdate.remaining_minutes_today ?? 90,
-          is_online: cleanUpdate.is_online ?? true,
-          rating_avg: 0,
-          operating_hours: cleanUpdate.operating_hours || {
-            start: '09:00 AM',
-            end: '06:00 PM',
-            timezone: 'Asia/Kolkata',
-          },
+          user_id: userObjectId,
+          expertise_tags: defaults.expertiseTags || [],
+          daily_available_minutes: defaults.dailyAvailableMinutes,
+          remaining_minutes_today: defaults.remainingMinutesToday,
+          is_online: defaults.isOnline ?? true,
+          rating_avg: defaults.ratingAvg ?? 0,
+          operating_hours: defaults.operatingHours,
         },
       },
       { upsert: true, returnDocument: 'after' },
     ).exec();
     return upserted ? MentorProfileSchemaMapper.toDomain(upserted as MentorProfileDocument) : null;
+  }
+
+  async updateRating(userId: string, ratingAvg: number): Promise<void> {
+    await this.mentorProfileModel.findOneAndUpdate(
+      this.buildUserFilter(userId),
+      { rating_avg: ratingAvg },
+    ).exec();
   }
 
   async findAllOnline(): Promise<MentorProfileModel[]> {

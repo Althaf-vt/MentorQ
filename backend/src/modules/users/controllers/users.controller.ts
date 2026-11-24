@@ -6,10 +6,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { UsersService } from '../services/users.service.js';
-import { AvatarStorageService, AVATAR_DESTINATION } from '../services/avatar-storage.service.js';
+import { AVATAR_DESTINATION } from '../services/avatar-storage.service.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
 import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
+import {
+  UserResponseDto,
+  UserEnvelopeDto,
+} from '../types/user.type.js';
 import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 @Controller('api/v1/users')
@@ -17,42 +21,52 @@ import type { AuthenticatedRequest } from '../../../common/types/authenticated-r
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly avatarStorageService: AvatarStorageService,
   ) {}
 
   @Get('me')
-  async getMe(@Req() req: AuthenticatedRequest) {
+  async getMe(@Req() req: AuthenticatedRequest): Promise<UserEnvelopeDto<UserResponseDto>> {
     const user = await this.usersService.findById(req.user.id);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Patch('me')
-  async updateMe(@Req() req: AuthenticatedRequest, @Body() updateData: UpdateUserDto) {
+  async updateMe(
+    @Req() req: AuthenticatedRequest,
+    @Body() updateData: UpdateUserDto,
+  ): Promise<UserEnvelopeDto<UserResponseDto>> {
     const user = await this.usersService.updateProfile(req.user.id, updateData);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Post('favorites/:mentorId')
-  async addFavorite(@Req() req: AuthenticatedRequest, @Param('mentorId') mentorId: string) {
+  async addFavorite(
+    @Req() req: AuthenticatedRequest,
+    @Param('mentorId') mentorId: string,
+  ): Promise<UserEnvelopeDto<UserResponseDto>> {
     const user = await this.usersService.addFavorite(req.user.id, mentorId);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Delete('favorites/:mentorId')
-  async removeFavorite(@Req() req: AuthenticatedRequest, @Param('mentorId') mentorId: string) {
+  async removeFavorite(
+    @Req() req: AuthenticatedRequest,
+    @Param('mentorId') mentorId: string,
+  ): Promise<UserEnvelopeDto<UserResponseDto>> {
     const user = await this.usersService.removeFavorite(req.user.id, mentorId);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   @Get('me/favorites')
-  async getMyFavorites(@Req() req: AuthenticatedRequest) {
+  async getMyFavorites(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UserEnvelopeDto<(string | UserResponseDto)[]>> {
     const user = await this.usersService.findByIdWithFavorites(req.user.id);
     const populatedFavorites = UserDtoMapper.toFavoriteList(user.favoriteMentors || []);
     return { status: 'success', data: populatedFavorites };
   }
 
   @Get('mentors/directory')
-  async getMentorsDirectory() {
+  async getMentorsDirectory(): Promise<UserEnvelopeDto<any[]>> {
     const directory = await this.usersService.getMentorsDirectory();
     return { status: 'success', data: UserDtoMapper.toDirectoryList(directory) };
   }
@@ -78,26 +92,24 @@ export class UsersController {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
     }),
   )
-  async uploadAvatar(@Req() req: AuthenticatedRequest, @UploadedFile() file: Express.Multer.File) {
+  async uploadAvatar(
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UserEnvelopeDto<UserResponseDto>> {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
-    const currentUser = await this.usersService.findById(req.user.id);
-    this.avatarStorageService.deleteAvatarFile(currentUser.avatarUrl);
-
-    const avatarUrl = this.avatarStorageService.buildAvatarUrl(file.filename);
-    const user = await this.usersService.updateAvatar(req.user.id, avatarUrl);
+    const user = await this.usersService.changeAvatar(req.user.id, file.filename);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 
   // ---- Avatar Delete -------------------------------------------------------
   @Delete('me/avatar')
-  async deleteAvatar(@Req() req: AuthenticatedRequest) {
-    const currentUser = await this.usersService.findById(req.user.id);
-    this.avatarStorageService.deleteAvatarFile(currentUser.avatarUrl);
-
-    const user = await this.usersService.updateAvatar(req.user.id, null);
+  async deleteAvatar(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UserEnvelopeDto<UserResponseDto>> {
+    const user = await this.usersService.removeAvatar(req.user.id);
     return { status: 'success', data: UserDtoMapper.toResponseDto(user) };
   }
 }

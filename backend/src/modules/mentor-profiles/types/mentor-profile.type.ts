@@ -16,3 +16,22 @@ export interface MentorProfileModel {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+export interface CreateMentorProfileInput {
+  userId: string;
+  expertiseTags?: string[];
+  dailyAvailableMinutes?: number;
+  remainingMinutesToday?: number;
+  isOnline?: boolean;
+  ratingAvg?: number;
+  operatingHours?: OperatingHours;
+}
+
+export interface UpdateMentorProfileInput {
+  isOnline?: boolean;
+  dailyAvailableMinutes?: number;
+  remainingMinutesToday?: number;
+  expertiseTags?: string[];
+  operatingHours?: OperatingHours;
+  ratingAvg?: number;
+}

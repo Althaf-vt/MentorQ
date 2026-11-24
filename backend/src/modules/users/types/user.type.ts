@@ -3,6 +3,21 @@ export interface SocialLinks {
   github?: string;
 }
 
+export interface CreateUserInput {
+  email: string;
+  password_hash: string;
+  full_name: string;
+  role?: string;
+  status?: string;
+  is_verified?: boolean;
+  avatar_url?: string;
+}
+
+export interface UpdateUserProfileInput {
+  fullName?: string;
+  socialLinks?: SocialLinks;
+}
+
 export interface UserModel {
   id: string;
   fullName: string;
@@ -45,4 +60,22 @@ export interface UserResponseDto {
   avatarUrl?: string;
   socialLinks?: SocialLinks;
   isOnline: boolean;
+}
+
+export interface UserStatusResponseDto {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
+export interface UserEnvelopeDto<T> {
+  status: 'success';
+  data: T;
+}
+
+export interface UserMetricsResponseDto {
+  students: { total: number; suspended: number; active: number };
+  mentors: { total: number; suspended: number; active: number };
 }

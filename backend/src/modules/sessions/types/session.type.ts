@@ -1,3 +1,17 @@
+export interface CreateSessionInput {
+  ticketId: string;
+  mentorId: string;
+  studentId: string;
+  allocatedMinutes: number;
+  startedAt?: Date;
+}
+
+export interface CompleteSessionInput {
+  endedAt: Date;
+  actualDurationMinutes: number;
+  resolutionNotes?: string | null;
+}
+
 export interface SessionModel {
   id: string;
   ticketId: string;

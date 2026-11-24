@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { AppException, ErrorCode } from '../../../common/exceptions/app.exception.js';
 import { PlatformSettingsResponseDto } from '../types/platform-settings.type.js';
 import { UpdateSettingsDto } from '../dto/settings.dto.js';
+import { ADMIN_ERROR_MESSAGES } from '../constants/admin.constants.js';
 import {
   PLATFORM_SETTINGS_REPOSITORY,
   type IPlatformSettingsRepository,
@@ -18,7 +19,7 @@ export class SettingsService {
   async getSettings(): Promise<PlatformSettingsResponseDto> {
     const settings = await this.settingsRepository.findSettings();
     if (!settings) {
-      throw new AppException(ErrorCode.SETTINGS_NOT_FOUND, 'Platform settings not found');
+      throw new AppException(ErrorCode.SETTINGS_NOT_FOUND, ADMIN_ERROR_MESSAGES.SETTINGS_NOT_FOUND);
     }
     return PlatformSettingsDtoMapper.toResponseDto(settings);
   }
@@ -26,7 +27,7 @@ export class SettingsService {
   async updateSettings(updateDto: UpdateSettingsDto): Promise<PlatformSettingsResponseDto> {
     const settings = await this.settingsRepository.updateSettings(updateDto);
     if (!settings) {
-      throw new AppException(ErrorCode.SETTINGS_NOT_FOUND, 'Platform settings not found');
+      throw new AppException(ErrorCode.SETTINGS_NOT_FOUND, ADMIN_ERROR_MESSAGES.SETTINGS_NOT_FOUND);
     }
     return PlatformSettingsDtoMapper.toResponseDto(settings);
   }
