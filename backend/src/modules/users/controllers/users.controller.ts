@@ -13,6 +13,7 @@ import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 import {
   UserResponseDto,
   UserEnvelopeDto,
+  MentorDirectoryEntryDto,
 } from '../types/user.type.js';
 import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
@@ -66,9 +67,9 @@ export class UsersController {
   }
 
   @Get('mentors/directory')
-  async getMentorsDirectory(): Promise<UserEnvelopeDto<any[]>> {
+  async getMentorsDirectory(): Promise<UserEnvelopeDto<MentorDirectoryEntryDto[]>> {
     const directory = await this.usersService.getMentorsDirectory();
-    return { status: 'success', data: UserDtoMapper.toDirectoryList(directory) };
+    return { status: 'success', data: directory };
   }
 
   // ---- Avatar Upload -------------------------------------------------------
