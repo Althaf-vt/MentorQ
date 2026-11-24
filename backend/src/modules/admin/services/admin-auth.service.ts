@@ -5,7 +5,7 @@ import { AppException, ErrorCode } from '../../../common/exceptions/app.exceptio
 import { MailService } from '../../auth/services/mail.service.js';
 import { ADMIN_REPOSITORY, type IAdminRepository } from '../repositories/admin.repository.interface.js';
 import { AdminDtoMapper } from '../mappers/admin.dto-mapper.js';
-import { AdminStatus, AdminTokenResponseDto } from '../types/admin.type.js';
+import { AdminStatus, AdminTokenResponseDto, AdminMessageResponseDto, AdminOtpVerifyResponseDto } from '../types/admin.type.js';
 import { 
   AdminLoginDto, 
   AdminForgotPasswordDto, 
@@ -45,7 +45,7 @@ export class AdminAuthService {
     return AdminDtoMapper.toTokenResponse(this.jwtService.sign(payload), admin);
   }
 
-  async forgotPassword(data: AdminForgotPasswordDto) {
+  async forgotPassword(data: AdminForgotPasswordDto): Promise<AdminMessageResponseDto> {
     const admin = await this.adminRepository.findByEmail(data.email);
     if (!admin) {
       // Don't leak whether an email exists or not
@@ -61,7 +61,7 @@ export class AdminAuthService {
     return { message: ADMIN_MESSAGES.OTP_SENT_MASKED };
   }
 
-  async verifyOtp(data: AdminVerifyOtpDto) {
+  async verifyOtp(data: AdminVerifyOtpDto): Promise<AdminOtpVerifyResponseDto> {
     const admin = await this.adminRepository.findByEmail(data.email);
     if (!admin) {
       throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, ADMIN_ERROR_MESSAGES.INVALID_OTP);
@@ -90,7 +90,7 @@ export class AdminAuthService {
     };
   }
 
-  async resetPassword(data: AdminResetPasswordDto) {
+  async resetPassword(data: AdminResetPasswordDto): Promise<AdminMessageResponseDto> {
     let payload: { intent?: string; sub: string };
     try {
       payload = this.jwtService.verify(data.token);

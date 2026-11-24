@@ -8,7 +8,12 @@ import { OTP_REPOSITORY, type IOtpRepository } from '../repositories/otp.reposit
 import { MailService } from './mail.service.js';
 import { AuthDtoMapper } from '../mappers/auth.dto-mapper.js';
 import { RoleVerificationPolicy } from '../policies/role-verification.policy.js';
-import { AuthTokenResponseDto, JwtUserPayload } from '../types/auth.type.js';
+import {
+  AuthTokenResponseDto,
+  JwtUserPayload,
+  AuthMessageResponseDto,
+  AuthOtpVerifyResponseDto,
+} from '../types/auth.type.js';
 import { RegisterDto } from '../dto/register.dto.js';
 import { LoginDto } from '../dto/login.dto.js';
 import { USER_ROLES } from '../../users/constants/users.constants.js';
@@ -27,7 +32,7 @@ export class AuthService {
     @Inject(OTP_REPOSITORY) private readonly otpRepository: IOtpRepository,
   ) {}
 
-  async register(userData: RegisterDto) {
+  async register(userData: RegisterDto): Promise<AuthMessageResponseDto> {
     const existingUser = await this.usersService.findByEmail(userData.email);
     if (existingUser) {
       throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, AUTH_ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
@@ -71,7 +76,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async sendOtp(email: string) {
+  async sendOtp(email: string): Promise<AuthMessageResponseDto> {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + AUTH_CONFIG.OTP_EXPIRY_MS);
 
@@ -81,7 +86,11 @@ export class AuthService {
     return { message: AUTH_MESSAGES.OTP_SENT };
   }
 
-  async verifyOtp(email: string, code: string, expectedRole?: string) {
+  async verifyOtp(
+    email: string,
+    code: string,
+    expectedRole?: string,
+  ): Promise<AuthOtpVerifyResponseDto> {
     const otp = await this.otpRepository.findValidOtp(email, code);
     if (!otp || (otp.expiresAt || otp.expires_at) < new Date()) {
       throw new AppException(ErrorCode.INVALID_OR_EXPIRED_OTP, AUTH_ERROR_MESSAGES.INVALID_OR_EXPIRED_OTP);
@@ -132,7 +141,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async refreshToken(jwtUser: JwtUserPayload) {
+  async refreshToken(jwtUser: JwtUserPayload): Promise<AuthTokenResponseDto> {
     const user = await this.usersService.findById(jwtUser.id);
     if (!user) {
       throw new AppException(ErrorCode.USER_NOT_FOUND, AUTH_ERROR_MESSAGES.USER_NO_LONGER_EXISTS);

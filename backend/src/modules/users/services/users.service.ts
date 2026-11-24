@@ -10,6 +10,7 @@ import {
   UserMetricsResponseDto,
   UserStatusResponseDto,
   MentorDirectoryEntryDto,
+  PaginatedUsersResponseDto,
 } from '../types/user.type.js';
 import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
@@ -132,7 +133,7 @@ export class UsersService {
     return UserDtoMapper.toDirectoryList(mentors, profileMap);
   }
 
-  async listUsers(page: number = 1, limit: number = 10, role?: string) {
+  async listUsers(page: number = 1, limit: number = 10, role?: string): Promise<PaginatedUsersResponseDto> {
     const query: Record<string, unknown> = role ? { role } : {};
     const skip = (page - 1) * limit;
     const { users, total } = await this.usersRepository.findPaginated(query, skip, limit);
