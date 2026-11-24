@@ -11,6 +11,8 @@ import {
   AuthMessageResponseDto,
   AuthOtpVerifyResponseDto,
 } from '../types/auth.type.js';
+import { AUTH_CONFIG } from '../constants/auth.constants.js';
+import { USER_ROLES } from '../../users/constants/users.constants.js';
 import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 export class GoogleAuthGuardWithState extends AuthGuard('google') {
@@ -64,8 +66,8 @@ export class AuthController {
   async googleAuthRedirect(@Req() req: any, @Res() res: express.Response) {
     const expectedRole = req.query.state as string;
     const authResult = await this.authService.validateGoogleUser(req.user, expectedRole);
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5180';
-    const loginPath = expectedRole === 'MENTOR' ? '/mentor/login' : '/login';
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || AUTH_CONFIG.DEFAULT_FRONTEND_URL;
+    const loginPath = expectedRole === USER_ROLES.MENTOR ? AUTH_CONFIG.LOGIN_ROUTES.MENTOR : AUTH_CONFIG.LOGIN_ROUTES.STUDENT;
     const redirectUrl = `${frontendUrl}${loginPath}?token=${authResult.access_token}&user=${encodeURIComponent(
       JSON.stringify(authResult.user),
     )}`;

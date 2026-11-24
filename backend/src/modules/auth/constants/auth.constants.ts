@@ -2,6 +2,11 @@ export const AUTH_CONFIG = {
   BCRYPT_SALT_ROUNDS: 10,
   OTP_EXPIRY_MS: 10 * 60 * 1000,
   OAUTH_PASSWORD_PLACEHOLDER: 'OAUTH_USER',
+  DEFAULT_FRONTEND_URL: 'http://localhost:5180',
+  LOGIN_ROUTES: {
+    MENTOR: '/mentor/login',
+    STUDENT: '/login',
+  },
 } as const;
 
 export const AUTH_MESSAGES = {
