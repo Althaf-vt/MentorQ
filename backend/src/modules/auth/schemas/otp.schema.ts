@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type OtpDocument = Otp & Document;
+export type OtpDocument = Otp & Document & { created_at?: Date; updated_at?: Date };
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class Otp {

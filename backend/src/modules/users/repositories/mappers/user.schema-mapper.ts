@@ -1,10 +1,11 @@
 import { UserDocument } from '../../schemas/user.schema.js';
 import { UserModel } from '../../types/user.type.js';
+import { extractIdString, type PopulatedOrId } from '../../../../common/types/mongoose-populated.type.js';
 
 export class UserSchemaMapper {
   static toDomain(doc: UserDocument): UserModel {
-    const favoriteMentors = (doc.favorite_mentors || []).map((m: any) =>
-      m?._id?.toString?.() || m?.toString?.() || String(m),
+    const favoriteMentors = (doc.favorite_mentors || []).map((m: PopulatedOrId) =>
+      extractIdString(m),
     );
 
     return {
@@ -23,8 +24,8 @@ export class UserSchemaMapper {
       socialLinks: doc.social_links,
       isOnline: doc.is_online ?? false,
       favoriteMentors,
-      createdAt: (doc as any).created_at,
-      updatedAt: (doc as any).updated_at,
+      createdAt: doc.created_at,
+      updatedAt: doc.updated_at,
     };
   }
 
