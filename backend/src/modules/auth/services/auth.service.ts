@@ -13,6 +13,7 @@ import {
   JwtUserPayload,
   AuthMessageResponseDto,
   AuthOtpVerifyResponseDto,
+  GoogleOAuthProfile,
 } from '../types/auth.type.js';
 import { RegisterDto } from '../dto/register.dto.js';
 import { LoginDto } from '../dto/login.dto.js';
@@ -119,7 +120,10 @@ export class AuthService {
     return AuthDtoMapper.toTokenResponse(this.jwtService.sign(payload), user);
   }
 
-  async validateGoogleUser(profile: any, expectedRole?: string) {
+  async validateGoogleUser(
+    profile: GoogleOAuthProfile,
+    expectedRole?: string,
+  ): Promise<AuthTokenResponseDto> {
     let user = await this.usersService.findByEmail(profile.emails[0].value);
 
     if (user) {
@@ -131,7 +135,7 @@ export class AuthService {
         full_name: profile.displayName,
         email: profile.emails[0].value,
         password_hash: AUTH_CONFIG.OAUTH_PASSWORD_PLACEHOLDER,
-        avatar_url: profile.photos[0]?.value,
+        avatar_url: profile.photos?.[0]?.value,
         role: expectedRole || USER_ROLES.STUDENT,
         is_verified: true,
       });
@@ -149,7 +153,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async validateToken(token: string) {
+  async validateToken(token: string): Promise<UserModel | null> {
     try {
       const payload = this.jwtService.verify(token);
       return this.usersService.findById(payload.sub);

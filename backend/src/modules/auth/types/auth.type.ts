@@ -26,3 +26,18 @@ export interface JwtUserPayload {
   email: string;
   role: string;
 }
+
+export interface JwtTokenPayload {
+  sub: string;
+  email: string;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
+
+export interface GoogleOAuthProfile {
+  id: string;
+  displayName: string;
+  emails: Array<{ value: string; verified?: boolean }>;
+  photos?: Array<{ value: string }>;
+}
