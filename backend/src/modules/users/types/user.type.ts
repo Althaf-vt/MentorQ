@@ -72,6 +72,16 @@ export interface UserStatusResponseDto {
   status: string;
 }
 
+export interface PaginatedUsersResponseDto {
+  data: UserSummaryDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export interface UserEnvelopeDto<T> {
   status: 'success';
   data: T;
