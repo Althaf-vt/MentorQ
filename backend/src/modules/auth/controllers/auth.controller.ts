@@ -6,6 +6,11 @@ import * as express from 'express';
 import { RegisterDto } from '../dto/register.dto.js';
 import { LoginDto } from '../dto/login.dto.js';
 import { SendOtpDto, VerifyOtpDto } from '../dto/otp.dto.js';
+import {
+  AuthTokenResponseDto,
+  AuthMessageResponseDto,
+  AuthOtpVerifyResponseDto,
+} from '../types/auth.type.js';
 import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 export class GoogleAuthGuardWithState extends AuthGuard('google') {
@@ -25,28 +30,28 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(@Body() userData: RegisterDto) {
+  async register(@Body() userData: RegisterDto): Promise<AuthMessageResponseDto> {
     return this.authService.register(userData);
   }
 
   @Post('login')
-  async login(@Body() credentials: LoginDto) {
+  async login(@Body() credentials: LoginDto): Promise<AuthTokenResponseDto> {
     return this.authService.login(credentials);
   }
 
   @Post('otp/send')
-  async sendOtp(@Body() sendOtpDto: SendOtpDto) {
+  async sendOtp(@Body() sendOtpDto: SendOtpDto): Promise<AuthMessageResponseDto> {
     return this.authService.sendOtp(sendOtpDto.email);
   }
 
   @Post('otp/verify')
-  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<AuthOtpVerifyResponseDto> {
     return this.authService.verifyOtp(verifyOtpDto.email, verifyOtpDto.otp, verifyOtpDto.expectedRole);
   }
 
   @Post('refresh')
   @UseGuards(AuthGuard('jwt'))
-  async refreshToken(@Req() req: AuthenticatedRequest) {
+  async refreshToken(@Req() req: AuthenticatedRequest): Promise<AuthTokenResponseDto> {
     return this.authService.refreshToken(req.user);
   }
 
