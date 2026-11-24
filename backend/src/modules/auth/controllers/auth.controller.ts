@@ -10,14 +10,10 @@ import {
   AuthTokenResponseDto,
   AuthMessageResponseDto,
   AuthOtpVerifyResponseDto,
-  GoogleOAuthProfile,
 } from '../types/auth.type.js';
+import type { GoogleAuthRequest } from '../types/auth.type.js';
 import { AUTH_CONFIG } from '../constants/auth.constants.js';
 import { USER_ROLES } from '../../users/constants/users.constants.js';
-
-export interface GoogleAuthRequest extends express.Request {
-  user: GoogleOAuthProfile;
-}
 import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 export class GoogleAuthGuardWithState extends AuthGuard('google') {

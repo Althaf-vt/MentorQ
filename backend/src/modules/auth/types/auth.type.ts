@@ -1,3 +1,5 @@
+import type * as express from 'express';
+
 export interface AuthUserDto {
   id: string;
   fullName: string;
@@ -40,4 +42,8 @@ export interface GoogleOAuthProfile {
   displayName: string;
   emails: Array<{ value: string; verified?: boolean }>;
   photos?: Array<{ value: string }>;
+}
+
+export interface GoogleAuthRequest extends express.Request {
+  user: GoogleOAuthProfile;
 }
