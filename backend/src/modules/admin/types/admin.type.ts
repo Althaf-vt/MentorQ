@@ -38,3 +38,12 @@ export interface AdminTokenResponseDto {
   access_token: string;
   admin: AdminUserDto;
 }
+
+export interface AdminMessageResponseDto {
+  message: string;
+}
+
+export interface AdminOtpVerifyResponseDto {
+  message: string;
+  resetToken: string;
+}

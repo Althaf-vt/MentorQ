@@ -1,3 +1,5 @@
+import { MentorProfileModel } from '../../mentor-profiles/types/mentor-profile.type.js';
+
 export interface SocialLinks {
   linkedin?: string;
   github?: string;
@@ -70,6 +72,16 @@ export interface UserStatusResponseDto {
   status: string;
 }
 
+export interface PaginatedUsersResponseDto {
+  data: UserSummaryDto[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export interface UserEnvelopeDto<T> {
   status: 'success';
   data: T;
@@ -78,4 +90,17 @@ export interface UserEnvelopeDto<T> {
 export interface UserMetricsResponseDto {
   students: { total: number; suspended: number; active: number };
   mentors: { total: number; suspended: number; active: number };
+}
+
+export interface MentorDirectoryEntryDto {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  status: string;
+  isVerified: boolean;
+  avatarUrl?: string;
+  socialLinks?: SocialLinks;
+  isOnline: boolean;
+  mentorProfile: MentorProfileModel | null;
 }

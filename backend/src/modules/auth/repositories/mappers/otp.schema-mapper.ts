@@ -4,7 +4,7 @@ import { OtpModel } from '../../types/otp.type.js';
 export class OtpSchemaMapper {
   static toDomain(doc: OtpDocument | null | undefined): OtpModel | null {
     if (!doc) return null;
-    const raw = typeof (doc as any).toObject === 'function' ? (doc as any).toObject() : doc;
+    const raw = 'toObject' in doc && typeof doc.toObject === 'function' ? doc.toObject<OtpDocument>() : doc;
     const id = raw._id ? raw._id.toString() : '';
 
     return {

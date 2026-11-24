@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 @ValidatorConstraint({ name: 'isBeforeEndTime', async: false })
 export class IsBeforeEndTimeConstraint implements ValidatorConstraintInterface {
   validate(startTime: string, args: ValidationArguments) {
-    const object = args.object as any;
+    const object = args.object as OperatingHoursDto;
     if (!startTime || !object.endTime) return false;
     
     const [startH, startM] = startTime.split(':').map(Number);
@@ -34,7 +34,7 @@ class OperatingHoursDto {
 @ValidatorConstraint({ name: 'isWithinOperatingHours', async: false })
 export class IsWithinOperatingHoursConstraint implements ValidatorConstraintInterface {
   validate(dailyAvailability: number, args: ValidationArguments) {
-    const object = args.object as any;
+    const object = args.object as UpdateMentorConfigDto;
     const operatingHours = object.operatingHours;
     if (!operatingHours || !operatingHours.startTime || !operatingHours.endTime) return true; // Handled by other validators
 

@@ -6,6 +6,11 @@ import {
   AdminVerifyOtpDto, 
   AdminResetPasswordDto 
 } from '../dto/admin-auth.dto.js';
+import {
+  AdminTokenResponseDto,
+  AdminMessageResponseDto,
+  AdminOtpVerifyResponseDto,
+} from '../types/admin.type.js';
 
 @Controller('api/v1/admin/auth')
 export class AdminAuthController {
@@ -13,25 +18,31 @@ export class AdminAuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: AdminLoginDto) {
+  async login(@Body() loginDto: AdminLoginDto): Promise<AdminTokenResponseDto> {
     return this.adminAuthService.login(loginDto);
   }
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: AdminForgotPasswordDto) {
+  async forgotPassword(
+    @Body() forgotPasswordDto: AdminForgotPasswordDto,
+  ): Promise<AdminMessageResponseDto> {
     return this.adminAuthService.forgotPassword(forgotPasswordDto);
   }
 
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(@Body() verifyOtpDto: AdminVerifyOtpDto) {
+  async verifyOtp(
+    @Body() verifyOtpDto: AdminVerifyOtpDto,
+  ): Promise<AdminOtpVerifyResponseDto> {
     return this.adminAuthService.verifyOtp(verifyOtpDto);
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() resetPasswordDto: AdminResetPasswordDto) {
+  async resetPassword(
+    @Body() resetPasswordDto: AdminResetPasswordDto,
+  ): Promise<AdminMessageResponseDto> {
     return this.adminAuthService.resetPassword(resetPasswordDto);
   }
 }

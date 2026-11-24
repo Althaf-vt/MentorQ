@@ -13,7 +13,9 @@ import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 import {
   UserResponseDto,
   UserEnvelopeDto,
+  MentorDirectoryEntryDto,
 } from '../types/user.type.js';
+import { USER_ERROR_MESSAGES } from '../constants/users.constants.js';
 import type { AuthenticatedRequest } from '../../../common/types/authenticated-request.type.js';
 
 @Controller('api/v1/users')
@@ -66,9 +68,9 @@ export class UsersController {
   }
 
   @Get('mentors/directory')
-  async getMentorsDirectory(): Promise<UserEnvelopeDto<any[]>> {
+  async getMentorsDirectory(): Promise<UserEnvelopeDto<MentorDirectoryEntryDto[]>> {
     const directory = await this.usersService.getMentorsDirectory();
-    return { status: 'success', data: UserDtoMapper.toDirectoryList(directory) };
+    return { status: 'success', data: directory };
   }
 
   // ---- Avatar Upload -------------------------------------------------------
@@ -85,7 +87,7 @@ export class UsersController {
       fileFilter: (_req, file, cb) => {
         const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!allowedMimeTypes.includes(file.mimetype)) {
-          return cb(new BadRequestException('Only JPEG, PNG, and WebP image files are allowed'), false);
+          return cb(new BadRequestException(USER_ERROR_MESSAGES.INVALID_IMAGE_TYPE), false);
         }
         cb(null, true);
       },
@@ -97,7 +99,7 @@ export class UsersController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<UserEnvelopeDto<UserResponseDto>> {
     if (!file) {
-      throw new BadRequestException('No file uploaded');
+      throw new BadRequestException(USER_ERROR_MESSAGES.NO_FILE_UPLOADED);
     }
 
     const user = await this.usersService.changeAvatar(req.user.id, file.filename);

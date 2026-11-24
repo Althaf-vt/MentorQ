@@ -9,6 +9,8 @@ import {
   CreateUserInput,
   UserMetricsResponseDto,
   UserStatusResponseDto,
+  MentorDirectoryEntryDto,
+  PaginatedUsersResponseDto,
 } from '../types/user.type.js';
 import { UserDtoMapper } from '../mappers/user.dto-mapper.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
@@ -119,7 +121,7 @@ export class UsersService {
     return user;
   }
 
-  async getMentorsDirectory(): Promise<any[]> {
+  async getMentorsDirectory(): Promise<MentorDirectoryEntryDto[]> {
     const mentors = await this.usersRepository.findMentors();
     const mentorIds = mentors.map((m) => m.id);
     const profiles = await this.mentorProfilesService.findByUserIds(mentorIds);
@@ -128,13 +130,10 @@ export class UsersService {
       profileMap.set(p.userId, p);
     }
 
-    return mentors.map((mentor) => ({
-      ...mentor,
-      mentorProfile: profileMap.get(mentor.id) || null,
-    }));
+    return UserDtoMapper.toDirectoryList(mentors, profileMap);
   }
 
-  async listUsers(page: number = 1, limit: number = 10, role?: string) {
+  async listUsers(page: number = 1, limit: number = 10, role?: string): Promise<PaginatedUsersResponseDto> {
     const query: Record<string, unknown> = role ? { role } : {};
     const skip = (page - 1) * limit;
     const { users, total } = await this.usersRepository.findPaginated(query, skip, limit);

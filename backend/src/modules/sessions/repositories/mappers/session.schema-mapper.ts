@@ -1,16 +1,12 @@
 import { SessionDocument } from '../../schemas/session.schema.js';
 import { SessionModel } from '../../types/session.type.js';
+import { extractIdString, type PopulatedOrId } from '../../../../common/types/mongoose-populated.type.js';
 
 export class SessionSchemaMapper {
   static toDomain(doc: SessionDocument): SessionModel {
-    const rawTicketId = doc.ticket_id;
-    const ticketId = (rawTicketId as any)?._id?.toString?.() || rawTicketId?.toString?.() || String(rawTicketId);
-
-    const rawMentorId = doc.mentor_id;
-    const mentorId = (rawMentorId as any)?._id?.toString?.() || rawMentorId?.toString?.() || String(rawMentorId);
-
-    const rawStudentId = doc.student_id;
-    const studentId = (rawStudentId as any)?._id?.toString?.() || rawStudentId?.toString?.() || String(rawStudentId);
+    const ticketId = extractIdString(doc.ticket_id as PopulatedOrId);
+    const mentorId = extractIdString(doc.mentor_id as PopulatedOrId);
+    const studentId = extractIdString(doc.student_id as PopulatedOrId);
 
     return {
       id: doc._id.toString(),

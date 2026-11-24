@@ -15,6 +15,8 @@ export type UserStatusType = (typeof USER_STATUS)[keyof typeof USER_STATUS];
 
 export const USER_ERROR_MESSAGES = {
   NOT_FOUND: 'User not found',
+  INVALID_IMAGE_TYPE: 'Only JPEG, PNG, and WebP image files are allowed',
+  NO_FILE_UPLOADED: 'No file uploaded',
 } as const;
 
 export const USER_POPULATE_FIELDS = {

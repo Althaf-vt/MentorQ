@@ -1,15 +1,11 @@
 import { TicketDocument } from '../../schemas/ticket.schema.js';
 import { TicketModel } from '../../types/ticket.type.js';
+import { extractIdString, type PopulatedOrId } from '../../../../common/types/mongoose-populated.type.js';
 
 export class TicketSchemaMapper {
   static toDomain(doc: TicketDocument): TicketModel {
-    const rawStudentId = doc.student_id;
-    const studentId = (rawStudentId as any)?._id?.toString?.() || rawStudentId?.toString?.() || String(rawStudentId);
-
-    const rawMentorId = doc.mentor_id;
-    const mentorId = rawMentorId
-      ? (rawMentorId as any)?._id?.toString?.() || rawMentorId?.toString?.() || String(rawMentorId)
-      : null;
+    const studentId = extractIdString(doc.student_id as PopulatedOrId);
+    const mentorId = doc.mentor_id ? extractIdString(doc.mentor_id as PopulatedOrId) : null;
 
     return {
       id: doc._id.toString(),
@@ -23,7 +19,7 @@ export class TicketSchemaMapper {
       actualTimeSpentMinutes: doc.actual_time_spent_minutes ?? 0,
       tags: doc.tags || [],
       guidanceMessage: doc.guidance_message || null,
-      statusHistory: (doc.status_history || []).map((h: any) => ({
+      statusHistory: (doc.status_history || []).map((h) => ({
         status: h.status,
         timestamp: h.timestamp,
         feedback_note: h.feedback_note,
