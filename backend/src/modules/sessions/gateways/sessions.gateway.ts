@@ -35,7 +35,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
         const user = await this.authService.validateToken(token);
         if (user) {
           client.data.user = user;
-          const uid = ((user as any)._id || (user as any).id)?.toString();
+          const uid = (user.id || user._id)?.toString();
           if (uid) {
             client.join(`user_${uid}`);
             client.join(`student_${uid}`);
@@ -132,7 +132,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('sendMessage')
   handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { sessionId: string; message: any },
+    @MessageBody() payload: { sessionId: string; message: unknown },
   ) {
     if (payload?.sessionId && payload?.message) {
       client.to(`session_${payload.sessionId}`).emit('receiveMessage', payload.message);
@@ -143,7 +143,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('webrtc_signal')
   handleWebRtcSignal(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { sessionId?: string; ticketId?: string; data: any },
+    @MessageBody() payload: { sessionId?: string; ticketId?: string; data: unknown },
   ) {
     if (payload?.sessionId) {
       client.to(`session_${payload.sessionId}`).emit('webrtc_signal', {
@@ -219,13 +219,13 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   // Method to emit updates to a specific session room
-  emitSessionUpdate(sessionId: string, data: any) {
+  emitSessionUpdate(sessionId: string, data: Record<string, unknown>) {
     if (!this.server) return;
     this.server.to(`session_${sessionId}`).emit('sessionUpdate', data);
   }
 
   // Method to emit chat message to session room
-  emitNewMessage(sessionId: string, message: any) {
+  emitNewMessage(sessionId: string, message: unknown) {
     if (!this.server) return;
     this.server.to(`session_${sessionId}`).emit('receiveMessage', message);
   }
@@ -246,7 +246,7 @@ export class SessionsGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   // Method to emit queue updates
-  emitQueueUpdate(data: any) {
+  emitQueueUpdate(data: Record<string, unknown>) {
     if (!this.server) return;
     this.server.emit('queueUpdate', data);
   }
