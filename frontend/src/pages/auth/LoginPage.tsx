@@ -7,7 +7,7 @@ import * as z from 'zod'
 import { useLoginMutation } from '@/store/api/authApi'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
-import { useToast } from '@/context/ToastContext'
+import { useToastStore } from '@/store/toastStore'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -27,7 +27,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ expectedRole = 'STUDENT' }
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { showToast } = useToast()
+  const showToast = useToastStore((state) => state.showToast)
   const [login, { isLoading }] = useLoginMutation()
 
   const {

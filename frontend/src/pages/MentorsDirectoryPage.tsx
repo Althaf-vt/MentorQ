@@ -6,7 +6,7 @@ import {
   useAddFavoriteMentorMutation,
   useRemoveFavoriteMentorMutation,
 } from '@/store/api/directoryApi'
-import { useToast } from '@/context/ToastContext'
+import { useToastStore } from '@/store/toastStore'
 
 export const MentorsDirectoryPage: React.FC = () => {
   const { data: directoryResp, isLoading: isLoadingDirectory } = useGetMentorsDirectoryQuery(undefined, { pollingInterval: 30000 })
@@ -23,7 +23,7 @@ export const MentorsDirectoryPage: React.FC = () => {
 
   const [addFavorite, { isLoading: isAdding }] = useAddFavoriteMentorMutation()
   const [removeFavorite, { isLoading: isRemoving }] = useRemoveFavoriteMentorMutation()
-  const { showToast } = useToast()
+  const showToast = useToastStore((state) => state.showToast)
 
   const [activeTab, setActiveTab] = useState<'ALL' | 'FAVORITES'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')

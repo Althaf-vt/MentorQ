@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Navbar } from './components/layout/Navbar'
+import { Toaster } from '@/components/layout/Toaster'
 import { LoginPage } from './pages/auth/LoginPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
 import { PasswordResetPage } from './pages/auth/PasswordResetPage'
@@ -49,6 +50,7 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-[#faf9f7] flex flex-col font-body">
         <Navbar />
+        <Toaster />
         <div className="flex-grow">
           <Routes>
             {/* Public Routes */}

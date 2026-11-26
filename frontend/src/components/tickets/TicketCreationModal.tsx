@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { X, Send, Clock, Tag, AlertCircle, Check } from 'lucide-react'
 import { useCreateTicketMutation } from '@/store/api/ticketApi'
-import { useToast } from '@/context/ToastContext'
+import { useToastStore } from '@/store/toastStore'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -32,7 +32,7 @@ const ticketSchema = z.object({
 type TicketFormValues = z.infer<typeof ticketSchema>
 
 export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
-  const { showToast } = useToast()
+  const showToast = useToastStore((state) => state.showToast)
   const [createTicket, { isLoading }] = useCreateTicketMutation()
   const [globalError, setGlobalError] = useState('')
   

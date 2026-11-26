@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client'
 import { getToken } from '@/lib/roleContext'
+import { useToastStore } from '@/store/toastStore'
 
 const WS_URL = (import.meta.env.VITE_WS_URL as string) || 'http://localhost:3133'
 
@@ -33,14 +34,17 @@ class SocketService {
 
     this.socket.on('connect', () => {
       console.log('WebSocket connected:', this.socket?.id)
+      useToastStore.getState().showToast('Live system connected', 'success')
     })
 
     this.socket.on('disconnect', (reason) => {
       console.log('WebSocket disconnected:', reason)
+      useToastStore.getState().showToast('Live system disconnected. Attempting to reconnect...', 'error')
     })
 
     this.socket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error)
+      useToastStore.getState().showToast('Live system connection error', 'error')
     })
 
     return this.socket

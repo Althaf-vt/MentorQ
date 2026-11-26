@@ -23,7 +23,7 @@ import {
 import { useStartSessionMutation } from '@/store/api/sessionApi'
 import { socketService } from '@/services/socket.service'
 import { playNotificationSound } from '@/utils/audioUtils'
-import { useToast } from '@/context/ToastContext'
+import { useToastStore } from '@/store/toastStore'
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -51,7 +51,7 @@ export const MentorDashboardPage: React.FC = () => {
   const [guidanceModalData, setGuidanceModalData] = useState<{ticketId: string} | null>(null)
   const [guidanceMessage, setGuidanceMessage] = useState('')
   const [guidanceError, setGuidanceError] = useState('')
-  const { showToast } = useToast()
+  const showToast = useToastStore((state) => state.showToast)
 
   useEffect(() => {
     if ('Notification' in window) {

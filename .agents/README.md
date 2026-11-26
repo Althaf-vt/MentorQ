@@ -14,7 +14,8 @@ This directory contains specialized AI agents designed to automate, orchestrate,
     │   └── task-batch-planner.md      # Decomposes tasks into <= 100-250 line verifiable batches
     │
     ├── architecture/
-    │   └── backend-architect-reviewer.md # Reviews NestJS code against architectural guidelines
+    │   ├── backend-architect-reviewer.md  # Reviews NestJS code against backend architectural guidelines
+    │   └── frontend-architect-reviewer.md # Reviews React/TS code against frontend architectural guidelines
     │
     ├── git/
     │   ├── git-commit-crafter.md      # Drafts atomic Conventional Commits for PowerShell
@@ -35,7 +36,7 @@ flowchart TD
 
     subgraph BatchLoop ["Per-Batch Execution & Quality Gate"]
         Planner --> Implement["Implement Batch Changes"]
-        Implement --> ArchReview["2. backend-architect-reviewer\n(Audit code vs architecture rules)"]
+        Implement --> ArchReview["2. backend / frontend-architect-reviewer\n(Audit code vs architecture rules)"]
         ArchReview -->|Fix Issues| Implement
         ArchReview -->|Passed| CommitCraft["3. git-commit-crafter\n(Draft atomic conventional commits)"]
         CommitCraft --> CommitEval["4. git-commit-evaluator\n(Audit rules & execute on approval)"]
@@ -65,6 +66,7 @@ flowchart TD
 
 ### 2. Architecture & Quality (`architecture/`)
 - **[`backend-architect-reviewer`](file:///c:/Users/altha/OneDrive/Documents/MentorQ/.agents/agents/architecture/backend-architect-reviewer.md)**: Reviews backend NestJS code against Controller -> Service -> Repository 3-layer architecture, zero Mongoose document leakage, and EDA rules.
+- **[`frontend-architect-reviewer`](file:///c:/Users/altha/OneDrive/Documents/MentorQ/.agents/agents/architecture/frontend-architect-reviewer.md)**: Reviews frontend React/TypeScript code against Page -> Component -> Store -> Service layering, RTK Query server-state discipline, Zustand client-state rules, and design system boundaries.
 
 ### 3. Git Commit Lifecycle (`git/`)
 - **[`git-commit-crafter`](file:///c:/Users/altha/OneDrive/Documents/MentorQ/.agents/agents/git/git-commit-crafter.md)**: Drafts atomic Conventional Commits per architectural layer (no bulk commits, shields `docs/` and `.agents/pipeline-state.md`).

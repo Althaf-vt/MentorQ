@@ -4,13 +4,13 @@ import { Sparkles, ShieldCheck, Clock, ArrowRight, ArrowLeft } from 'lucide-reac
 import { useSendOtpMutation, useVerifyOtpMutation } from '@/store/api/authApi'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
-import { useToast } from '@/context/ToastContext'
+import { useToastStore } from '@/store/toastStore'
 
 export const VerifyOtpPage: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { showToast } = useToast()
+  const showToast = useToastStore((state) => state.showToast)
 
   const initialEmail = location.state?.email || ''
   const expectedRole = location.state?.expectedRole as 'MENTOR' | 'STUDENT' | undefined

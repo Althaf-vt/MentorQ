@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useRegisterMutation } from '@/store/api/authApi'
-import { useToast } from '@/context/ToastContext'
+import { useToastStore } from '@/store/toastStore'
 
 const registerSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
@@ -29,7 +29,7 @@ export const RegisterPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const navigate = useNavigate()
-  const { showToast } = useToast()
+  const showToast = useToastStore((state) => state.showToast)
   const [register, { isLoading }] = useRegisterMutation()
 
   const {
