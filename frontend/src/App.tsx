@@ -48,7 +48,7 @@ function RootRedirect() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[#faf9f7] flex flex-col font-body">
+      <div data-mqds="light" className="min-h-screen bg-[var(--mqds-canvas,#faf9f7)] text-[var(--mqds-text,#303331)] flex flex-col font-body">
         <Navbar />
         <Toaster />
         <div className="flex-grow">
