@@ -1,6 +1,7 @@
 @import './variables.css';
 @import './cards.css';
 @import './notifications.css';
+@import './toast.css';
 @import './authentication-form.css';
 @import './session-request-form.css';
 @import './ticket-modal.css';

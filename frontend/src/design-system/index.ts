@@ -31,6 +31,7 @@ export { Skeleton, type SkeletonProps } from './components/Skeleton/Skeleton';
 export { SocialLinks, socialPlatforms, type SocialLinksProps } from './components/SocialLinks/SocialLinks';
 export { Table, type TableProps } from './components/Table/Table';
 export { Textarea, type TextareaProps } from './components/Textarea/Textarea';
+export { Toast, type ToastMessage, type ToastProps, type ToastTone } from './components/Toast/Toast';
 export { Tooltip, type TooltipProps } from './components/Tooltip/Tooltip';
 
 export { AuthenticationForm, type AuthMode, type AuthRole, type AuthenticationFormProps } from './components/AuthenticationForm/AuthenticationForm';
