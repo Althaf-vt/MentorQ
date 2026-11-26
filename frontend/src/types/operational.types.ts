@@ -7,7 +7,8 @@ export interface TicketStatusHistory {
 }
 
 export interface Ticket {
-  _id: string
+  _id?: string
+  id?: string
   student_id: string | { _id: string; fullName: string; email: string }
   mentor_id?: string | { _id: string; fullName: string; email: string }
   topic: string

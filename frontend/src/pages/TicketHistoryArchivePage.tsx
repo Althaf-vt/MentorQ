@@ -37,10 +37,10 @@ export const TicketHistoryArchivePage: React.FC = () => {
   // Extract past notes/guidance for DocumentFolder
   const archivedNotes = useMemo(() => {
     return tickets
-      .filter((t) => Boolean(t.guidance_message || t.status === 'COMPLETED'))
+      .filter((t) => Boolean(t.guidance_message || (t as { guidanceMessage?: string }).guidanceMessage || t.status === 'COMPLETED'))
       .slice(0, 10)
       .map((t) => ({
-        id: t._id,
+        id: t._id || (t as { id?: string }).id || '',
         title: t.topic,
       }))
   }, [tickets])
@@ -143,48 +143,52 @@ export const TicketHistoryArchivePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {list.map((t) => (
-                  <tr key={t._id}>
-                    <td className="font-semibold text-[var(--mqds-text)] max-w-xs truncate">
-                      {t.topic}
-                    </td>
-                    <td>
-                      <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--mqds-muted)]">
-                        <Clock className="w-3.5 h-3.5 text-[var(--mqds-primary)]" />
-                        <span>{t.requested_minutes || 15}m</span>
-                      </span>
-                    </td>
-                    <td>
-                      <Badge
-                        tone={
-                          t.status === 'COMPLETED'
-                            ? 'success'
-                            : t.status === 'CANCELLED' || t.status === 'REJECTED'
-                            ? 'danger'
-                            : 'warning'
-                        }
-                        className="font-mono text-[10px] uppercase"
-                      >
-                        {t.status}
-                      </Badge>
-                    </td>
-                    <td className="text-[var(--mqds-muted)] font-mono text-xs">
-                      {new Date(t.createdAt).toLocaleDateString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <Link
-                        to={`/queue/${t._id}`}
-                        className="text-xs font-semibold text-[var(--mqds-primary)] hover:underline"
-                      >
-                        Details &rarr;
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {list.map((t) => {
+                  const ticketId = t._id || (t as { id?: string }).id || ''
+                  const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
+                  return (
+                    <tr key={ticketId}>
+                      <td className="font-semibold text-[var(--mqds-text)] max-w-xs truncate">
+                        {t.topic}
+                      </td>
+                      <td>
+                        <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--mqds-muted)]">
+                          <Clock className="w-3.5 h-3.5 text-[var(--mqds-primary)]" />
+                          <span>{duration}m</span>
+                        </span>
+                      </td>
+                      <td>
+                        <Badge
+                          tone={
+                            t.status === 'COMPLETED'
+                              ? 'success'
+                              : t.status === 'CANCELLED' || t.status === 'REJECTED'
+                              ? 'danger'
+                              : 'warning'
+                          }
+                          className="font-mono text-[10px] uppercase"
+                        >
+                          {t.status}
+                        </Badge>
+                      </td>
+                      <td className="text-[var(--mqds-muted)] font-mono text-xs">
+                        {new Date(t.createdAt).toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <Link
+                          to={`/queue/${ticketId}`}
+                          className="text-xs font-semibold text-[var(--mqds-primary)] hover:underline"
+                        >
+                          Details &rarr;
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </Table>
 

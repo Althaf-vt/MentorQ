@@ -20,7 +20,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
   const [markAllRead] = useMarkAllNotificationsAsReadMutation()
 
   const items: NotificationItem[] = notifications.map((n: Notification) => ({
-    id: n._id,
+    id: n._id || (n as unknown as { id?: string }).id || '',
     title: n.title,
     description: n.message,
     at: new Date(n.createdAt).getTime(),

@@ -342,6 +342,7 @@ export const StudentDashboardPage: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {paginatedTickets.map((t) => {
+              const ticketId = t._id || (t as { id?: string }).id || ''
               const rawDate = t.createdAt || (t as { created_at?: string }).created_at
               const dateStr = rawDate
                 ? new Date(rawDate).toLocaleDateString([], {
@@ -351,10 +352,11 @@ export const StudentDashboardPage: React.FC = () => {
                     minute: '2-digit',
                   })
                 : ''
+              const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
 
               return (
                 <Card
-                  key={t._id}
+                  key={ticketId}
                   variant="ticket"
                   interactive
                   {...cardTiltHandlers}
@@ -376,9 +378,9 @@ export const StudentDashboardPage: React.FC = () => {
                         {t.status}
                       </Badge>
                       <div className="font-mono text-xs text-[var(--mqds-muted)] my-2">
-                        {t.requested_minutes || 15}m
+                        {duration}m
                       </div>
-                      <TicketAction onClick={() => navigate(`/queue/${t._id}`)}>
+                      <TicketAction onClick={() => navigate(`/queue/${ticketId}`)}>
                         Track
                       </TicketAction>
                     </div>
@@ -387,7 +389,7 @@ export const StudentDashboardPage: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-[var(--mqds-primary)]">
-                        #{t._id.slice(-6).toUpperCase()}
+                        #{ticketId ? ticketId.slice(-6).toUpperCase() : '------'}
                       </span>
                       {dateStr && (
                         <span className="text-[11px] font-mono text-[var(--mqds-muted)]">

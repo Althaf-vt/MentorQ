@@ -366,6 +366,7 @@ export const MentorDashboardPage: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {paginatedPool.map((t) => {
+                const ticketId = t._id || (t as { id?: string }).id || ''
                 const rawDate = t.createdAt || (t as { created_at?: string }).created_at
                 const dateStr = rawDate
                   ? new Date(rawDate).toLocaleDateString([], {
@@ -375,10 +376,11 @@ export const MentorDashboardPage: React.FC = () => {
                       minute: '2-digit',
                     })
                   : ''
+                const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
 
                 return (
                   <Card
-                    key={t._id}
+                    key={ticketId}
                     variant="ticket"
                     interactive
                     {...cardTiltHandlers}
@@ -389,11 +391,11 @@ export const MentorDashboardPage: React.FC = () => {
                           Pending
                         </Badge>
                         <div className="font-mono text-xs text-[var(--mqds-muted)] my-2">
-                          {t.requested_minutes || 15}m
+                          {duration}m
                         </div>
                         <Button
                           variant="primary"
-                          onClick={() => handleClaimTicket(t._id)}
+                          onClick={() => handleClaimTicket(ticketId)}
                           disabled={isClaiming || !isOnline}
                           className="!px-3 !py-1.5 !min-h-0 text-xs w-full"
                           title={!isOnline ? 'Mark yourself as Available to claim tickets' : 'Claim this ticket'}
@@ -406,7 +408,7 @@ export const MentorDashboardPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-[var(--mqds-primary)]">
-                          #{t._id.slice(-6).toUpperCase()}
+                          #{ticketId ? ticketId.slice(-6).toUpperCase() : '------'}
                         </span>
                         {dateStr && (
                           <span className="text-[11px] font-mono text-[var(--mqds-muted)]">
@@ -516,6 +518,7 @@ export const MentorDashboardPage: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {paginatedActive.map((t) => {
+                const ticketId = t._id || (t as { id?: string }).id || ''
                 const rawDate = t.createdAt || (t as { created_at?: string }).created_at
                 const dateStr = rawDate
                   ? new Date(rawDate).toLocaleDateString([], {
@@ -525,10 +528,11 @@ export const MentorDashboardPage: React.FC = () => {
                       minute: '2-digit',
                     })
                   : ''
+                const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
 
                 return (
                   <Card
-                    key={t._id}
+                    key={ticketId}
                     variant="ticket"
                     interactive
                     {...cardTiltHandlers}
@@ -542,12 +546,12 @@ export const MentorDashboardPage: React.FC = () => {
                           {t.status}
                         </Badge>
                         <div className="font-mono text-xs text-[var(--mqds-muted)] my-2">
-                          {t.requested_minutes || 15}m
+                          {duration}m
                         </div>
                         <div className="space-y-1.5 w-full">
                           <Button
                             variant="secondary"
-                            onClick={() => setGuidanceModalData({ ticketId: t._id })}
+                            onClick={() => setGuidanceModalData({ ticketId })}
                             className="!px-2 !py-1 !min-h-0 text-[10px] w-full flex items-center justify-center gap-1"
                           >
                             <MessageSquare className="w-3 h-3" />
@@ -555,7 +559,7 @@ export const MentorDashboardPage: React.FC = () => {
                           </Button>
                           <Button
                             variant="primary"
-                            onClick={() => handleStartFocusSession(t._id)}
+                            onClick={() => handleStartFocusSession(ticketId)}
                             className="!px-2 !py-1 !min-h-0 text-[10px] w-full flex items-center justify-center gap-1"
                           >
                             <Video className="w-3 h-3" />
@@ -568,7 +572,7 @@ export const MentorDashboardPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-[var(--mqds-primary)]">
-                          #{t._id.slice(-6).toUpperCase()}
+                          #{ticketId ? ticketId.slice(-6).toUpperCase() : '------'}
                         </span>
                         {dateStr && (
                           <span className="text-[11px] font-mono text-[var(--mqds-muted)]">

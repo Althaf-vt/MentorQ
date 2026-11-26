@@ -81,6 +81,7 @@ export const QueueTrackerPage: React.FC = () => {
   }
 
   const pos = posData?.position ?? 1
+  const currentTicketId = ticket._id || ticket.id || ticketId || ''
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -100,7 +101,7 @@ export const QueueTrackerPage: React.FC = () => {
             <span>Live Queue</span>
           </span>
           <Badge tone="info" className="font-mono text-xs">
-            #{ticket._id.slice(-6).toUpperCase()}
+            #{currentTicketId ? currentTicketId.slice(-6).toUpperCase() : '------'}
           </Badge>
         </div>
       </div>
@@ -180,7 +181,7 @@ export const QueueTrackerPage: React.FC = () => {
           </div>
           <Button
             variant="primary"
-            onClick={() => navigate(`/focus/${ticket._id}`)}
+            onClick={() => navigate(`/focus/${currentTicketId}`)}
             className="flex items-center gap-2 whitespace-nowrap animate-pulse"
           >
             <PlayCircle className="w-4 h-4" />
@@ -303,7 +304,7 @@ export const QueueTrackerPage: React.FC = () => {
               variant="danger"
               disabled={isCancelling}
               onClick={async () => {
-                await updateStatus({ id: ticket._id, status: 'CANCELLED' })
+                await updateStatus({ id: currentTicketId, status: 'CANCELLED' })
                 setIsCancelModalOpen(false)
                 navigate('/dashboard')
               }}
