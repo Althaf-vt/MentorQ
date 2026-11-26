@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Clock, ArrowLeft, AlertCircle, CheckCircle2, Loader2, PlayCircle, XCircle, MessageSquare } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Clock, ArrowLeft, CheckCircle2, PlayCircle, XCircle, MessageSquare, Radio } from 'lucide-react'
 import { useGetTicketByIdQuery, useGetQueuePositionQuery, useUpdateTicketStatusMutation } from '@/store/api/ticketApi'
 import { socketService } from '@/services/socket.service'
 import { playNotificationSound } from '@/utils/audioUtils'
-
 import { useAppSelector } from '@/store/hooks'
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Loader,
+  Modal,
+} from '@/design-system'
 
 export const QueueTrackerPage: React.FC = () => {
   const { ticketId } = useParams<{ ticketId: string }>()
@@ -25,8 +32,11 @@ export const QueueTrackerPage: React.FC = () => {
       socketService.emit('joinUser', user.id)
     }
 
-    const onUp = () => { refetch(); refetchPos() }
-    const onFocusStarted = (data: any) => {
+    const onUp = () => {
+      refetch()
+      refetchPos()
+    }
+    const onFocusStarted = (data: unknown) => {
       console.log('Focus mode started event received:', data)
       playNotificationSound()
       refetch()
@@ -45,104 +55,264 @@ export const QueueTrackerPage: React.FC = () => {
     }
   }, [ticketId, user?.id, refetch, refetchPos])
 
-  if (isLoading) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-2"><Loader2 className="animate-spin text-[#5948d3]" /><p className="text-xs text-slate-500">Loading...</p></div>
-  if (!ticket) return <div className="max-w-md mx-auto my-12 p-6 bg-white rounded-xl border text-center space-y-3"><AlertCircle className="mx-auto text-red-500" /><p className="text-sm">Ticket not found.</p><Link to="/dashboard" className="inline-block px-4 py-2 bg-[#5948d3] text-white text-xs rounded-full">Back to Dashboard</Link></div>
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
+        <Loader />
+        <p className="text-xs font-mono text-[var(--mqds-muted)]">Loading ticket status...</p>
+      </div>
+    )
+  }
+
+  if (!ticket) {
+    return (
+      <div className="max-w-md mx-auto my-12 p-8">
+        <EmptyState
+          title="Ticket Not Found"
+          description="The requested ticket could not be found or has expired."
+          action={
+            <Button variant="primary" onClick={() => navigate('/dashboard')}>
+              Back to Dashboard
+            </Button>
+          }
+        />
+      </div>
+    )
+  }
 
   const pos = posData?.position ?? 1
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      {/* Navigation & Header */}
       <div className="flex justify-between items-center">
-        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-slate-600 text-xs font-semibold"><ArrowLeft className="w-4 h-4" /> Back</button>
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#5948d3]/10 text-[#5948d3]">Ticket #{ticket._id.slice(-6)}</span>
-      </div>
-
-      <div className="bg-white rounded-2xl p-6 border shadow-sm space-y-5">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">{ticket.topic}</h1>
-          <p className="text-xs text-slate-500 mt-1">{ticket.description}</p>
-        </div>
-
-        {ticket.status === 'PENDING' && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#f4f4f1] p-4 rounded-xl flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-[#5948d3] text-white flex items-center justify-center font-bold text-lg">#{pos}</span>
-              <div><p className="text-[10px] uppercase text-slate-400 font-semibold">Queue Position</p><p className="text-xs font-bold text-slate-700">{pos === 1 ? 'Next!' : `${pos - 1} ahead`}</p></div>
-            </div>
-            <div className="bg-[#f4f4f1] p-4 rounded-xl flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center"><Clock className="w-5 h-5" /></span>
-              <div><p className="text-[10px] uppercase text-slate-400 font-semibold">Est. Wait</p><p className="text-xs font-bold text-slate-700">~{pos * 10}m</p></div>
-            </div>
-          </div>
-        )}
-
-        {ticket.status === 'ACTIVE' && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2"><CheckCircle2 className="text-emerald-600" /><p className="text-xs font-bold text-emerald-900">Your session is active!</p></div>
-            <button onClick={() => navigate(`/focus/${ticket._id}`)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-full font-bold flex items-center gap-1 shadow-md shadow-emerald-500/20 animate-pulse"><PlayCircle className="w-4 h-4" /> Enter Focus Mode</button>
-          </div>
-        )}
-
-        {ticket.status === 'COMPLETED' && ticket.guidance_message && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-2">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-blue-600" />
-              <p className="text-xs font-bold text-blue-900">Mentor Guidance</p>
-            </div>
-            <p className="text-xs text-blue-800 whitespace-pre-wrap leading-relaxed">{ticket.guidance_message}</p>
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex gap-1">{ticket.tags?.map(t => <span key={t} className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">#{t}</span>)}</div>
-          {ticket.status === 'PENDING' && (
-            <button onClick={() => setIsCancelModalOpen(true)} disabled={isCancelling} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs rounded-lg flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Cancel</button>
-          )}
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/dashboard')}
+          className="!p-2 !min-h-0 text-xs flex items-center gap-1.5"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Dashboard</span>
+        </Button>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 text-xs font-mono text-[var(--mqds-muted)] bg-[var(--mqds-surface)] px-2.5 py-1 rounded-full border border-[var(--mqds-border-subtle)]">
+            <Radio className="w-3 h-3 text-[var(--mqds-primary)] animate-pulse" />
+            <span>Live Queue</span>
+          </span>
+          <Badge tone="info" className="font-mono text-xs">
+            #{ticket._id.slice(-6).toUpperCase()}
+          </Badge>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-5 border shadow-sm">
-        <h3 className="font-bold text-sm text-slate-800 mb-3">Timeline</h3>
-        <div className="space-y-3">
-          {ticket.status_history?.map((h, i) => (
-            <div key={i} className="flex gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#5948d3] mt-1.5" />
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-800">{h.status}</p>
-                <p className="text-[10px] text-slate-400">{new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                {h.feedback_note && <p className="text-xs text-slate-500 italic mt-0.5">{h.feedback_note}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Position Hero Card */}
+      {ticket.status === 'PENDING' && (
+        <Card variant="paper" className="p-8 sm:p-10 text-center relative overflow-hidden shadow-md border border-[var(--mqds-paper-border)]">
+          <div className="relative z-10 flex justify-center mb-6">
+            <Badge tone="warning" className="px-3.5 py-1 rounded-full text-xs font-mono uppercase tracking-wider font-semibold">
+              Waiting in Queue
+            </Badge>
+          </div>
 
-      {isCancelModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
-              <AlertCircle className="w-6 h-6" />
+          {/* SVG Progress Ring */}
+          <div className="relative z-10 mx-auto w-48 h-48 flex items-center justify-center">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
+              <circle
+                cx="100"
+                cy="100"
+                fill="none"
+                r="84"
+                stroke="var(--mqds-border-subtle, #e1e3e0)"
+                strokeWidth="12"
+              />
+              <circle
+                className="transition-all duration-1000 ease-out"
+                cx="100"
+                cy="100"
+                fill="none"
+                r="84"
+                stroke="var(--mqds-primary, #6c5ce7)"
+                strokeDasharray="527.78"
+                strokeDashoffset={Math.max(0, 527.78 - (527.78 / Math.max(pos, 1)))}
+                strokeLinecap="round"
+                strokeWidth="12"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="font-headline text-5xl font-bold text-[var(--mqds-primary)] tracking-tight leading-none">
+                #{pos}
+              </span>
+              <span className="font-body text-xs font-medium text-[var(--mqds-muted)] mt-1.5 tracking-wide">
+                in line
+              </span>
+            </div>
+          </div>
+
+          <div className="relative z-10 mt-6 pt-6 border-t border-[var(--mqds-border-subtle)] max-w-sm mx-auto">
+            <div className="font-mono text-xs uppercase tracking-widest text-[var(--mqds-muted)] font-semibold">
+              Estimated Wait Time
+            </div>
+            <div className="font-headline text-3xl font-bold text-[var(--mqds-text)] mt-1 tracking-tight">
+              ~{pos * 10} minutes
+            </div>
+            <p className="text-xs text-[var(--mqds-muted)] mt-1">
+              {pos === 1 ? 'You are next in line for mentorship!' : `${pos - 1} ticket(s) ahead of you`}
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Active Session Alert Banner */}
+      {ticket.status === 'ACTIVE' && (
+        <div className="p-6 rounded-2xl bg-[var(--mqds-hover,#ede9fe)] border border-[var(--mqds-primary)]/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--mqds-primary)] text-white flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="font-bold text-lg text-slate-900">Cancel Ticket?</h2>
-              <p className="text-xs text-slate-500 mt-1">Are you sure you want to cancel this mentorship request? You will lose your position in the queue.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button onClick={() => setIsCancelModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-50">Keep Ticket</button>
-              <button 
-                onClick={async () => {
-                  await updateStatus({ id: ticket._id, status: 'CANCELLED' });
-                  setIsCancelModalOpen(false);
-                  navigate('/dashboard');
-                }} 
-                disabled={isCancelling} 
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold flex justify-center items-center gap-2 disabled:opacity-50"
-              >
-                {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
-              </button>
+              <p className="text-sm font-headline font-bold text-[var(--mqds-text)]">
+                Your Mentorship Session is Ready!
+              </p>
+              <p className="text-xs text-[var(--mqds-muted)]">
+                A mentor has claimed your ticket and is waiting in the focus room.
+              </p>
             </div>
           </div>
+          <Button
+            variant="primary"
+            onClick={() => navigate(`/focus/${ticket._id}`)}
+            className="flex items-center gap-2 whitespace-nowrap animate-pulse"
+          >
+            <PlayCircle className="w-4 h-4" />
+            <span>Enter Focus Mode</span>
+          </Button>
         </div>
       )}
+
+      {/* Completed Guidance Banner */}
+      {ticket.status === 'COMPLETED' && ticket.guidance_message && (
+        <Card variant="paper" className="p-6 border border-[var(--mqds-paper-border)] space-y-3">
+          <div className="flex items-center gap-2 text-[var(--mqds-primary)] font-headline font-semibold text-sm">
+            <MessageSquare className="w-4 h-4" />
+            <span>Mentor Guidance Notes</span>
+          </div>
+          <div className="p-4 rounded-xl bg-[var(--mqds-surface)] border border-[var(--mqds-border-subtle)] font-body text-xs text-[var(--mqds-text)] whitespace-pre-wrap leading-relaxed">
+            {ticket.guidance_message}
+          </div>
+        </Card>
+      )}
+
+      {/* Ticket Details Card */}
+      <Card variant="paper" className="p-6 sm:p-8 border border-[var(--mqds-paper-border)] shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--mqds-border-subtle)] pb-4">
+          <div>
+            <span className="font-mono text-xs uppercase tracking-wider text-[var(--mqds-muted)]">
+              Ticket Details
+            </span>
+            <h1 className="font-headline text-xl sm:text-2xl font-bold text-[var(--mqds-text)] mt-1">
+              {ticket.topic}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge tone={ticket.status === 'ACTIVE' ? 'success' : ticket.status === 'COMPLETED' ? 'info' : 'warning'}>
+              {ticket.status}
+            </Badge>
+          </div>
+        </div>
+
+        <p className="font-body text-sm text-[var(--mqds-text)] leading-relaxed whitespace-pre-wrap">
+          {ticket.description}
+        </p>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[var(--mqds-border-subtle)] text-xs">
+          <div className="flex items-center gap-4 text-[var(--mqds-muted)]">
+            <div className="flex items-center gap-1.5 font-mono">
+              <Clock className="w-4 h-4 text-[var(--mqds-primary)]" />
+              <span>{ticket.requested_minutes || 15} mins requested</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {ticket.tags?.map((t) => (
+                <Badge key={t} tone="neutral" className="text-[11px] font-mono">
+                  #{t}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          {ticket.status === 'PENDING' && (
+            <Button
+              variant="danger-subtle"
+              onClick={() => setIsCancelModalOpen(true)}
+              disabled={isCancelling}
+              className="flex items-center gap-1.5 text-xs"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Cancel Request</span>
+            </Button>
+          )}
+        </div>
+      </Card>
+
+      {/* Status History Timeline */}
+      {ticket.status_history && ticket.status_history.length > 0 && (
+        <Card variant="paper" className="p-6 border border-[var(--mqds-paper-border)] shadow-sm">
+          <h3 className="font-headline font-bold text-sm text-[var(--mqds-text)] mb-4">
+            Lifecycle Timeline
+          </h3>
+          <div className="space-y-4">
+            {ticket.status_history.map((h, i) => (
+              <div key={i} className="flex items-start gap-3 relative">
+                <div className="w-2.5 h-2.5 rounded-full bg-[var(--mqds-primary)] mt-1.5 shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="font-mono text-xs font-semibold uppercase text-[var(--mqds-text)]">
+                      {h.status}
+                    </p>
+                    <p className="font-mono text-[11px] text-[var(--mqds-muted)]">
+                      {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  {h.feedback_note && (
+                    <p className="text-xs text-[var(--mqds-muted)] italic mt-0.5">
+                      {h.feedback_note}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        open={isCancelModalOpen}
+        onOpenChange={setIsCancelModalOpen}
+        variant="danger"
+        title="Cancel Mentorship Request"
+        description="Are you sure you want to cancel this mentorship request? You will lose your current position in the queue."
+        actions={
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <Button
+              variant="secondary"
+              onClick={() => setIsCancelModalOpen(false)}
+            >
+              Keep Ticket
+            </Button>
+            <Button
+              variant="danger"
+              disabled={isCancelling}
+              onClick={async () => {
+                await updateStatus({ id: ticket._id, status: 'CANCELLED' })
+                setIsCancelModalOpen(false)
+                navigate('/dashboard')
+              }}
+            >
+              {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+            </Button>
+          </div>
+        }
+      />
     </div>
   )
 }
