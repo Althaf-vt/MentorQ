@@ -1,10 +1,16 @@
 import React, { useState } from 'react'
-import { X, Send, Clock, Tag, AlertCircle, Check } from 'lucide-react'
+import { AlertCircle, Clock, Tag, Check, Send } from 'lucide-react'
 import { useCreateTicketMutation } from '@/store/api/ticketApi'
 import { useToastStore } from '@/store/toastStore'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import {
+  Modal,
+  Input,
+  Textarea,
+  Button,
+} from '@/design-system'
 
 interface Props {
   isOpen: boolean
@@ -35,7 +41,7 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
   const showToast = useToastStore((state) => state.showToast)
   const [createTicket, { isLoading }] = useCreateTicketMutation()
   const [globalError, setGlobalError] = useState('')
-  
+
   const { register, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<TicketFormValues>({
     resolver: zodResolver(ticketSchema),
     defaultValues: {
@@ -45,8 +51,6 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
       tags: ['React']
     }
   })
-
-  if (!isOpen) return null
 
   const selectedTags = watch('tags')
 
@@ -69,86 +73,120 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
       reset()
       if (onSuccess) onSuccess()
       onClose()
-    } catch (err: any) {
-      const errMsg = err?.data?.message || 'Failed to submit ticket.'
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string | string[] } }
+      const errMsg = error?.data?.message || 'Failed to submit ticket.'
       setGlobalError(Array.isArray(errMsg) ? errMsg.join(', ') : errMsg)
       showToast('Validation failed. Please check your inputs.', 'error')
     }
   }
 
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="w-full max-w-xl bg-[#faf9f7] rounded-2xl shadow-2xl border border-[#e1e3e0] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e1e3e0] bg-white">
-          <div>
-            <h2 className="font-bold text-lg text-slate-800">Request Mentorship Session</h2>
-            <p className="text-xs text-slate-500">Submit your question to enter the queue</p>
+    <Modal
+      open={isOpen}
+      onOpenChange={handleModalClose}
+      variant="ticket"
+      ticketHeader={{
+        leading: 'MQ',
+        label: 'MENTORQ TICKET',
+      }}
+      title="Request Mentorship"
+      description="Submit your problem to enter the live queue"
+      className="max-w-xl"
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-1">
+        {globalError && (
+          <div className="p-3 bg-[var(--mqds-warning-surface,#fff5f5)] border border-[var(--mqds-danger-border,#f5c6cb)] rounded-xl text-[var(--mqds-danger,#a8364b)] text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{globalError}</span>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+        )}
+
+        <Input
+          label="Topic"
+          placeholder="e.g. Debugging React useEffect infinite loop"
+          {...register('topic')}
+          error={errors.topic?.message}
+        />
+
+        <Textarea
+          label="Problem Description"
+          placeholder="Describe your issue, what you've tried so far, and code snippets if relevant..."
+          rows={3}
+          {...register('description')}
+          error={errors.description?.message}
+        />
+
+        <div>
+          <Input
+            label={
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-[var(--mqds-primary)]" />
+                <span>Duration (Minutes)</span>
+              </span>
+            }
+            type="number"
+            min={5}
+            step={1}
+            {...register('requested_minutes', { valueAsNumber: true })}
+            error={errors.requested_minutes?.message}
+          />
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-          {globalError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{globalError}</div>}
-          
-          <div>
-            <label className="block text-xs font-semibold uppercase text-slate-700 mb-1">Topic</label>
-            <input 
-              type="text" 
-              {...register('topic')}
-              placeholder="e.g. Debugging React useEffect loop" 
-              className={`w-full px-3 py-2 rounded-xl border text-sm bg-white ${errors.topic ? 'border-red-500 focus:ring-red-500' : ''}`} 
-            />
-            {errors.topic && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.topic.message}</p>}
-          </div>
 
-          <div>
-            <label className="block text-xs font-semibold uppercase text-slate-700 mb-1">Description</label>
-            <textarea 
-              rows={3} 
-              {...register('description')}
-              placeholder="Problem description..." 
-              className={`w-full px-3 py-2 rounded-xl border text-sm bg-white resize-none ${errors.description ? 'border-red-500 focus:ring-red-500' : ''}`} 
-            />
-            {errors.description && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.description.message}</p>}
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-700 flex items-center gap-1 mb-1"><Clock className="w-3.5 h-3.5 text-[#5948d3]" /> Duration (Minutes)</label>
-            <input 
-              type="number"
-              min="5"
-              step="1"
-              {...register('requested_minutes', { valueAsNumber: true })}
-              className={`w-full px-3 py-2 rounded-xl border text-sm bg-white ${errors.requested_minutes ? 'border-red-500 focus:ring-red-500' : ''}`}
-            />
-            {errors.requested_minutes && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.requested_minutes.message}</p>}
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-700 flex items-center gap-1 mb-1"><Tag className="w-3.5 h-3.5 text-[#5948d3]" /> Tags</label>
-            <div className="flex flex-wrap gap-1.5">
-              {CATS.map(c => (
-                <button 
-                  key={c} 
-                  type="button" 
-                  onClick={() => toggleTag(c)} 
-                  className={`px-2.5 py-1 rounded-full text-xs flex items-center gap-1 ${selectedTags.includes(c) ? 'bg-[#5948d3] text-white' : 'bg-[#eeeeeb] text-slate-700'}`}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--mqds-text)] mb-2 flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-[var(--mqds-primary)]" />
+            <span>Tags (Select 1-5)</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {CATS.map((c) => {
+              const isSelected = selectedTags?.includes(c)
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleTag(c)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
+                      : 'bg-[var(--mqds-border-subtle)] text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)]'
+                  }`}
                 >
-                  {c}{selectedTags.includes(c) && <Check className="w-3 h-3" strokeWidth={3} />}
+                  <span>{c}</span>
+                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                 </button>
-              ))}
-            </div>
-            {errors.tags && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.tags.message}</p>}
+              )
+            })}
           </div>
+          {errors.tags && (
+            <p className="text-[var(--mqds-danger)] text-xs mt-1.5 flex items-center gap-1 font-mono">
+              <AlertCircle className="w-3 h-3" />
+              <span>{errors.tags.message}</span>
+            </p>
+          )}
+        </div>
 
-          <div className="pt-3 border-t border-[#e1e3e0] flex justify-between items-center">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl border text-slate-600 text-sm">Cancel</button>
-            <button type="submit" disabled={isLoading} className="px-5 py-2 rounded-full bg-[#5948d3] hover:bg-[#4d39c7] text-white text-sm flex items-center gap-2 shadow disabled:opacity-50">
-              <span>{isLoading ? 'Submitting...' : 'Submit Ticket'}</span>
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="pt-4 border-t border-[var(--mqds-border-subtle)] flex justify-end items-center gap-3">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <span>{isLoading ? 'Submitting...' : 'Submit Ticket'}</span>
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
+      </form>
+    </Modal>
   )
 }
