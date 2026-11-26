@@ -44,7 +44,8 @@ To completely prevent LLM hallucinations, context drift, and lost progress acros
 You coordinate the following specialized agents:
 - **Planner:** `task-batch-planner` (`.agents/agents/planning/task-batch-planner.md`)
 - **Backend Reviewer:** `backend-architect-reviewer` (`.agents/agents/architecture/backend-architect-reviewer.md`) — use exclusively for `backend/**` changes
-- **Frontend Reviewer:** `frontend-architect-reviewer` (`.agents/agents/architecture/frontend-architect-reviewer.md`) — use exclusively for `frontend/**` changes
+- **Frontend Reviewer:** `frontend-architect-reviewer` (`.agents/agents/architecture/frontend-architect-reviewer.md`) — use for general frontend architectural rule audits
+- **UI & Design System Reviewer (Temporary):** `ui-design-system-reviewer` (`.agents/agents/ui/ui-design-system-reviewer.md`) — use exclusively during UI & Design System alignment tasks in place of the architecture reviewer
 - **Git Commit Crafter:** `git-commit-crafter` (`.agents/agents/git/git-commit-crafter.md`)
 - **Git Commit Evaluator & Performer:** `git-commit-evaluator` (`.agents/agents/git/git-commit-evaluator.md`)
 - **PR Drafter:** `pr-drafter` (`.agents/agents/pr/pr-drafter.md`)
