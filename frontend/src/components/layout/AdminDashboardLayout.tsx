@@ -3,6 +3,7 @@ import { LogOut, LayoutDashboard, Settings, Users, ShieldAlert } from 'lucide-re
 import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
 import { clearSession } from '@/lib/roleContext'
+import { Button } from '@/design-system'
 import clsx from 'clsx'
 
 export function AdminDashboardLayout() {
@@ -23,58 +24,68 @@ export function AdminDashboardLayout() {
   ]
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-white font-sans">
+    <div
+      data-mqds="dark"
+      className="flex h-screen bg-[var(--mqds-canvas,#201d35)] text-[var(--mqds-text,#f4f7f2)] font-body"
+    >
       {/* Sidebar */}
-      <aside className="w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
-            <ShieldAlert className="w-6 h-6 text-white" />
+      <aside className="w-64 border-r border-[var(--mqds-border,#89839b)]/25 bg-[var(--mqds-surface,#272440)] flex flex-col justify-between">
+        <div>
+          <div className="p-6 flex items-center gap-3 border-b border-[var(--mqds-border,#89839b)]/20">
+            <div className="w-10 h-10 bg-[var(--mqds-danger,#9b253b)] rounded-xl flex items-center justify-center text-white shadow-xs">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold font-headline tracking-tight text-[var(--mqds-text)]">
+                Admin Console
+              </h1>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
+                MentorQ Control
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Admin</h1>
-            <p className="text-xs text-zinc-400">Portal</p>
-          </div>
+
+          <nav className="px-4 space-y-1.5 mt-6">
+            {navItems.map((item) => {
+              const isActive = location.pathname.startsWith(item.path)
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={clsx(
+                    'flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group',
+                    isActive
+                      ? 'bg-[var(--mqds-hover,#3b355a)] text-[var(--mqds-accent,#c5baff)] shadow-xs'
+                      : 'text-[var(--mqds-muted)] hover:bg-[var(--mqds-hover)] hover:text-white'
+                  )}
+                >
+                  <item.icon
+                    className={clsx(
+                      'w-4 h-4 transition-transform duration-200',
+                      isActive ? 'scale-110 text-[var(--mqds-accent)]' : 'group-hover:scale-110'
+                    )}
+                  />
+                  <span>{item.name}</span>
+                </Link>
+              )
+            })}
+          </nav>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4">
-          {navItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path)
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={clsx(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
-                  isActive
-                    ? 'bg-red-500/10 text-red-400'
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
-                )}
-              >
-                <item.icon
-                  className={clsx(
-                    'w-5 h-5 transition-transform duration-200',
-                    isActive ? 'scale-110' : 'group-hover:scale-110'
-                  )}
-                />
-                <span className="font-medium">{item.name}</span>
-              </Link>
-            )
-          })}
-        </nav>
-
-        <div className="p-4">
-          <button
+        <div className="p-4 border-t border-[var(--mqds-border,#89839b)]/20">
+          <Button
+            variant="danger-subtle"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 !py-2 text-xs"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Sign Out</span>
-          </button>
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out</span>
+          </Button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-[var(--mqds-canvas,#201d35)]">
         <div className="flex-1 overflow-auto p-8">
           <div className="max-w-6xl mx-auto">
             <Outlet />
