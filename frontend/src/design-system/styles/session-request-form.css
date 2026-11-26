@@ -1,0 +1,163 @@
+/* Ticket treatment for the shared request form. */
+dialog.request-dialog[data-variant="ivory"] {
+  width: min(560px, 94vw);
+  max-height: 92dvh;
+  border-color: #c8a28d;
+  border-radius: 17px;
+  background: #fff9ef;
+  color: #251644;
+  box-shadow: 0 24px 85px #120f27a6;
+}
+dialog.request-dialog::before { content: none; }
+dialog.request-dialog[data-variant="ivory"] .sheet {
+  --request-gutter: clamp(16px, 5vw, 28px);
+  position: relative;
+  padding: 0 var(--request-gutter) var(--request-gutter);
+}
+.request-dialog .sheet > .close {
+  position: absolute;
+  z-index: 1;
+  top: 15px;
+  right: 15px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #7e4c5a;
+  border-radius: 50%;
+  color: #402638;
+  line-height: 1;
+}
+.request-dialog .sheet > .close:hover { background: #fff9ef82; }
+.request-dialog .sheet form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .8fr);
+  gap: 15px 14px;
+}
+dialog.request-dialog[data-variant="ivory"] .sheet h2 {
+  position: relative;
+  grid-column: 1 / -1;
+  margin: 0 calc(-1 * var(--request-gutter)) 9px;
+  padding: 22px 56px 24px calc(var(--request-gutter) + 45px);
+  background:
+    repeating-radial-gradient(ellipse at right top, transparent 0 17px, #8c4c5530 18px 19px, transparent 20px 26px) right top / 125px 100% no-repeat,
+    #ffae8a;
+  color: #301c33;
+  font-size: clamp(26px, 6vw, 39px);
+  line-height: 1.06;
+  letter-spacing: -.055em;
+}
+.request-dialog .sheet h2::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -5px;
+  height: 10px;
+  background: radial-gradient(circle, #fff9ef 4px, transparent 4.5px) left top / 15px 10px repeat-x;
+  pointer-events: none;
+}
+dialog.request-dialog[data-variant="ivory"] .spring-symbol {
+  position: absolute;
+  z-index: 1;
+  top: 21px;
+  left: var(--request-gutter);
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  border-radius: 6px;
+  background: #302153;
+  color: #fff9ef;
+  font-size: 20px;
+  transform: rotate(-6deg);
+}
+dialog.request-dialog[data-variant="ivory"] .sheet form > label {
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  color: #463450;
+  font-size: .87rem;
+}
+.request-dialog .sheet label:has(input[name="topic"]) { grid-column: 1 / -1; }
+dialog.request-dialog[data-variant="ivory"] .sheet :is(input, select) {
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid #aa95ad;
+  border-radius: 7px;
+  background: #f1e8f6;
+  color: #251644;
+  caret-color: #251644;
+  font-size: 16px;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+dialog.request-dialog[data-variant="ivory"] .sheet input[name="topic"] {
+  min-height: 51px;
+  border-color: #ac9995;
+  background: #fffdfa;
+}
+dialog.request-dialog[data-variant="ivory"] .sheet :is(input, select):focus-visible {
+  outline: 2px solid #654392;
+  outline-offset: 2px;
+  border-color: #654392;
+}
+dialog.request-dialog[data-variant="ivory"] .sheet .submit-request {
+  grid-column: 1 / -1;
+  min-height: 46px;
+  margin-top: 4px;
+}
+dialog.request-dialog[data-variant="ivory"] .sheet .submit-request:not(:disabled) { background: #302153; }
+dialog.request-dialog[data-variant="ivory"] .sheet .submit-request:not(:disabled):hover { background: #4c337d; }
+
+@media (max-width: 365px) {
+  .request-dialog .sheet form { grid-template-columns: 1fr; gap: 12px; }
+}
+.request-dialog .sheet { font-family: var(--mqds-font, Inter), "Segoe UI", sans-serif; }
+.request-dialog .sheet form > label { display: grid; font-weight: 650; }
+.request-dialog .sheet :is(input, select) { width: 100%; box-sizing: border-box; }
+.request-dialog .spring-symbol { display: grid; place-items: center; font-weight: 750; }
+.request-dialog .submit-request { width: 100%; justify-content: space-between; }
+.request-dialog .submit-request:not(:disabled) { color: #fff9ef; }
+.request-dialog .submit-request:disabled { background: #225c47; color: #fff9ef; }
+
+dialog.mqds-modal.session-request-dialog { width: min(560px, 94vw); }
+
+.mqds-modal .mqds-session-request-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .8fr);
+  gap: 15px 14px;
+}
+.mqds-modal .mqds-session-request-form > :is(label, .mqds-field) {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #463450;
+  font-size: .87rem;
+  font-weight: 650;
+}
+.mqds-modal .mqds-session-request-form :is(input, select) {
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid #aa95ad;
+  border-radius: 7px;
+  background: #f1e8f6;
+  color: #251644;
+  font: 400 16px var(--mqds-font);
+}
+.mqds-modal .mqds-session-request-form input[name="topic"] {
+  min-height: 51px;
+  border-color: #ac9995;
+  background: #fffdfa;
+}
+.mqds-modal .mqds-session-request-form input::placeholder { color: #645963; }
+.mqds-modal .mqds-session-request-form :is(input, select):focus-visible { outline: 2px solid #654392; outline-offset: 2px; }
+.mqds-modal .mqds-session-request-form > label:has(input[name="topic"]),
+.mqds-modal .mqds-session-request-form > .submit-request { grid-column: 1 / -1; }
+.mqds-modal .mqds-session-request-form > .submit-request { min-height: 46px; justify-content: space-between; margin-top: 4px; }
+.mqds-modal .mqds-session-request-form > .submit-request:not(:disabled) { background: #302153; }
+.mqds-modal .mqds-session-request-form > .submit-request:not(:disabled):hover { background: #4c337d; }
+.mqds-modal .mqds-session-request-form > .submit-request:disabled { background: #225c47; color: #fff9ef; }
+
+@media (max-width: 365px) {
+  .mqds-modal .mqds-session-request-form { grid-template-columns: 1fr; gap: 12px; }
+}
