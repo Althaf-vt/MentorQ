@@ -38,3 +38,6 @@ litellm_config.yaml
 # Antigravity agent runtime state
 .agents/pipeline-state.md
 
+# UI preview playground
+ui-preview/
+
