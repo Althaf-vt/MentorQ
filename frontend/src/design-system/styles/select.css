@@ -1,0 +1,84 @@
+select.mqds-select {
+  min-block-size: 44px;
+  padding-inline: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+select.mqds-select:enabled { cursor: pointer; }
+
+@supports (appearance: base-select) and selector(::picker(select)) and selector(::picker-icon) {
+  @media (forced-colors: none) {
+    select.mqds-select,
+    select.mqds-select::picker(select) { appearance: base-select; }
+
+    select.mqds-select { gap: 10px; }
+    select.mqds-select:open:not([aria-invalid="true"]) { border-color: var(--mqds-focus); }
+
+    select.mqds-select::picker-icon {
+      align-self: center;
+      flex: none;
+      width: 7px;
+      height: 7px;
+      margin-inline-start: auto;
+      margin-inline-end: 2px;
+      border: solid currentColor;
+      border-width: 0 1.5px 1.5px 0;
+      content: "";
+      transform: translateY(-2px) rotate(45deg);
+      transition: transform var(--mqds-motion-fast) var(--mqds-ease-out);
+    }
+
+    select.mqds-select:open::picker-icon { transform: translateY(2px) rotate(225deg); }
+
+    select.mqds-select::picker(select) {
+      box-sizing: border-box;
+      max-inline-size: calc(100vi - 16px);
+      margin-block: 4px;
+      padding: 4px;
+      border: 1px solid var(--mqds-field-border);
+      border-radius: calc(var(--mqds-radius-control) + 3px);
+      background: var(--mqds-field);
+      color: var(--mqds-text);
+      box-shadow: var(--mqds-shadow-panel);
+      font: 550 .92rem/1.4 var(--mqds-font);
+    }
+
+    @supports (inline-size: anchor-size(self-inline)) {
+      select.mqds-select::picker(select) {
+        inline-size: anchor-size(self-inline);
+        min-inline-size: 0;
+      }
+    }
+
+    select.mqds-select option {
+      align-items: center;
+      min-block-size: 36px;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: var(--mqds-radius-control);
+      overflow-wrap: anywhere;
+      cursor: pointer;
+    }
+
+    select.mqds-select option:disabled { opacity: .58; cursor: default; }
+    select.mqds-select option:enabled:is(:hover, :focus-visible) { background: var(--mqds-hover); }
+    select.mqds-select option:checked { background: var(--mqds-lilac); color: var(--mqds-ink); font-weight: 700; }
+    select.mqds-select option::checkmark { order: 1; margin-inline-start: auto; }
+    select.mqds-select option:focus-visible { outline: 2px solid var(--mqds-focus); outline-offset: -2px; }
+    select.mqds-select option:checked:focus-visible { outline-color: var(--mqds-ink); }
+
+    @media (prefers-reduced-motion: no-preference) {
+      select.mqds-select:open::picker(select) { animation: mqds-select-in var(--mqds-motion-fast) var(--mqds-ease-out); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      select.mqds-select::picker-icon { transition: none; }
+    }
+  }
+}
+
+@keyframes mqds-select-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
