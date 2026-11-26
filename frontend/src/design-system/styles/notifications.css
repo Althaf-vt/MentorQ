@@ -1,0 +1,151 @@
+[data-mqds="dark"] {
+  --mqds-drawer-surface: var(--mqds-canvas);
+  --mqds-drawer-heading:
+    repeating-radial-gradient(ellipse at right top, transparent 0 15px, #c8aff75c 16px 17px, transparent 18px 26px) right top / 155px 100% no-repeat,
+    linear-gradient(135deg, #514473, #3f365d 85%);
+  --mqds-drawer-edge: radial-gradient(circle, var(--mqds-drawer-surface) 4px, transparent 4.5px) left top / 15px 10px repeat-x;
+  --mqds-drawer-heading-muted: var(--mqds-muted);
+  --mqds-drawer-close-border: #c8aff780;
+  --mqds-drawer-close-hover: #c8aff727;
+  --mqds-drawer-card: var(--mqds-navy);
+  --mqds-drawer-highlight: color-mix(in srgb, var(--mqds-navy) 89%, var(--mqds-peach));
+  --mqds-drawer-filter-active: var(--mqds-lilac);
+  --mqds-drawer-filter-ink: var(--mqds-ink);
+}
+
+[data-mqds="light"] {
+  --mqds-drawer-surface: var(--mqds-ticket-surface);
+  --mqds-drawer-heading: var(--mqds-ticket-heading-background);
+  --mqds-drawer-edge: var(--mqds-ticket-perforation);
+  --mqds-drawer-heading-muted: #42293c;
+  --mqds-drawer-close-border: #7e4c5a;
+  --mqds-drawer-close-hover: #fff9ef82;
+  --mqds-drawer-card: #fffdf5;
+  --mqds-drawer-highlight: #fff0e5;
+  --mqds-drawer-filter-active: var(--mqds-primary);
+  --mqds-drawer-filter-ink: #fff;
+}
+
+.mqds-notification-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid var(--mqds-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mqds-text);
+  transition: background-color .2s ease, border-color .2s ease;
+}
+.mqds-notification-bell:hover, .mqds-notification-bell[aria-expanded="true"] { background: var(--mqds-hover); border-color: var(--mqds-focus); }
+.mqds-bell-shape { position: relative; width: 13px; height: 13px; border: 1.6px solid currentColor; border-radius: 8px 8px 3px 3px; }
+.mqds-bell-shape::before, .mqds-bell-shape::after { content: ""; position: absolute; left: 50%; background: currentColor; transform: translateX(-50%); }
+.mqds-bell-shape::before { width: 15px; height: 1.5px; bottom: -1.6px; border-radius: 1px; }
+.mqds-bell-shape::after { width: 4px; height: 2px; bottom: -4.5px; border-radius: 0 0 3px 3px; }
+.mqds-bell-count { position: absolute; top: -5px; right: -6px; min-width: 17px; height: 17px; padding-inline: 3px; border-radius: 9px; background: var(--mqds-peach); color: var(--mqds-ink); font-size: 10px; line-height: 17px; font-weight: 800; }
+
+.mqds-notifications-drawer {
+  --modal-exit-transform: translateX(100%);
+  --mqds-drawer-gutter: clamp(16px, 4vw, 26px);
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(420px, 96vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-left: 1px solid var(--mqds-border);
+  border-radius: 0;
+  background: var(--mqds-drawer-surface);
+  color: var(--mqds-text);
+  font-family: var(--mqds-font);
+}
+dialog.mqds-notifications-drawer::before { content: none; }
+dialog.mqds-notifications-drawer[aria-labelledby][open] { animation: mqds-notifications-slide-in .28s cubic-bezier(.2,.74,.24,1) both; }
+.mqds-notifications-drawer[open]::backdrop { background: #0d0b1da8; backdrop-filter: blur(4px); }
+@keyframes mqds-notifications-slide-in { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: none; } }
+.mqds-notifications-content { padding: 18px var(--mqds-drawer-gutter) var(--mqds-drawer-gutter); }
+.mqds-notifications-heading {
+  position: relative;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 22px var(--mqds-drawer-gutter) 24px;
+  background: var(--mqds-drawer-heading);
+}
+.mqds-notifications-heading::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -5px;
+  height: 10px;
+  background: var(--mqds-drawer-edge);
+  pointer-events: none;
+}
+.mqds-notifications-heading h2 { margin: 0; font-size: clamp(26px, 6vw, 37px); line-height: 1.06; letter-spacing: -.055em; }
+.mqds-notifications-heading p { margin: 7px 0 0; color: var(--mqds-drawer-heading-muted); font: 600 .8rem/1.4 var(--mqds-font-mono); }
+.mqds-notification-tools { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+.mqds-notification-filters { display: flex; gap: 4px; padding: 4px; border-radius: 8px; background: var(--mqds-field); }
+.mqds-notification-filters button { padding: 5px 9px; border-radius: 5px; background: transparent; color: var(--mqds-text); }
+.mqds-notification-filters button[aria-pressed="false"]:hover { background: var(--mqds-hover); }
+.mqds-notification-filters button[aria-pressed="true"] { background: var(--mqds-drawer-filter-active); color: var(--mqds-drawer-filter-ink); font-weight: 700; }
+.mqds-notification-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.mqds-notification-item { padding: 14px; border: 1px solid color-mix(in srgb, var(--mqds-border) 45%, transparent); border-left: 3px solid var(--mqds-border); border-radius: 9px; background: var(--mqds-drawer-card); }
+.mqds-notification-item[data-unread="true"] { border-left-color: var(--mqds-lilac); }
+.mqds-notification-item[data-tone="highlight"][data-unread="true"] { border-left-color: var(--mqds-peach); background: var(--mqds-drawer-highlight); }
+.mqds-notification-item-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; }
+.mqds-notification-item h3 { margin: 0; font-size: 1rem; }
+.mqds-notification-unread { border-radius: 20px; padding: 2px 6px; background: var(--mqds-lilac); color: var(--mqds-ink); font-size: .66rem; font-weight: 800; }
+.mqds-notification-item p { margin: 6px 0; color: var(--mqds-text); line-height: 1.4; overflow-wrap: anywhere; }
+.mqds-notification-item time { color: var(--mqds-muted); font-size: .77rem; }
+.mqds-notification-item-actions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; }
+.mqds-notification-item-actions:not(:empty) { margin-top: 10px; }
+.mqds-notification-read-all, .mqds-notification-mark-read, .mqds-notification-open { background: transparent; padding: 3px 0; color: var(--mqds-text); font-weight: 650; font-size: .82rem; }
+.mqds-notification-open { color: var(--mqds-notification-action); }
+.mqds-notification-read-all:not(:disabled):hover, .mqds-notification-mark-read:hover, .mqds-notification-open:hover { text-decoration: underline; text-underline-offset: 3px; }
+.mqds-notification-read-all:disabled { opacity: .54; cursor: default; }
+
+.mqds-notification-bell, .mqds-notifications-drawer button { font-family: inherit; cursor: pointer; }
+.mqds-notification-bell:focus-visible, .mqds-notifications-drawer button:focus-visible {
+  outline: 2px solid var(--mqds-focus);
+  outline-offset: 3px;
+}
+.mqds-notifications-drawer button { border: 0; }
+.mqds-notifications-drawer .mqds-notification-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--mqds-drawer-close-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mqds-text);
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: background-color var(--mqds-motion-fast);
+}
+.mqds-notifications-drawer .mqds-notification-close:hover { background: var(--mqds-drawer-close-hover); }
+.mqds-notifications-drawer .mqds-notification-read-all:disabled { cursor: default; }
+dialog.mqds-notifications-drawer[aria-labelledby][open]::backdrop {
+  animation: mqds-notification-shade-in var(--mqds-motion-standard) both;
+}
+dialog.mqds-notifications-drawer[aria-labelledby][open][data-closing]::backdrop {
+  animation: mqds-notification-shade-out var(--mqds-modal-exit) both;
+}
+@keyframes mqds-notification-shade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mqds-notification-shade-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  dialog.mqds-notifications-drawer[aria-labelledby][open],
+  dialog.mqds-notifications-drawer[aria-labelledby][open]::backdrop,
+  dialog.mqds-notifications-drawer[aria-labelledby][open][data-closing]::backdrop { animation: none; }
+  .mqds-notification-bell, .mqds-notifications-drawer .mqds-notification-close { transition: none; }
+}
