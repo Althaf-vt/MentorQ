@@ -1,0 +1,234 @@
+.mqds-folder {
+  --folder-tint: #c8aff7;
+  --folder-paper: #f1e7ff;
+  --folder-back-shape: polygon(0 15%, 54% 15%, 58% 12%, 63% 3%, 67% 0, 100% 0, 100% 100%, 0 100%);
+  min-width: 0;
+}
+.mqds-folder[data-tone="peach"] {
+  --folder-tint: #ffae8a;
+  --folder-paper: #ffede2;
+}
+.mqds-folder[data-tone="mint"] {
+  --folder-tint: #9cd8bc;
+  --folder-paper: #e3f4eb;
+  --folder-back-shape: polygon(0 0, 33% 0, 37% 3%, 42% 12%, 46% 15%, 100% 15%, 100% 100%, 0 100%);
+}
+.mqds-folder[data-tone="lilac"] {
+  --folder-back-shape: polygon(0 15%, 32% 15%, 36% 12%, 42% 3%, 46% 0, 71% 0, 75% 3%, 81% 12%, 85% 15%, 100% 15%, 100% 100%, 0 100%);
+}
+.mqds-folder-trigger {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: 206px;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #fffaf5;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.mqds-folder-trigger:focus-visible, .mqds-file:focus-visible {
+  outline: 2px solid var(--folder-tint);
+  outline-offset: 3px;
+}
+.mqds-folder-visual {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  perspective: 650px;
+  pointer-events: none;
+  transition: transform .32s cubic-bezier(.22,.75,.25,1), filter .32s ease;
+}
+.mqds-folder-back, .mqds-folder-flap {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  border-radius: 16px;
+}
+.mqds-folder-back {
+  height: 77%;
+  clip-path: var(--folder-back-shape);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--folder-tint) 54%, #29223f), #29223f 85%);
+  box-shadow: inset 0 1px #fff5;
+}
+.mqds-folder-peek {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  clip-path: inset(0 0 4px);
+}
+.mqds-folder-sheet {
+  position: absolute;
+  bottom: 28px;
+  left: 21%;
+  width: 58%;
+  height: 100px;
+  padding: 10px;
+  border: 1px solid #fff9;
+  border-radius: 9px;
+  background: var(--folder-paper);
+  box-shadow: 0 5px 15px #140b2963;
+  color: #302044;
+  font-size: .72rem;
+  transform: translate(calc(var(--sheet-slot) * 20%), calc(var(--sheet-slot) * 6px)) rotate(calc(var(--sheet-slot) * 5deg));
+  transition: transform .42s cubic-bezier(.23,.8,.24,1.17);
+  transition-delay: calc(var(--sheet-order) * 24ms);
+}
+.mqds-folder-lines, .mqds-file-lines {
+  display: block;
+  width: 65%;
+  height: 15px;
+  margin-top: 6px;
+  background: repeating-linear-gradient(to bottom, currentColor 0 2px, transparent 2px 6px);
+  opacity: .17;
+}
+.mqds-folder-flap {
+  z-index: 2;
+  height: 59%;
+  clip-path: polygon(0 0, 32% 0, 37% 3%, 43% 12%, 48% 15%, 100% 15%, 100% 100%, 0 100%);
+  transform-origin: center bottom;
+  background:
+    linear-gradient(155deg, #ffffff41, transparent 47%),
+    linear-gradient(167deg, color-mix(in srgb, var(--folder-tint) 34%, #24193499), #211932e8 88%);
+  box-shadow: inset 0 0 0 1px #ffffff55, inset 0 2px 4px #ffffff44;
+  -webkit-backdrop-filter: blur(11px) saturate(140%);
+  backdrop-filter: blur(11px) saturate(140%);
+  transition: transform .45s cubic-bezier(.23,.8,.24,1.16);
+}
+.mqds-folder-caption {
+  position: absolute;
+  z-index: 3;
+  inset: auto 16px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mqds-folder-caption strong, .mqds-folder-caption small { display: block; }
+.mqds-folder-caption small { margin-top: 3px; color: #e1d6ef; }
+.mqds-folder-arrow, .mqds-file-arrow {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px 8px 8px 3px;
+  background: var(--folder-tint);
+  color: #251644;
+  transition: transform .25s cubic-bezier(.22,.75,.25,1);
+}
+.mqds-folder[data-open="false"] .mqds-folder-trigger:focus-visible .mqds-folder-sheet {
+  transform: translate(calc(var(--sheet-slot) * 30%), calc(-36px + var(--sheet-slot) * 10px)) rotate(calc(var(--sheet-slot) * 9deg));
+}
+@media (hover: hover) {
+  .mqds-folder[data-open="false"] .mqds-folder-trigger:hover .mqds-folder-visual {
+    transform: rotateX(var(--mqds-tilt-x, 0deg)) rotateY(var(--mqds-tilt-y, 0deg)) translateY(-3px);
+    filter: drop-shadow(0 8px 14px #120b235c);
+  }
+  .mqds-folder[data-open="false"] .mqds-folder-trigger:hover .mqds-folder-sheet {
+    transform: translate(calc(var(--sheet-slot) * 30%), calc(-36px + var(--sheet-slot) * 10px)) rotate(calc(var(--sheet-slot) * 9deg));
+  }
+  .mqds-folder[data-open="false"] .mqds-folder-trigger:hover .mqds-folder-flap { transform: rotateX(-20deg); }
+}
+.mqds-folder[data-open="true"] {
+  display: flex;
+  flex-direction: column;
+  --open-folder-width: 318px;
+  --open-folder-height: 129px;
+  --open-folder-overlap: 58px;
+}
+.mqds-folder[data-open="true"][data-file-count="2"] { --open-folder-width: 256px; }
+.mqds-folder[data-open="true"][data-file-count="1"] {
+  --open-folder-width: 190px;
+  --open-folder-height: 106px;
+  --open-folder-overlap: 42px;
+}
+.mqds-folder[data-open="true"] .mqds-folder-trigger {
+  order: 1;
+  width: min(100%, var(--open-folder-width));
+  max-width: none;
+  height: var(--open-folder-height);
+  margin: calc(-1 * var(--open-folder-overlap)) auto 0;
+}
+.mqds-folder[data-open="true"] .mqds-folder-back {
+  height: 100%;
+  border-radius: 13px;
+}
+.mqds-folder[data-open="true"] .mqds-folder-flap {
+  height: 55%;
+  clip-path: polygon(0 0, 30% 0, 40% 0, 50% 0, 70% 0, 100% 0, 94% 100%, 6% 100%);
+  transform: rotateX(-24deg);
+}
+.mqds-folder[data-open="true"] .mqds-folder-sheet { opacity: 0; }
+.mqds-folder[data-open="true"] .mqds-folder-arrow { transform: rotate(-90deg); }
+.mqds-folder[data-open="true"] .mqds-folder-caption { inset: auto 18px 8px; }
+.mqds-folder-files { position: relative; z-index: 4; }
+.mqds-folder-files h4 { margin: 0 0 12px; }
+.mqds-folder-files ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 455px;
+  margin: 0 auto;
+  padding: 5px 0 0;
+  list-style: none;
+}
+.mqds-folder-files li {
+  --file-angle: 3deg;
+  --file-offset: 0px;
+  position: relative;
+  flex: 0 1 calc((100% - 16px) / 3);
+  min-width: 0;
+  max-width: 132px;
+  animation: mqds-file-unfold .48s cubic-bezier(.23,.8,.24,1.17) calc(var(--sheet-order) * 46ms) both;
+}
+.mqds-folder-files li:nth-child(3n + 2) { --file-angle: -3deg; --file-offset: -7px; }
+.mqds-folder-files li:nth-child(3n) { --file-angle: 4deg; }
+.mqds-folder-files li:only-child { --file-angle: 0deg; flex-basis: 116px; }
+.mqds-folder-files li:is(:hover, :focus-within) { z-index: 1; }
+.mqds-file {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  justify-items: start;
+  gap: 7px;
+  width: 100%;
+  height: 100%;
+  min-height: 145px;
+  padding: 10px;
+  border: 1px solid var(--folder-tint);
+  border-radius: 11px 11px 11px 4px;
+  background: linear-gradient(145deg, #fff9, transparent 75%), var(--folder-paper);
+  color: #302044;
+  font: inherit;
+  text-align: start;
+  transform: translateY(var(--file-offset)) rotate(var(--file-angle));
+  box-shadow: 0 4px 12px #120b234d;
+  transition: transform .23s ease, box-shadow .23s ease;
+  cursor: pointer;
+}
+.mqds-file-format { font: 700 .69rem/1.2 ui-monospace, monospace; }
+.mqds-file strong { font-size: .88rem; line-height: 1.2; overflow-wrap: anywhere; }
+.mqds-folder-files li:only-child .mqds-file { min-height: 122px; }
+.mqds-file-arrow { justify-self: end; width: 25px; height: 25px; }
+.mqds-file:is(:hover, :focus-visible) {
+  transform: translateY(calc(var(--file-offset) - 4px)) rotate(var(--file-angle));
+  box-shadow: 0 9px 19px #120b2380;
+}
+@keyframes mqds-file-unfold {
+  from { opacity: 0; transform: translateY(38px) rotate(-5deg) scale(.87); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mqds-folder-visual, .mqds-folder-sheet, .mqds-folder-flap, .mqds-folder-arrow, .mqds-file { transition: none; }
+  .mqds-folder-files li { animation: none; }
+  .mqds-folder[data-open="false"] .mqds-folder-trigger:hover .mqds-folder-visual { transform: none; }
+  .mqds-file:is(:hover, :focus-visible) { transform: translateY(var(--file-offset)) rotate(var(--file-angle)); }
+}
+
+.mqds-folder [hidden] { display: none; }
