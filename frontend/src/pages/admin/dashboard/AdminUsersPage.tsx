@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { useGetUsersQuery, useUpdateUserStatusMutation } from '@/store/api/adminApi'
-import { Loader2, ShieldAlert, CheckCircle2, Ban } from 'lucide-react'
-import clsx from 'clsx'
+import { ShieldAlert, CheckCircle2, Ban } from 'lucide-react'
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Loader,
+  Table,
+} from '@/design-system'
 
 export function AdminUsersPage() {
   const [page, setPage] = useState(1)
   const [roleFilter, setRoleFilter] = useState<string>('')
-  
+
   const { data, isLoading, isFetching } = useGetUsersQuery({ page, limit: 10, role: roleFilter || undefined })
   const [updateStatus, { isLoading: isUpdating }] = useUpdateUserStatusMutation()
 
@@ -18,32 +25,36 @@ export function AdminUsersPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusTone = (status: string): 'success' | 'warning' | 'danger' | 'neutral' => {
     switch (status) {
-      case 'ACTIVE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-      case 'SUSPENDED': return 'bg-orange-500/10 text-orange-400 border-orange-500/20'
-      case 'BANNED': return 'bg-red-500/10 text-red-400 border-red-500/20'
-      default: return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+      case 'ACTIVE': return 'success'
+      case 'SUSPENDED': return 'warning'
+      case 'BANNED': return 'danger'
+      default: return 'neutral'
     }
   }
 
-  const getRoleColor = (role: string) => {
+  const getRoleTone = (role: string): 'info' | 'neutral' | 'danger' => {
     switch (role) {
-      case 'MENTOR': return 'bg-purple-500/10 text-purple-400'
-      case 'STUDENT': return 'bg-blue-500/10 text-blue-400'
-      case 'ADMIN': return 'bg-red-500/10 text-red-400'
-      default: return 'bg-zinc-500/10 text-zinc-400'
+      case 'MENTOR': return 'info'
+      case 'STUDENT': return 'neutral'
+      case 'ADMIN': return 'danger'
+      default: return 'neutral'
     }
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-body">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">User Management</h1>
-          <p className="text-zinc-400 mt-2">Monitor and manage all platform accounts.</p>
+          <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text,#f4f7f2)]">
+            User Management
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--mqds-muted)] mt-1 font-mono">
+            Audit and administer all platform student and mentor accounts
+          </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <select
             value={roleFilter}
@@ -51,7 +62,7 @@ export function AdminUsersPage() {
               setRoleFilter(e.target.value)
               setPage(1)
             }}
-            className="bg-zinc-900 border border-zinc-800 text-white text-sm rounded-xl focus:ring-red-500 focus:border-red-500 block p-2.5 outline-none"
+            className="mqds-control text-xs !min-h-[38px] bg-[var(--mqds-surface,#272440)] text-[var(--mqds-text,#f4f7f2)] px-3 border border-[var(--mqds-border,#89839b)]/30 rounded-xl"
           >
             <option value="">All Roles</option>
             <option value="STUDENT">Students</option>
@@ -61,83 +72,94 @@ export function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden relative">
+      <Card
+        variant="paper"
+        className="p-6 bg-[var(--mqds-surface,#272440)] border border-[var(--mqds-border,#89839b)]/30 shadow-sm relative overflow-hidden"
+      >
         {(isLoading || isFetching) && (
-          <div className="absolute inset-0 bg-zinc-950/50 backdrop-blur-sm z-10 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-red-500" />
+          <div className="absolute inset-0 bg-[var(--mqds-canvas,#201d35)]/60 backdrop-blur-xs z-10 flex items-center justify-center">
+            <Loader />
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-zinc-400">
-            <thead className="text-xs text-zinc-300 uppercase bg-zinc-800/50 border-b border-zinc-800">
+        <div className="space-y-4">
+          <Table caption="Registered Platform Accounts">
+            <thead>
               <tr>
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Joined</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th scope="col">User</th>
+                <th scope="col">Role</th>
+                <th scope="col">Status</th>
+                <th scope="col">Joined</th>
+                <th scope="col" style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {data?.data.map((user) => (
-                <tr key={user.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
-                  <td className="px-6 py-4">
+                <tr key={user.id}>
+                  <td>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 font-bold">
-                        {user.full_name.charAt(0)}
-                      </div>
+                      <Avatar
+                        name={user.full_name}
+                        size="sm"
+                      />
                       <div>
-                        <p className="font-medium text-white">{user.full_name}</p>
-                        <p className="text-xs text-zinc-500">{user.email}</p>
+                        <p className="font-semibold text-xs text-[var(--mqds-text)]">{user.full_name}</p>
+                        <p className="text-[11px] font-mono text-[var(--mqds-muted)]">{user.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={clsx('px-2.5 py-1 text-xs font-medium rounded-full', getRoleColor(user.role))}>
+                  <td>
+                    <Badge tone={getRoleTone(user.role)} className="font-mono text-[10px] uppercase">
                       {user.role}
-                    </span>
+                    </Badge>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={clsx('px-2.5 py-1 text-xs font-medium rounded-full border', getStatusColor(user.status))}>
+                  <td>
+                    <Badge tone={getStatusTone(user.status)} className="font-mono text-[10px] uppercase">
                       {user.status}
-                    </span>
+                    </Badge>
                   </td>
-                  <td className="px-6 py-4 text-zinc-500">
-                    {new Date(user.created_at).toLocaleDateString()}
+                  <td className="text-xs font-mono text-[var(--mqds-muted)]">
+                    {new Date(user.created_at).toLocaleDateString([], {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td style={{ textAlign: 'right' }}>
                     {user.role !== 'ADMIN' && (
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         {user.status !== 'ACTIVE' && (
-                          <button
+                          <Button
+                            variant="secondary"
                             onClick={() => handleStatusChange(user.id, 'ACTIVE')}
                             disabled={isUpdating}
                             title="Reactivate User"
-                            className="p-2 text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-colors disabled:opacity-50"
+                            className="!p-1.5 !min-h-0 text-emerald-400 hover:text-emerald-300"
                           >
-                            <CheckCircle2 className="w-5 h-5" />
-                          </button>
+                            <CheckCircle2 className="w-4 h-4" />
+                          </Button>
                         )}
                         {user.status !== 'SUSPENDED' && (
-                          <button
+                          <Button
+                            variant="secondary"
                             onClick={() => handleStatusChange(user.id, 'SUSPENDED')}
                             disabled={isUpdating}
                             title="Suspend User"
-                            className="p-2 text-orange-400 hover:bg-orange-400/10 rounded-lg transition-colors disabled:opacity-50"
+                            className="!p-1.5 !min-h-0 text-amber-400 hover:text-amber-300"
                           >
-                            <ShieldAlert className="w-5 h-5" />
-                          </button>
+                            <ShieldAlert className="w-4 h-4" />
+                          </Button>
                         )}
                         {user.status !== 'BANNED' && (
-                          <button
+                          <Button
+                            variant="danger-subtle"
                             onClick={() => handleStatusChange(user.id, 'BANNED')}
                             disabled={isUpdating}
                             title="Ban User"
-                            className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors disabled:opacity-50"
+                            className="!p-1.5 !min-h-0"
                           >
-                            <Ban className="w-5 h-5" />
-                          </button>
+                            <Ban className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
                     )}
@@ -146,41 +168,43 @@ export function AdminUsersPage() {
               ))}
               {!data?.data.length && !isLoading && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
-                    No users found matching the current filters.
+                  <td colSpan={5} className="py-12 text-center text-xs font-mono text-[var(--mqds-muted)]">
+                    No users found matching the current criteria.
                   </td>
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+          </Table>
 
-        {/* Pagination */}
-        {data && data.meta.totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-zinc-800 flex items-center justify-between">
-            <span className="text-sm text-zinc-500">
-              Showing page <span className="font-medium text-white">{data.meta.page}</span> of{' '}
-              <span className="font-medium text-white">{data.meta.totalPages}</span>
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1.5 text-sm font-medium text-zinc-300 bg-zinc-800 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-              >
-                Previous
-              </button>
-              <button
-                disabled={page === data.meta.totalPages}
-                onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1.5 text-sm font-medium text-zinc-300 bg-zinc-800 rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-              >
-                Next
-              </button>
+          {/* Pagination */}
+          {data && data.meta.totalPages > 1 && (
+            <div className="pt-4 border-t border-[var(--mqds-border,#89839b)]/20 flex items-center justify-between text-xs font-mono text-[var(--mqds-muted)]">
+              <span>
+                Page <strong className="text-[var(--mqds-text)]">{data.meta.page}</strong> of{' '}
+                <strong className="text-[var(--mqds-text)]">{data.meta.totalPages}</strong>
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="!px-3 !py-1.5 !min-h-0 text-xs"
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={page === data.meta.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="!px-3 !py-1.5 !min-h-0 text-xs"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </Card>
     </div>
   )
 }
