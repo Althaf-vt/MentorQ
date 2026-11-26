@@ -1,0 +1,40 @@
+.mqds-otp { position: relative; }
+
+.mqds-otp-input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  opacity: 0;
+  font-size: 16px;
+}
+
+.mqds-otp-slots {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(5px, 1.4vw, 8px);
+}
+
+.mqds-otp-slots span {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  border: 1px solid var(--mqds-field-border);
+  border-radius: var(--mqds-radius-control);
+  background: var(--mqds-field);
+  color: var(--mqds-text);
+  font: 750 clamp(1rem, 4vw, 1.4rem)/1 var(--mqds-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.mqds-otp-input[aria-invalid]:not([aria-invalid="false"]) + .mqds-otp-slots span { border-color: var(--mqds-error); }
+.mqds-otp-input:disabled + .mqds-otp-slots { opacity: .58; }
+.mqds-otp-input:focus + .mqds-otp-slots [data-active="true"],
+.mqds-otp-input:focus + .mqds-otp-slots [data-selected="true"] {
+  outline: 2px solid var(--mqds-focus);
+  outline-offset: 1px;
+  background: var(--mqds-hover);
+}
