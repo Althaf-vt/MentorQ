@@ -1,0 +1,70 @@
+dialog.mqds-modal[data-variant="ticket"] {
+  --mqds-ticket-gutter: clamp(16px, 5vw, 28px);
+  --mqds-modal-surface: var(--mqds-ticket-surface);
+  --mqds-modal-border: #c8a28d;
+  max-height: 92dvh;
+  box-shadow: 0 24px 85px #120f27a6;
+}
+
+dialog.mqds-modal[data-variant="ticket"]::before { content: none; }
+
+.mqds-modal .mqds-modal-ticket-heading {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(10px, 3vw, 16px);
+  padding: 22px var(--mqds-ticket-gutter) 26px;
+  padding-inline-end: 60px;
+  background: var(--mqds-ticket-heading-background);
+}
+
+.mqds-modal-ticket-heading:has(.mqds-modal-ticket-mark) {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.mqds-modal-ticket-heading::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -5px;
+  height: 10px;
+  background: var(--mqds-ticket-perforation);
+  pointer-events: none;
+}
+
+.mqds-modal .mqds-modal-ticket-heading h2 { font-size: clamp(1.55rem, 6vw, 2.45rem); letter-spacing: -.055em; }
+.mqds-modal-ticket-label { margin-block-end: 5px; color: #42293c; font: 650 .75rem/1.4 var(--mqds-font-mono); }
+.mqds-modal-ticket-heading .mqds-modal-description { margin: 6px 0 0; color: #42293c; font-size: .92rem; }
+
+.mqds-modal-ticket-mark {
+  display: grid;
+  place-items: center;
+  width: clamp(38px, 11vw, 48px);
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: #302153;
+  color: var(--mqds-modal-surface);
+  font: 750 1rem/1 var(--mqds-font-mono);
+  transform: rotate(-6deg);
+}
+
+.mqds-modal-ticket-heading .mqds-modal-close {
+  position: absolute;
+  inset: 15px 15px auto auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-color: #7e4c5a;
+  background: #fff9ef50;
+  color: #42293c;
+  transition: background-color .18s ease;
+}
+
+.mqds-modal-ticket-heading .mqds-modal-close:is(:hover, :focus-visible) { background: var(--mqds-modal-surface); }
+.mqds-modal-ticket-heading .mqds-modal-close:focus-visible { outline: 2px solid #59388e; outline-offset: 3px; }
+.mqds-modal[data-variant="ticket"] .mqds-modal-content { padding: 20px var(--mqds-ticket-gutter) var(--mqds-ticket-gutter); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mqds-modal-ticket-heading .mqds-modal-close { transition: none; }
+}
