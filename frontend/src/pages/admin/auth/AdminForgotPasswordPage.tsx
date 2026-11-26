@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAdminForgotPasswordMutation } from '@/store/api/adminAuthApi'
-import { Loader2, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { Button, Input } from '@/design-system'
 
 const adminForgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -35,56 +36,55 @@ export function AdminForgotPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-white">Reset your password</h2>
-        <p className="mt-2 text-sm text-zinc-400">
-          Enter your email address and we'll send you a verification code.
+        <h2 className="text-xl font-headline font-bold text-[var(--mqds-text,#f4f7f2)]">
+          Reset Admin Password
+        </h2>
+        <p className="mt-1 text-xs font-mono text-[var(--mqds-muted,#cbc6df)]">
+          Enter your registered admin email address to receive an OTP code
         </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         {error && (
-          <div className="p-3 rounded-xl bg-red-900/50 text-red-200 text-sm border border-red-800">
-            {'data' in error ? (error.data as any).message : 'Failed to process request.'}
+          <div className="p-3 rounded-xl bg-[var(--mqds-danger,#9b253b)]/30 text-[var(--mqds-error,#ffb4bd)] text-xs border border-[var(--mqds-danger-border,#b45965)]">
+            {'data' in error ? ((error.data as { message?: string }).message || 'Failed to process request.') : 'Failed to process request.'}
           </div>
         )}
 
         {isSuccess && (
-          <div className="p-3 rounded-xl bg-emerald-900/50 text-emerald-200 text-sm border border-emerald-800">
-            If an account exists, an OTP has been sent.
+          <div className="p-3 rounded-xl bg-emerald-950/40 text-emerald-300 text-xs border border-emerald-800">
+            If an admin account exists, a verification code has been dispatched.
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-300">Email address</label>
-          <div className="mt-1">
-            <input
-              type="email"
-              {...register('email')}
-              className="block w-full rounded-xl bg-zinc-800 border-zinc-700 text-white focus:border-zinc-500 focus:ring-zinc-500 sm:text-sm transition-colors py-2 px-3"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
-            )}
-          </div>
-        </div>
+        <Input
+          label="Admin Email Address"
+          type="email"
+          placeholder="admin@mentorq.com"
+          {...register('email')}
+          error={errors.email?.message}
+        />
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
           disabled={isLoading}
-          className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-zinc-900 bg-white hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full justify-center !min-h-[44px] mt-2"
         >
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Send verification code'}
-        </button>
+          <span>{isLoading ? 'Dispatching Code...' : 'Send Verification Code'}</span>
+          <span aria-hidden="true">&rarr;</span>
+        </Button>
 
-        <div className="text-center">
-          <button
+        <div className="text-center pt-2">
+          <Button
             type="button"
+            variant="text"
             onClick={() => navigate('/admin/login')}
-            className="inline-flex items-center text-sm text-zinc-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-[var(--mqds-muted)] hover:text-white"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to login
-          </button>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to admin login</span>
+          </Button>
         </div>
       </form>
     </div>
