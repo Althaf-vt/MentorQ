@@ -1,9 +1,16 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Sparkles, AlertCircle, ArrowRight, GraduationCap, Briefcase } from 'lucide-react'
+import { Eye, EyeOff, Sparkles, AlertCircle, GraduationCap, Briefcase } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import {
+  Button,
+  Card,
+  Input,
+  Checkbox,
+  Badge,
+} from '@/design-system'
 import { useRegisterMutation } from '@/store/api/authApi'
 import { useToastStore } from '@/store/toastStore'
 
@@ -71,36 +78,51 @@ export const RegisterPage: React.FC = () => {
   }
 
   return (
-    <main className="min-h-screen bg-[#faf9f7] flex flex-col lg:flex-row">
-      <section className="hidden lg:flex lg:w-1/2 bg-[#f4f4f1] border-r border-[#b0b2b0]/30 p-12 flex-col justify-between">
+    <main className="min-h-[calc(100vh-4rem)] bg-[var(--mqds-canvas,#faf9f7)] flex flex-col lg:flex-row justify-between items-stretch">
+      {/* Brand Hero Column */}
+      <section className="hidden lg:flex lg:w-1/2 bg-[var(--mqds-hover,#f4efe8)] border-r border-[var(--mqds-border-subtle,#d5c4ae)] p-12 flex-col justify-between">
         <Link to="/" className="inline-flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-[var(--mqds-primary)] flex items-center justify-center text-white shadow-sm">
             <Sparkles className="w-5 h-5" />
           </div>
-          <span className="font-headline font-bold text-2xl text-[#303331]">
-            Mentor<span className="text-primary">Q</span>
+          <span className="font-headline font-bold text-2xl tracking-tight text-[var(--mqds-text)]">
+            Mentor<span className="text-[var(--mqds-primary)]">Q</span>
           </span>
         </Link>
         <div className="my-auto py-8 max-w-lg">
-          <h1 className="font-headline text-4xl font-bold text-[#303331] leading-tight mb-6">
+          <div className="mb-6">
+            <Badge tone="info">
+              <span className="w-2 h-2 rounded-full bg-[var(--mqds-accent)] mr-2 animate-pulse" />
+              Join the Engineering Community
+            </Badge>
+          </div>
+          <h1 className="font-headline text-4xl font-bold text-[var(--mqds-text)] leading-tight mb-6">
             Get 1-on-1 mentorship whenever you are stuck.
           </h1>
+          <p className="font-body text-[var(--mqds-muted)] text-base leading-relaxed">
+            Create your account to request live focus sessions, get queue admission tickets, or offer your mentorship to aspiring engineers.
+          </p>
         </div>
-        <div className="text-xs text-[#797b79]">
+        <div className="text-xs text-[var(--mqds-muted)] font-mono">
           <span>&copy; 2025 MentorQ Platform</span>
         </div>
       </section>
-      <section className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-md">
-          <h2 className="font-headline text-3xl font-bold text-[#303331] mb-2">Create an account</h2>
-          <p className="font-body text-sm text-[#5d605e] mb-6">Choose your role and get started.</p>
 
-          <div className="bg-[#e8e8e6] p-1 rounded-xl flex gap-1 mb-6">
+      {/* Registration Form Column */}
+      <section className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+        <Card variant="paper" className="w-full max-w-md p-8 sm:p-10 shadow-lg border border-[var(--mqds-paper-border)]">
+          <h2 className="font-headline text-3xl font-bold text-[var(--mqds-text)] mb-2">Create an account</h2>
+          <p className="font-body text-sm text-[var(--mqds-muted)] mb-6">Choose your role and get started.</p>
+
+          {/* Role Toggle Selector */}
+          <div className="bg-[var(--mqds-hover,#eeeeeb)] p-1 rounded-xl flex gap-1 mb-6 border border-[var(--mqds-border-subtle)]">
             <button
               type="button"
               onClick={() => setValue('role', 'STUDENT')}
-              className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer ${
-                watchRole === 'STUDENT' ? 'bg-primary text-white shadow-sm' : 'text-[#5d605e]'
+              className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                watchRole === 'STUDENT'
+                  ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
+                  : 'text-[var(--mqds-muted)] hover:text-[var(--mqds-text)]'
               }`}
             >
               <GraduationCap className="w-4 h-4" />
@@ -109,8 +131,10 @@ export const RegisterPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setValue('role', 'MENTOR')}
-              className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer ${
-                watchRole === 'MENTOR' ? 'bg-primary text-white shadow-sm' : 'text-[#5d605e]'
+              className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                watchRole === 'MENTOR'
+                  ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
+                  : 'text-[var(--mqds-muted)] hover:text-[var(--mqds-text)]'
               }`}
             >
               <Briefcase className="w-4 h-4" />
@@ -119,98 +143,97 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           {errorMessage && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600 flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xl bg-[var(--mqds-warning-surface)] border border-[var(--mqds-danger-border)] text-sm text-[var(--mqds-danger)] flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label className="block text-xs font-label font-medium uppercase text-[#303331] mb-1">Full Name</label>
-              <input
-                type="text"
-                {...registerField('fullName')}
-                placeholder="Alex Chen"
-                className="w-full h-11 px-4 rounded-xl border border-[#b0b2b0]/50 bg-white text-sm text-[#303331] focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              {errors.fullName && <p className="text-red-500 text-xs mt-1 text-left">{errors.fullName.message}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-label font-medium uppercase text-[#303331] mb-1">Email</label>
-              <input
-                type="email"
-                {...registerField('email')}
-                placeholder="alex@company.com"
-                className="w-full h-11 px-4 rounded-xl border border-[#b0b2b0]/50 bg-white text-sm text-[#303331] focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1 text-left">{errors.email.message}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-label font-medium uppercase text-[#303331] mb-1">Password</label>
+            <Input
+              label="Full Name"
+              type="text"
+              id="register-name"
+              placeholder="Alex Chen"
+              error={errors.fullName?.message}
+              {...registerField('fullName')}
+            />
+
+            <Input
+              label="Email"
+              type="email"
+              id="register-email"
+              placeholder="alex@company.com"
+              error={errors.email?.message}
+              {...registerField('email')}
+            />
+
+            <div className="mqds-field">
+              <label htmlFor="register-password">Password</label>
               <div className="relative">
                 <input
+                  id="register-password"
                   type={showPassword ? 'text' : 'password'}
                   {...registerField('password')}
                   placeholder="••••••••"
-                  className="w-full h-11 pl-4 pr-11 rounded-xl border border-[#b0b2b0]/50 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="mqds-control pr-10"
+                  aria-invalid={!!errors.password}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#797b79]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--mqds-muted)] hover:text-[var(--mqds-text)] cursor-pointer"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1 text-left">{errors.password.message}</p>}
+              {errors.password && <span className="mqds-field-error text-xs">{errors.password.message}</span>}
             </div>
+
             <div className="flex flex-col gap-1 pt-1">
-              <div className="flex items-center gap-2">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  {...registerField('agreeTerms')}
-                  className="rounded text-primary focus:ring-primary/30"
-                />
-                <label htmlFor="terms" className="text-xs text-[#5d605e]">
-                  I agree to the Terms & Privacy Policy
-                </label>
-              </div>
-              {errors.agreeTerms && <p className="text-red-500 text-xs mt-1 text-left">{errors.agreeTerms.message}</p>}
+              <Checkbox
+                id="terms"
+                label={
+                  <span className="text-xs text-[var(--mqds-muted)]">
+                    I agree to the Terms & Privacy Policy
+                  </span>
+                }
+                {...registerField('agreeTerms')}
+              />
+              {errors.agreeTerms && <p className="text-[var(--mqds-danger)] text-xs mt-1 text-left">{errors.agreeTerms.message}</p>}
             </div>
-            <button
+
+            <Button
               type="submit"
+              variant="primary"
               disabled={isLoading}
-              className="w-full h-12 rounded-full bg-primary hover:bg-primary-dim text-white font-medium text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-70"
+              className="w-full !min-h-[46px] mt-2 justify-center"
             >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+              <span>{isLoading ? 'Creating Account...' : 'Create Account'}</span>
+              <span aria-hidden="true">&rarr;</span>
+            </Button>
           </form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#e1e3e0]"></div>
+              <div className="w-full border-t border-[var(--mqds-border-subtle)]"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#faf9f7] px-2 text-[#797b79]">Or continue with</span>
+              <span className="bg-[var(--mqds-surface,#faf9f7)] px-2 text-[var(--mqds-muted)] font-mono text-[10px]">
+                Or continue with
+              </span>
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => {
               const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3133/api/v1'
               window.location.href = `${apiBase}/auth/google`
             }}
-            className="w-full h-11 rounded-full border border-[#b0b2b0]/50 hover:bg-[#faf9f7] text-[#303331] font-medium text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full !min-h-[44px] justify-center gap-2.5"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -231,15 +254,15 @@ export const RegisterPage: React.FC = () => {
               />
             </svg>
             <span>Sign in with Google</span>
-          </button>
+          </Button>
 
-          <p className="mt-6 text-center text-sm text-[#5d605e]">
+          <p className="mt-6 text-center text-sm text-[var(--mqds-muted)]">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary font-semibold hover:underline ml-1">
+            <Link to="/login" className="text-[var(--mqds-primary)] font-semibold hover:underline ml-1">
               Log in
             </Link>
           </p>
-        </div>
+        </Card>
       </section>
     </main>
   )
