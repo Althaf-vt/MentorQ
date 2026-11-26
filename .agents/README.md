@@ -17,6 +17,9 @@ This directory contains specialized AI agents designed to automate, orchestrate,
     │   ├── backend-architect-reviewer.md  # Reviews NestJS code against backend architectural guidelines
     │   └── frontend-architect-reviewer.md # Reviews React/TS code against frontend architectural guidelines
     │
+    ├── ui/
+    │   └── ui-design-system-reviewer.md   # [TEMPORARY] Audits & reviews frontend UI alignment with the MentorQ Design System
+    │
     ├── git/
     │   ├── git-commit-crafter.md      # Drafts atomic Conventional Commits for PowerShell
     │   └── git-commit-evaluator.md    # Audits commits & executes upon approval
