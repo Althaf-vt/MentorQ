@@ -6,13 +6,18 @@ import {
   LogOut,
   Settings,
   Sliders,
-  Bell,
   LayoutDashboard,
   ListCollapse,
   Menu,
   X,
   ChevronRight,
 } from 'lucide-react'
+import {
+  NotificationBell,
+  Avatar,
+  Button,
+  Modal,
+} from '@/design-system'
 import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
 import { useRoleAuth } from '@/store/hooks/useRoleAuth'
@@ -87,7 +92,7 @@ export const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <header className="w-full bg-[#FAFAF8]/90 backdrop-blur-md border-b border-[#E5E4DE] sticky top-0 z-50 font-body">
+    <header className="w-full bg-[var(--mqds-surface,#faf9f7)]/95 backdrop-blur-md border-b border-[var(--mqds-border-subtle,#e5e4de)] sticky top-0 z-50 font-body">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4 sm:gap-10">
           {/* Hamburger Menu Toggle for Mobile / Tablet viewports */}
@@ -95,7 +100,7 @@ export const Navbar: React.FC = () => {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 -ml-1 text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb] rounded-xl transition-colors md:hidden cursor-pointer"
+              className="p-2 -ml-1 text-[var(--mqds-muted,#5d605e)] hover:text-[var(--mqds-text,#303331)] hover:bg-[var(--mqds-hover,#eeeeeb)] rounded-xl transition-colors md:hidden cursor-pointer"
               aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -107,11 +112,11 @@ export const Navbar: React.FC = () => {
             className="flex items-center gap-2.5"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm shadow-primary/30">
+            <div className="w-9 h-9 rounded-xl bg-[var(--mqds-primary,#5948d3)] flex items-center justify-center text-white shadow-sm">
               <Sparkles className="w-5 h-5" />
             </div>
-            <span className="font-headline text-xl font-bold tracking-tight text-[#303331]">
-              Mentor<span className="text-primary">Q</span>
+            <span className="font-headline text-xl font-bold tracking-tight text-[var(--mqds-text,#303331)]">
+              Mentor<span className="text-[var(--mqds-primary,#5948d3)]">Q</span>
             </span>
           </Link>
 
@@ -122,8 +127,8 @@ export const Navbar: React.FC = () => {
                 to={getDashboardPath()}
                 className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
                   isActive(getDashboardPath())
-                    ? 'text-primary bg-primary/10 font-semibold'
-                    : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
+                    ? 'text-[var(--mqds-primary)] bg-[var(--mqds-hover)] font-semibold'
+                    : 'text-[var(--mqds-muted,#5d605e)] hover:text-[var(--mqds-text,#303331)] hover:bg-[var(--mqds-hover,#eeeeeb)]'
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
@@ -135,8 +140,8 @@ export const Navbar: React.FC = () => {
                     to="/mentors"
                     className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
                       isActive('/mentors') || isActive('/mentors/favorites')
-                        ? 'text-primary bg-primary/10 font-semibold'
-                        : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
+                        ? 'text-[var(--mqds-primary)] bg-[var(--mqds-hover)] font-semibold'
+                        : 'text-[var(--mqds-muted,#5d605e)] hover:text-[var(--mqds-text,#303331)] hover:bg-[var(--mqds-hover,#eeeeeb)]'
                     }`}
                   >
                     <UserIcon className="w-4 h-4" />
@@ -146,8 +151,8 @@ export const Navbar: React.FC = () => {
                     to="/history"
                     className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
                       isActive('/history')
-                        ? 'text-primary bg-primary/10 font-semibold'
-                        : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
+                        ? 'text-[var(--mqds-primary)] bg-[var(--mqds-hover)] font-semibold'
+                        : 'text-[var(--mqds-muted,#5d605e)] hover:text-[var(--mqds-text,#303331)] hover:bg-[var(--mqds-hover,#eeeeeb)]'
                     }`}
                   >
                     <ListCollapse className="w-4 h-4" />
@@ -160,8 +165,8 @@ export const Navbar: React.FC = () => {
                   to="/mentor/configuration"
                   className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
                     isActive('/mentor/configuration')
-                      ? 'text-primary bg-primary/10 font-semibold'
-                      : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
+                      ? 'text-[var(--mqds-primary)] bg-[var(--mqds-hover)] font-semibold'
+                      : 'text-[var(--mqds-muted,#5d605e)] hover:text-[var(--mqds-text,#303331)] hover:bg-[var(--mqds-hover,#eeeeeb)]'
                   }`}
                 >
                   <Sliders className="w-4 h-4" />
@@ -172,8 +177,8 @@ export const Navbar: React.FC = () => {
                 to={getSettingsPath()}
                 className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
                   isActive(getSettingsPath())
-                    ? 'text-primary bg-primary/10 font-semibold'
-                    : 'text-[#5d605e] hover:text-[#303331] hover:bg-[#eeeeeb]'
+                    ? 'text-[var(--mqds-primary)] bg-[var(--mqds-hover)] font-semibold'
+                    : 'text-[var(--mqds-muted,#5d605e)] hover:text-[var(--mqds-text,#303331)] hover:bg-[var(--mqds-hover,#eeeeeb)]'
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -186,52 +191,51 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-4">
           {isAuthenticated && user ? (
             <div className="flex items-center gap-1.5 sm:gap-3">
-              <button
+              <NotificationBell
+                count={unreadCount}
+                expanded={notifOpen}
                 onClick={() => setNotifOpen(!notifOpen)}
-                className="relative p-2 text-[#797b79] hover:text-primary hover:bg-[#eeeeeb] rounded-lg transition-colors cursor-pointer"
-                title="Notifications"
-                aria-label="Notifications"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white font-sora font-bold text-[9px] flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+              />
 
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs overflow-hidden">
-                  {resolveAvatarUrl(user.avatarUrl) ? (
-                    <img src={resolveAvatarUrl(user.avatarUrl)!} alt={user.fullName} className="w-full h-full object-cover" />
-                  ) : (
-                    user.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon className="w-4 h-4" />
-                  )}
-                </div>
+                <Avatar
+                  src={resolveAvatarUrl(user.avatarUrl) || undefined}
+                  name={user.fullName || 'User'}
+                  size="sm"
+                />
                 <div className="hidden sm:block text-left">
-                  <p className="text-xs font-semibold text-[#303331] leading-tight truncate max-w-[120px]">{user.fullName}</p>
-                  <p className="text-[10px] text-[#797b79] capitalize">{user.role.toLowerCase()}</p>
+                  <p className="text-xs font-semibold text-[var(--mqds-text,#303331)] leading-tight truncate max-w-[120px]">{user.fullName}</p>
+                  <p className="text-[10px] text-[var(--mqds-muted,#797b79)] capitalize">{user.role.toLowerCase()}</p>
                 </div>
               </div>
 
-              <button
+              <Button
                 type="button"
+                variant="danger-subtle"
                 onClick={() => setLogoutModalOpen(true)}
-                className="p-2 text-[#797b79] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                 title="Log out"
                 aria-label="Log out"
+                className="!min-h-[36px] !px-2.5"
               >
                 <LogOut className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/login" className="px-4 py-2 text-sm font-medium text-[#303331] hover:text-primary">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/login')}
+              >
                 Sign In
-              </Link>
-              <Link to="/register" className="px-4 py-2 text-sm font-medium bg-primary hover:bg-primary-dim text-white rounded-lg shadow-sm">
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => navigate('/register')}
+              >
                 Get Started
-              </Link>
+              </Button>
             </div>
           )}
         </div>
@@ -247,33 +251,31 @@ export const Navbar: React.FC = () => {
           />
 
           {/* Sliding Menu Panel */}
-          <div className="relative w-72 max-w-[80vw] bg-white h-[calc(100vh-4rem)] shadow-2xl border-r border-[#E5E4DE] flex flex-col justify-between p-4 z-10 overflow-y-auto animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 max-w-[80vw] bg-[var(--mqds-surface,#ffffff)] h-[calc(100vh-4rem)] shadow-2xl border-r border-[var(--mqds-border-subtle,#E5E4DE)] flex flex-col justify-between p-4 z-10 overflow-y-auto animate-in slide-in-from-left duration-200">
             <div className="space-y-4">
               {/* User Identity Banner in Drawer */}
-              <div className="p-3 bg-[#faf9f7] rounded-xl border border-[#ecebe6] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm overflow-hidden">
-                  {resolveAvatarUrl(user?.avatarUrl) ? (
-                    <img src={resolveAvatarUrl(user?.avatarUrl)!} alt={user?.fullName || 'User'} className="w-full h-full object-cover" />
-                  ) : (
-                    user?.fullName ? user.fullName.charAt(0).toUpperCase() : <UserIcon className="w-5 h-5" />
-                  )}
-                </div>
+              <div className="p-3 bg-[var(--mqds-hover,#faf9f7)] rounded-xl border border-[var(--mqds-border-subtle,#ecebe6)] flex items-center gap-3">
+                <Avatar
+                  src={resolveAvatarUrl(user?.avatarUrl) || undefined}
+                  name={user?.fullName || 'User'}
+                  size="md"
+                />
                 <div className="overflow-hidden">
-                  <p className="text-xs font-bold text-[#303331] truncate">{user?.fullName || 'User'}</p>
-                  <p className="text-[10px] text-primary font-semibold uppercase">{user?.role?.toLowerCase()} Account</p>
+                  <p className="text-xs font-bold text-[var(--mqds-text,#303331)] truncate">{user?.fullName || 'User'}</p>
+                  <p className="text-[10px] text-[var(--mqds-primary)] font-semibold uppercase">{user?.role?.toLowerCase()} Account</p>
                 </div>
               </div>
 
               {/* Navigation Links */}
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">Navigation</p>
+                <p className="text-[10px] font-bold text-[var(--mqds-muted)] uppercase tracking-wider px-2 py-1">Navigation</p>
                 <Link
                   to={getDashboardPath()}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
                     isActive(getDashboardPath())
-                      ? 'bg-primary text-white font-bold shadow-xs'
-                      : 'text-slate-700 hover:bg-[#faf9f7]'
+                      ? 'bg-[var(--mqds-primary)] text-white font-bold shadow-xs'
+                      : 'text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -290,8 +292,8 @@ export const Navbar: React.FC = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
                         isActive('/mentors') || isActive('/mentors/favorites')
-                          ? 'bg-primary text-white font-bold shadow-xs'
-                          : 'text-slate-700 hover:bg-[#faf9f7]'
+                          ? 'bg-[var(--mqds-primary)] text-white font-bold shadow-xs'
+                          : 'text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)]'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -305,8 +307,8 @@ export const Navbar: React.FC = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
                         isActive('/history')
-                          ? 'bg-primary text-white font-bold shadow-xs'
-                          : 'text-slate-700 hover:bg-[#faf9f7]'
+                          ? 'bg-[var(--mqds-primary)] text-white font-bold shadow-xs'
+                          : 'text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)]'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -324,8 +326,8 @@ export const Navbar: React.FC = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
                       isActive('/mentor/configuration')
-                        ? 'bg-primary text-white font-bold shadow-xs'
-                        : 'text-slate-700 hover:bg-[#faf9f7]'
+                        ? 'bg-[var(--mqds-primary)] text-white font-bold shadow-xs'
+                        : 'text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)]'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -341,8 +343,8 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`w-full px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
                     isActive(getSettingsPath())
-                      ? 'bg-primary text-white font-bold shadow-xs'
-                      : 'text-slate-700 hover:bg-[#faf9f7]'
+                      ? 'bg-[var(--mqds-primary)] text-white font-bold shadow-xs'
+                      : 'text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -355,14 +357,16 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Logout Button in Drawer Footer */}
-            <div className="pt-4 border-t border-[#ecebe6]">
-              <button
+            <div className="pt-4 border-t border-[var(--mqds-border-subtle)]">
+              <Button
+                type="button"
+                variant="danger-subtle"
                 onClick={() => setLogoutModalOpen(true)}
-                className="w-full px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                className="w-full justify-start gap-2.5"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Log Out</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -370,32 +374,30 @@ export const Navbar: React.FC = () => {
 
       {notifOpen && <NotificationDrawer onClose={() => setNotifOpen(false)} />}
 
-      {/* Logout Confirmation Modal */}
-      {logoutModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
-              <LogOut className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="font-bold text-lg text-slate-900">Sign Out?</h2>
-              <p className="text-xs text-slate-500 mt-1">Are you sure you want to sign out of MentorQ?</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button onClick={() => setLogoutModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-50">Cancel</button>
-              <button 
-                onClick={() => {
-                  setLogoutModalOpen(false)
-                  handleLogout()
-                }} 
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold flex justify-center items-center"
-              >
-                Sign Out
-              </button>
-            </div>
+      {/* Logout Confirmation Modal using Design System Modal */}
+      <Modal
+        open={logoutModalOpen}
+        onOpenChange={setLogoutModalOpen}
+        title="Sign Out?"
+        description="Are you sure you want to sign out of MentorQ?"
+        variant="danger"
+        actions={
+          <div className="flex gap-2 justify-end">
+            <Button variant="secondary" onClick={() => setLogoutModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setLogoutModalOpen(false)
+                handleLogout()
+              }}
+            >
+              Sign Out
+            </Button>
           </div>
-        </div>
-      )}
+        }
+      />
     </header>
   )
 }
