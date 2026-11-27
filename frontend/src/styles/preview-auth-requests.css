@@ -137,6 +137,10 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   gap: 18px;
 }
 .dashboard-ticket-grid > * { min-width: 0; }
+.dashboard-ticket-grid > :is(.lean-ticket-card, .mentor-ticket-grid-item):is(:hover, :focus-within) {
+  position: relative;
+  z-index: 1;
+}
 @media (min-width: 1100px) {
   .dashboard-ticket-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -155,7 +159,6 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   min-height: 88px;
   margin-bottom: 0;
   border-radius: 8px;
-  transition: --mqds-ticket-paper .2s ease;
 }
 .lean-ticket-card > .mqds-card-body {
   min-width: 0;
@@ -219,19 +222,6 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
 }
 .lean-ticket-card .mqds-card-actions { margin: 7px 0 0 42px; }
 .lean-ticket-card .mqds-ticket-action { min-height: 34px; padding: 5px 9px; font-size: .8rem; }
-.mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"]:is(:hover, :focus-within) {
-  transform: none;
-  --mqds-ticket-paper: var(--mqds-paper-hover);
-}
-@media (hover: hover) and (pointer: fine) {
-  .mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"] .mqds-ticket-action,
-  .mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"]:is(:hover, :focus-within) .mqds-ticket-action {
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-    transition: none;
-  }
-}
 .lean-ticket-card > .mqds-card-stub {
   display: grid;
   align-content: center;
@@ -266,7 +256,12 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mqds-card.lean-ticket-card[data-stub="true"] { transition: none; }
+  .mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"] .mqds-ticket-action {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    transition: none;
+  }
 }
 @media (max-width: 700px) {
   .mqds-card.dashboard-request-ticket[data-stub="true"] { grid-template-columns: minmax(0, 1fr) 32%; }
