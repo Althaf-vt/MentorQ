@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useGetUsersQuery, useUpdateUserStatusMutation } from '@/store/api/adminApi'
 import { ShieldAlert, CheckCircle2, Ban } from 'lucide-react'
 import {
@@ -6,11 +6,11 @@ import {
   Badge,
   Button,
   Card,
-  Loader,
+  Skeleton,
   Table,
 } from '@/design-system'
 
-export function AdminUsersPage() {
+export const AdminUsersPage: React.FC = () => {
   const [page, setPage] = useState(1)
   const [roleFilter, setRoleFilter] = useState<string>('')
 
@@ -47,7 +47,7 @@ export function AdminUsersPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-body">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text,#f4f7f2)]">
+          <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text)]">
             User Management
           </h1>
           <p className="text-xs sm:text-sm text-[var(--mqds-muted)] mt-1 font-mono">
@@ -62,7 +62,7 @@ export function AdminUsersPage() {
               setRoleFilter(e.target.value)
               setPage(1)
             }}
-            className="mqds-control text-xs !min-h-[38px] bg-[var(--mqds-surface,#272440)] text-[var(--mqds-text,#f4f7f2)] px-3 border border-[var(--mqds-border,#89839b)]/30 rounded-xl"
+            className="mqds-control text-xs !min-h-[38px] bg-[var(--mqds-surface)] text-[var(--mqds-text)] px-3 border border-[var(--mqds-border-subtle)] rounded-xl"
           >
             <option value="">All Roles</option>
             <option value="STUDENT">Students</option>
@@ -73,137 +73,140 @@ export function AdminUsersPage() {
       </div>
 
       <Card
-        variant="paper"
-        className="p-6 bg-[var(--mqds-surface,#272440)] border border-[var(--mqds-border,#89839b)]/30 shadow-sm relative overflow-hidden"
+        className="p-6 border border-[var(--mqds-border-subtle)] shadow-xs relative overflow-hidden !bg-[var(--mqds-surface)] !text-[var(--mqds-text)]"
+        style={{ background: 'var(--mqds-surface)', color: 'var(--mqds-text)' }}
       >
-        {(isLoading || isFetching) && (
-          <div className="absolute inset-0 bg-[var(--mqds-canvas,#201d35)]/60 backdrop-blur-xs z-10 flex items-center justify-center">
-            <Loader />
+        {isLoading ? (
+          <Skeleton variant="table" label="Loading platform users…" rows={6} />
+        ) : (
+          <div className="space-y-4">
+            {isFetching && (
+              <div className="text-[10px] font-mono text-[var(--mqds-accent)] text-right animate-pulse">
+                Updating users…
+              </div>
+            )}
+            <Table caption="Registered Platform Accounts">
+              <thead>
+                <tr>
+                  <th scope="col">User</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Joined</th>
+                  <th scope="col" style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data?.data.map((user) => (
+                  <tr key={user.id}>
+                    <th scope="row" style={{ fontWeight: 'normal', textAlign: 'left' }}>
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          name={user.full_name}
+                          size="sm"
+                        />
+                        <div>
+                          <p className="font-semibold text-xs text-[var(--mqds-text)]">{user.full_name}</p>
+                          <p className="text-[11px] font-mono text-[var(--mqds-muted)]">{user.email}</p>
+                        </div>
+                      </div>
+                    </th>
+                    <td>
+                      <Badge tone={getRoleTone(user.role)} className="font-mono text-[10px] uppercase">
+                        {user.role}
+                      </Badge>
+                    </td>
+                    <td>
+                      <Badge tone={getStatusTone(user.status)} className="font-mono text-[10px] uppercase">
+                        {user.status}
+                      </Badge>
+                    </td>
+                    <td className="text-xs font-mono text-[var(--mqds-muted)]">
+                      {new Date(user.created_at).toLocaleDateString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      {user.role !== 'ADMIN' && (
+                        <div className="flex items-center justify-end gap-1.5">
+                          {user.status !== 'ACTIVE' && (
+                            <Button
+                              variant="secondary"
+                              onClick={() => handleStatusChange(user.id, 'ACTIVE')}
+                              disabled={isUpdating}
+                              title="Reactivate User"
+                              className="!p-1.5 !min-h-0 text-emerald-500 hover:text-emerald-400"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {user.status !== 'SUSPENDED' && (
+                            <Button
+                              variant="secondary"
+                              onClick={() => handleStatusChange(user.id, 'SUSPENDED')}
+                              disabled={isUpdating}
+                              title="Suspend User"
+                              className="!p-1.5 !min-h-0 text-amber-500 hover:text-amber-400"
+                            >
+                              <ShieldAlert className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {user.status !== 'BANNED' && (
+                            <Button
+                              variant="danger-subtle"
+                              onClick={() => handleStatusChange(user.id, 'BANNED')}
+                              disabled={isUpdating}
+                              title="Ban User"
+                              className="!p-1.5 !min-h-0"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {!data?.data.length && !isLoading && (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-xs font-mono text-[var(--mqds-muted)]">
+                      No users found matching the current criteria.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+
+            {/* Pagination */}
+            {data && data.meta.totalPages > 1 && (
+              <div className="pt-4 border-t border-[var(--mqds-border-subtle)] flex items-center justify-between text-xs font-mono text-[var(--mqds-muted)]">
+                <span>
+                  Page <strong className="text-[var(--mqds-text)]">{data.meta.page}</strong> of{' '}
+                  <strong className="text-[var(--mqds-text)]">{data.meta.totalPages}</strong>
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    disabled={page === 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="!px-3 !py-1.5 !min-h-0 text-xs"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={page === data.meta.totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="!px-3 !py-1.5 !min-h-0 text-xs"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
-
-        <div className="space-y-4">
-          <Table caption="Registered Platform Accounts">
-            <thead>
-              <tr>
-                <th scope="col">User</th>
-                <th scope="col">Role</th>
-                <th scope="col">Status</th>
-                <th scope="col">Joined</th>
-                <th scope="col" style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data?.data.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        name={user.full_name}
-                        size="sm"
-                      />
-                      <div>
-                        <p className="font-semibold text-xs text-[var(--mqds-text)]">{user.full_name}</p>
-                        <p className="text-[11px] font-mono text-[var(--mqds-muted)]">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <Badge tone={getRoleTone(user.role)} className="font-mono text-[10px] uppercase">
-                      {user.role}
-                    </Badge>
-                  </td>
-                  <td>
-                    <Badge tone={getStatusTone(user.status)} className="font-mono text-[10px] uppercase">
-                      {user.status}
-                    </Badge>
-                  </td>
-                  <td className="text-xs font-mono text-[var(--mqds-muted)]">
-                    {new Date(user.created_at).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {user.role !== 'ADMIN' && (
-                      <div className="flex items-center justify-end gap-1.5">
-                        {user.status !== 'ACTIVE' && (
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleStatusChange(user.id, 'ACTIVE')}
-                            disabled={isUpdating}
-                            title="Reactivate User"
-                            className="!p-1.5 !min-h-0 text-emerald-400 hover:text-emerald-300"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {user.status !== 'SUSPENDED' && (
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleStatusChange(user.id, 'SUSPENDED')}
-                            disabled={isUpdating}
-                            title="Suspend User"
-                            className="!p-1.5 !min-h-0 text-amber-400 hover:text-amber-300"
-                          >
-                            <ShieldAlert className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {user.status !== 'BANNED' && (
-                          <Button
-                            variant="danger-subtle"
-                            onClick={() => handleStatusChange(user.id, 'BANNED')}
-                            disabled={isUpdating}
-                            title="Ban User"
-                            className="!p-1.5 !min-h-0"
-                          >
-                            <Ban className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!data?.data.length && !isLoading && (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-xs font-mono text-[var(--mqds-muted)]">
-                    No users found matching the current criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-
-          {/* Pagination */}
-          {data && data.meta.totalPages > 1 && (
-            <div className="pt-4 border-t border-[var(--mqds-border,#89839b)]/20 flex items-center justify-between text-xs font-mono text-[var(--mqds-muted)]">
-              <span>
-                Page <strong className="text-[var(--mqds-text)]">{data.meta.page}</strong> of{' '}
-                <strong className="text-[var(--mqds-text)]">{data.meta.totalPages}</strong>
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="!px-3 !py-1.5 !min-h-0 text-xs"
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="secondary"
-                  disabled={page === data.meta.totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="!px-3 !py-1.5 !min-h-0 text-xs"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
       </Card>
     </div>
   )

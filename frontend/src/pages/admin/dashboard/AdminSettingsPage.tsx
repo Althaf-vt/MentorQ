@@ -1,14 +1,14 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useGetSettingsQuery, useUpdateSettingsMutation } from '@/store/api/adminApi'
-import { Save, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import {
   Button,
   Card,
   Input,
-  Loader,
+  Skeleton,
   Textarea,
 } from '@/design-system'
 
@@ -22,7 +22,7 @@ const settingsSchema = z.object({
 
 type SettingsFormData = z.infer<typeof settingsSchema>
 
-export function AdminSettingsPage() {
+export const AdminSettingsPage: React.FC = () => {
   const { data: settings, isLoading: isFetching } = useGetSettingsQuery()
   const [updateSettings, { isLoading: isUpdating, isSuccess, reset }] = useUpdateSettingsMutation()
 
@@ -69,9 +69,20 @@ export function AdminSettingsPage() {
 
   if (isFetching) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <Loader />
-        <p className="text-xs font-mono text-[var(--mqds-muted)]">Loading settings...</p>
+      <div className="max-w-3xl space-y-8 font-body">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text)]">
+            Platform Settings
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--mqds-muted)] mt-1 font-mono">
+            Global platform metadata, feature flags, and access toggles
+          </p>
+        </div>
+        <div className="space-y-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} variant="card" label="Loading settings…" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -79,7 +90,7 @@ export function AdminSettingsPage() {
   return (
     <div className="max-w-3xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-body">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text,#f4f7f2)]">
+        <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text)]">
           Platform Settings
         </h1>
         <p className="text-xs sm:text-sm text-[var(--mqds-muted)] mt-1 font-mono">
@@ -87,13 +98,20 @@ export function AdminSettingsPage() {
         </p>
       </div>
 
+      {isSuccess && (
+        <div className="p-4 rounded-xl bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-accent)] flex items-center gap-3 text-xs font-semibold shadow-xs">
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+          <span>Platform settings updated successfully!</span>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* General Info Card */}
         <Card
-          variant="paper"
-          className="p-6 bg-[var(--mqds-surface,#272440)] border border-[var(--mqds-border,#89839b)]/30 shadow-xs space-y-5"
+          className="p-6 border border-[var(--mqds-border-subtle)] shadow-xs space-y-5 !bg-[var(--mqds-surface)] !text-[var(--mqds-text)]"
+          style={{ background: 'var(--mqds-surface)', color: 'var(--mqds-text)' }}
         >
-          <div className="border-b border-[var(--mqds-border,#89839b)]/20 pb-3">
+          <div className="border-b border-[var(--mqds-border-subtle)] pb-3">
             <h2 className="text-sm font-bold font-headline text-[var(--mqds-text)]">
               General Platform Information
             </h2>
@@ -127,20 +145,20 @@ export function AdminSettingsPage() {
 
         {/* Registration Controls Card */}
         <Card
-          variant="paper"
-          className="p-6 bg-[var(--mqds-surface,#272440)] border border-[var(--mqds-border,#89839b)]/30 shadow-xs space-y-5"
+          className="p-6 border border-[var(--mqds-border-subtle)] shadow-xs space-y-5 !bg-[var(--mqds-surface)] !text-[var(--mqds-text)]"
+          style={{ background: 'var(--mqds-surface)', color: 'var(--mqds-text)' }}
         >
-          <div className="border-b border-[var(--mqds-border,#89839b)]/20 pb-3">
+          <div className="border-b border-[var(--mqds-border-subtle)] pb-3">
             <h2 className="text-sm font-bold font-headline text-[var(--mqds-text)]">
               Registration Controls
             </h2>
             <p className="text-xs text-[var(--mqds-muted)] font-mono mt-0.5">
-              Control scholar and mentor onboarding portals
+              Control student and mentor onboarding portals
             </p>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--mqds-hover,#3b355a)]/40 border border-[var(--mqds-border,#89839b)]/20">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--mqds-hover)]/30 border border-[var(--mqds-border-subtle)]">
               <div>
                 <p className="text-xs font-semibold text-[var(--mqds-text)]">
                   Student Registration
@@ -151,9 +169,11 @@ export function AdminSettingsPage() {
               </div>
               <button
                 type="button"
+                role="switch"
+                aria-checked={allowStudentReg}
                 onClick={() => setValue('allowStudentRegistration', !allowStudentReg, { shouldDirty: true })}
                 className={`w-12 h-6 rounded-full relative transition-colors focus:outline-none cursor-pointer ${
-                  allowStudentReg ? 'bg-[var(--mqds-primary)]' : 'bg-[var(--mqds-border,#89839b)]/40'
+                  allowStudentReg ? 'bg-[var(--mqds-primary)]' : 'bg-[var(--mqds-border-subtle)]'
                 }`}
                 aria-label="Toggle Student Registration"
               >
@@ -165,20 +185,22 @@ export function AdminSettingsPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--mqds-hover,#3b355a)]/40 border border-[var(--mqds-border,#89839b)]/20">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--mqds-hover)]/30 border border-[var(--mqds-border-subtle)]">
               <div>
                 <p className="text-xs font-semibold text-[var(--mqds-text)]">
                   Mentor Registration
                 </p>
                 <p className="text-[11px] text-[var(--mqds-muted)] font-mono">
-                  Allow new mentors to apply for instructor accounts
+                  Allow experienced practitioners to submit mentor applications
                 </p>
               </div>
               <button
                 type="button"
+                role="switch"
+                aria-checked={allowMentorReg}
                 onClick={() => setValue('allowMentorRegistration', !allowMentorReg, { shouldDirty: true })}
                 className={`w-12 h-6 rounded-full relative transition-colors focus:outline-none cursor-pointer ${
-                  allowMentorReg ? 'bg-[var(--mqds-primary)]' : 'bg-[var(--mqds-border,#89839b)]/40'
+                  allowMentorReg ? 'bg-[var(--mqds-primary)]' : 'bg-[var(--mqds-border-subtle)]'
                 }`}
                 aria-label="Toggle Mentor Registration"
               >
@@ -192,25 +214,19 @@ export function AdminSettingsPage() {
           </div>
         </Card>
 
-        {/* Submit Actions */}
-        <div className="flex items-center gap-4">
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={!isDirty || isUpdating}
-            className="flex items-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            <span>{isUpdating ? 'Saving Changes...' : 'Save Settings'}</span>
-          </Button>
-
-          {isSuccess && (
-            <span className="flex items-center gap-1.5 text-emerald-400 text-xs font-mono font-medium animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Settings updated successfully</span>
-            </span>
-          )}
-        </div>
+        {isDirty && (
+          <div className="flex justify-end pt-2">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isUpdating}
+              className="flex items-center gap-2"
+            >
+              <span>{isUpdating ? 'Saving...' : 'Save Settings'}</span>
+              <span aria-hidden="true">&rarr;</span>
+            </Button>
+          </div>
+        )}
       </form>
     </div>
   )

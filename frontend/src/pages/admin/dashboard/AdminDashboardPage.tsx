@@ -1,6 +1,7 @@
+import React from 'react'
 import { useGetMetricsQuery } from '@/store/api/adminApi'
 import { Users, GraduationCap, Calendar, Ticket } from 'lucide-react'
-import { Card, Loader } from '@/design-system'
+import { Card, Skeleton } from '@/design-system'
 
 function MetricCard({
   title,
@@ -17,15 +18,15 @@ function MetricCard({
 }) {
   return (
     <Card
-      variant="paper"
-      className="p-6 relative overflow-hidden bg-[var(--mqds-surface,#272440)] border border-[var(--mqds-border,#89839b)]/30 shadow-sm"
+      className="p-6 relative overflow-hidden border border-[var(--mqds-border-subtle)] shadow-xs !bg-[var(--mqds-surface)] !text-[var(--mqds-text)]"
+      style={{ background: 'var(--mqds-surface)', color: 'var(--mqds-text)' }}
     >
       <div className="flex items-start justify-between relative z-10">
         <div>
-          <p className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted,#cbc6df)]">
+          <p className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
             {title}
           </p>
-          <h3 className="text-3xl font-headline font-bold text-[var(--mqds-text,#f4f7f2)] mt-2">
+          <h3 className="text-3xl font-headline font-bold text-[var(--mqds-text)] mt-2">
             {value}
           </h3>
           {subtitle && (
@@ -35,7 +36,7 @@ function MetricCard({
           )}
         </div>
         <div
-          className="p-3 rounded-xl border border-[var(--mqds-border,#89839b)]/20"
+          className="p-3 rounded-xl border border-[var(--mqds-border-subtle)]"
           style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
         >
           <Icon className="w-5 h-5" />
@@ -45,22 +46,33 @@ function MetricCard({
   )
 }
 
-export function AdminDashboardPage() {
+export const AdminDashboardPage: React.FC = () => {
   const { data: metrics, isLoading, isError } = useGetMetricsQuery()
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <Loader />
-        <p className="text-xs font-mono text-[var(--mqds-muted)]">Loading metrics...</p>
+      <div className="space-y-8 font-body">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text)]">
+            Platform Overview
+          </h1>
+          <p className="text-xs sm:text-sm text-[var(--mqds-muted)] mt-1 font-mono">
+            Live administrative health metrics and user statistics
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="card" label="Loading metrics…" />
+          ))}
+        </div>
       </div>
     )
   }
 
   if (isError || !metrics) {
     return (
-      <div className="p-6 rounded-2xl bg-[var(--mqds-danger)]/20 border border-[var(--mqds-danger-border)] text-[var(--mqds-error)] text-xs">
-        Failed to load platform metrics.
+      <div className="p-6 rounded-2xl bg-[var(--mqds-warning-surface)] border border-[var(--mqds-danger-border)] text-[var(--mqds-danger)] text-xs font-medium">
+        Failed to load platform metrics. Please try again.
       </div>
     )
   }
@@ -68,7 +80,7 @@ export function AdminDashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 font-body">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text,#f4f7f2)]">
+        <h1 className="text-2xl sm:text-3xl font-headline font-bold tracking-tight text-[var(--mqds-text)]">
           Platform Overview
         </h1>
         <p className="text-xs sm:text-sm text-[var(--mqds-muted)] mt-1 font-mono">
