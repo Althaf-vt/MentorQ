@@ -1,0 +1,288 @@
+/* Batch 6: Exact preview.html styles for OTP, Request Details, Session History,
+ * Student Profile, Notification Header Actions, and Dock-Aware Toast Clearance.
+ * Ticket modals & index cards preserve the "print-on-canvas" paper palette with
+ * explicit --mqds-ink text contrast across both Light and Dark themes.
+ */
+
+/* --- OTP Verification Modal (ui-preview/otp-verification.css) --- */
+dialog.mqds-modal.otp-dialog { width: min(450px, 94vw); }
+
+.otp-form {
+  --mqds-field: #f1e8f6;
+  --mqds-field-border: #aa95ad;
+  --mqds-hover: #eadcff;
+  display: grid;
+  gap: 12px;
+}
+
+.otp-example {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #dacbe7;
+  border-radius: var(--mqds-radius-control);
+  background: #fbf5fc;
+  color: var(--mqds-muted-ink);
+  font-size: .84rem;
+}
+.otp-example strong { color: var(--mqds-ink); font: 750 .95rem/1.4 var(--mqds-font-mono); letter-spacing: .1em; }
+
+.otp-timing {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 12px;
+  color: var(--mqds-muted-ink);
+  font-size: .86rem;
+  font-variant-numeric: tabular-nums;
+}
+.otp-timing button {
+  padding: 4px 0;
+  background: transparent;
+  color: #493478;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 700;
+}
+.otp-timing button:focus-visible { outline: 2px solid var(--mqds-focus); outline-offset: 3px; }
+.otp-timing button:disabled { cursor: default; color: var(--mqds-muted-ink); text-decoration: none; }
+
+.otp-notice { margin: 0; color: var(--mqds-success-text); font-size: .86rem; }
+.otp-notice:empty { margin-block-end: -12px; }
+.otp-success {
+  margin: 0 0 12px;
+  padding: 12px;
+  border-inline-start: 3px solid #769587;
+  border-radius: var(--mqds-radius-control);
+  background: var(--mqds-success-surface);
+  color: var(--mqds-success-text);
+}
+.otp-dialog .otp-submit { width: 100%; min-height: 46px; justify-content: space-between; background: #302153; color: #fff; }
+.otp-dialog .otp-submit:not(:disabled):hover { background: #4c337d; }
+
+/* --- Request Details & Dashboard Ticket (ui-preview/request-details.css) --- */
+dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
+.request-detail-content { display: grid; gap: 14px; }
+.request-detail-meta { margin: 0; color: var(--mqds-muted-ink); }
+.request-detail-summary { margin: 0; line-height: 1.45; }
+
+.request-queue-facts {
+  display: grid;
+  grid-template-columns: minmax(0, .76fr) minmax(0, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+.request-queue-facts > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dacbe7;
+  border-radius: 7px;
+  background: #f1e8f6;
+  color: var(--mqds-ink);
+}
+.request-queue-facts dt { font-size: .8rem; font-weight: 650; }
+.request-queue-facts dd { margin: 4px 0 0; font-size: clamp(18px, 5vw, 29px); font-weight: 800; letter-spacing: -.045em; }
+
+.request-progress {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #dacbe7;
+  border-radius: 9px;
+  background: #fffdfa;
+  color: var(--mqds-ink);
+  list-style: none;
+}
+.request-progress li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 12px;
+  border-inline-start: 3px solid transparent;
+  font-weight: 700;
+}
+.request-progress li + li { border-block-start: 1px solid #dacbe7; }
+.request-progress li span { color: var(--mqds-muted-ink); text-align: end; font-size: .83rem; font-weight: 500; }
+.request-progress li[data-step="current"] { border-inline-start-color: #a88bd9; background: #f0e8f6; }
+
+.requests-empty {
+  color: var(--mqds-muted);
+  padding: 15px;
+  border: 1px dashed color-mix(in srgb, var(--mqds-border) 75%, transparent);
+  border-radius: 8px;
+}
+[data-mqds="dark"] .requests-empty {
+  color: #ded9ee;
+  border-color: #cbc6df66;
+}
+
+.mqds-card.dashboard-request-ticket[data-stub="true"] {
+  grid-template-columns: minmax(0, 1fr) 27%;
+  margin-bottom: 14px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--ink);
+  mask: radial-gradient(circle 14px at 0 50%, transparent 98%, black) left / 51% 100% no-repeat,
+    radial-gradient(circle 14px at 100% 50%, transparent 98%, black) right / 51% 100% no-repeat;
+}
+.dashboard-request-ticket > :is(.mqds-card-body, .mqds-card-stub) { padding: 0; }
+.dashboard-request-ticket .body { padding-inline: 6.85%; }
+.dashboard-request-ticket .stub { height: 100%; }
+.dashboard-request-ticket .stub::before { display: none; }
+.dashboard-ticket-action { display: flex; align-items: center; min-height: 36px; }
+@media (max-width: 700px) {
+  .mqds-card.dashboard-request-ticket[data-stub="true"] { grid-template-columns: minmax(0, 1fr) 32%; }
+  .dashboard-request-ticket .body { padding-inline: 14px; }
+}
+@media (max-width: 400px) {
+  .dashboard-request-ticket > .mqds-card-stub::before {
+    inset: 0 auto 0 -5px;
+    width: 10px;
+    height: auto;
+    background-size: 10px 16px;
+  }
+}
+
+/* --- Session History Table & Detail Modal (ui-preview/session-history.css) --- */
+.dashboard-history-table { font-size: inherit; }
+.dashboard-history-table > caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dashboard-history-table td { font-size: .875rem; }
+.dashboard-history-table td:last-child { width: 1%; white-space: nowrap; }
+.dashboard-history-table .mqds-table-row-stamp { width: 35px; height: 30px; }
+
+dialog.mqds-modal.session-detail { width: min(620px, 94vw); }
+.mqds-modal.session-detail .mqds-modal-content { display: grid; gap: 16px; }
+.session-detail-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.session-detail-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #927aae;
+  border-radius: 50%;
+  background: transparent;
+  color: #251644;
+  font-size: 23px;
+}
+.session-outcome {
+  padding: 12px 14px;
+  border-inline-start: 3px solid #a88bd9;
+  border-radius: 7px;
+  background: #f0e8f6;
+  color: var(--mqds-ink);
+}
+.session-detail h3 { margin: 0; font-size: 1rem; }
+.session-outcome p { margin: 4px 0 0; line-height: 1.4; }
+.session-archive {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #51496f;
+  border-radius: 10px;
+  background: var(--mqds-navy);
+  color: #f4f7f2;
+}
+.session-archive .live-chat-header span { color: #ded0fa; font: 600 .72rem/1.4 var(--mqds-font-mono); }
+.session-archive .live-thread { max-height: min(230px, 33dvh); }
+.session-archive .live-thread:focus-visible { outline: 2px solid var(--mqds-lilac); outline-offset: -3px; }
+.session-archive > p { padding: 12px 16px; margin: 0; }
+.session-feedback {
+  padding: 14px;
+  border: 1px solid #dacbe7;
+  border-radius: 10px;
+  background: #fbf5fc;
+  color: var(--mqds-ink);
+}
+.session-feedback > .mqds-button { margin-top: 10px; }
+.session-feedback .mqds-button[data-variant="primary"]:not(:disabled) { background: #302153; color: #fff; }
+.session-feedback .mqds-button[data-variant="primary"]:not(:disabled):hover { background: #4c337d; }
+.session-saved-feedback {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 7px;
+  background: #eee3ff;
+  color: var(--mqds-ink);
+}
+.session-saved-feedback p { margin: 4px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.session-feedback-form { display: grid; gap: 10px; margin-top: 12px; }
+.session-feedback-form fieldset { margin: 0; padding: 0; border: 0; }
+.session-feedback-form legend { font-size: .88rem; font-weight: 650; }
+.session-rating, .session-feedback-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.session-rating { margin-top: 7px; }
+.session-rating label { position: relative; cursor: pointer; }
+.session-rating input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.session-rating span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #977bb3;
+  border-radius: 7px;
+  background: #f1e8f6;
+  color: var(--mqds-ink);
+  font-weight: 700;
+  transition: background-color .18s ease, color .18s ease;
+}
+.session-rating input:hover:not(:checked) + span { background: #e7d9f8; }
+.session-rating input:checked + span { background: #302153; color: #fff; }
+.session-rating input:focus-visible + span { outline: 2px solid #533682; outline-offset: 2px; }
+.session-feedback-form .mqds-textarea { background: #fffdfa; color: var(--mqds-ink); }
+.session-feedback-actions { justify-content: flex-end; }
+.session-feedback-status:not(:empty) { margin-top: 8px; color: #30634c; font-weight: 650; }
+
+/* --- Student Profile Dialog & Header Actions (ui-preview/student-profile.css + notifications.css) --- */
+dialog.mqds-modal.student-profile-dialog { width: min(470px, 94vw); }
+
+.student-profile-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  gap: clamp(8px, 3vw, 12px);
+}
+
+.student-profile-summary > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #dacbe7;
+  border-radius: 7px;
+  background: #f1e8f6;
+  color: var(--mqds-ink);
+}
+
+.student-profile-summary dt { font-size: .84rem; font-weight: 650; }
+.student-profile-summary dd {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-notifications-wrap { position: relative; }
+.header-actions { display: flex; align-items: center; gap: 10px; margin-inline-start: auto; }
+.header-actions .account { margin-inline-start: 0; }
+@media (max-width: 700px) {
+  .header-actions .account { display: grid; place-items: center; }
+}
+@media (max-width: 520px) {
+  header .site-nav { order: 3; width: 100%; margin-inline: 0; }
+  header .header-actions { margin-inline-end: 5px; }
+}
+
+/* Clear desktop bottom floating navigation dock cleanly when toasts appear */
+@media (min-width: 900px) {
+  .mqds-toast-region {
+    bottom: 88px;
+  }
+}

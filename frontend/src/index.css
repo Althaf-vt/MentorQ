@@ -3,6 +3,7 @@
 @import "./styles/preview-foundation.css";
 @import "./styles/preview-tickets-gallery.css";
 @import "./styles/navigation-dock.css";
+@import "./styles/preview-auth-requests.css";
 @import "tailwindcss";
 
 @theme {
