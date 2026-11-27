@@ -137,6 +137,7 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   min-height: 88px;
   margin-bottom: 0;
   border-radius: 8px;
+  transition: --mqds-ticket-paper .2s ease;
 }
 .lean-ticket-card > .mqds-card-body {
   display: flex;
@@ -144,23 +145,76 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   min-width: 0;
   padding: 12px 18px;
 }
-.lean-ticket-card .body {
+.lean-ticket-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   width: 100%;
   min-width: 0;
-  padding: 0;
-  gap: 14px;
 }
-.lean-ticket-card .stamp {
+.lean-ticket-stamp {
+  display: grid;
+  place-items: center;
+  flex: none;
   width: 38px;
   height: 36px;
-  font-size: 14px;
+  background: var(--mqds-primary);
+  color: #fff;
+  font: 700 14px/1 var(--mqds-font-mono);
   transform: skew(-8deg);
 }
-.lean-ticket-card .body h2 {
-  margin: 3px 0 5px;
-  font-size: 1.1rem;
+.lean-ticket-details { flex: 1; min-width: 0; }
+.lean-ticket-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  color: var(--mqds-muted-ink);
+  font: 600 .69rem/1.3 var(--mqds-font-mono);
+}
+.lean-ticket-topic {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: var(--mqds-ink);
+  font-family: var(--mqds-font);
+  font-size: 1.05rem;
+  font-weight: 700;
   line-height: 1.25;
   letter-spacing: -.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lean-ticket-description {
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: var(--mqds-muted-ink);
+  font-size: .78rem;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lean-ticket-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: var(--mqds-muted-ink);
+  font: 600 .68rem/1.2 var(--mqds-font-mono);
+  white-space: nowrap;
+}
+.lean-ticket-action { flex: none; margin-inline-start: auto; }
+.lean-ticket-action .mqds-ticket-action { font-size: .84rem; }
+.mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"]:is(:hover, :focus-within) {
+  transform: none;
+  --mqds-ticket-paper: var(--mqds-paper-hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  .mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"] .mqds-ticket-action,
+  .mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"]:is(:hover, :focus-within) .mqds-ticket-action {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    transition: none;
+  }
 }
 .lean-ticket-card > .mqds-card-stub {
   display: grid;
@@ -170,17 +224,23 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   padding: 10px 12px;
   text-align: center;
 }
-.lean-stub-number {
+.lean-ticket-card .lean-stub-number {
   font: 800 1.45rem/1 var(--mqds-font-mono);
   letter-spacing: -.05em;
   font-variant-numeric: tabular-nums;
 }
-.lean-stub-label { font: 700 .75rem/1.2 var(--mqds-font); }
-.lean-stub-meta { font: 600 .68rem/1.25 var(--mqds-font-mono); }
+.lean-ticket-card .lean-stub-label { font: 700 .75rem/1.2 var(--mqds-font); }
+.lean-ticket-card .lean-stub-meta { font: 600 .68rem/1.25 var(--mqds-font-mono); }
 @media (max-width: 640px) {
   .mqds-card.lean-ticket-card[data-stub="true"] { grid-template-columns: minmax(0, 1fr) 92px; }
   .lean-ticket-card > .mqds-card-body { padding: 10px 14px; }
-  .lean-ticket-card .stamp { display: none; }
+  .lean-ticket-stamp { display: none; }
+  .lean-ticket-body { display: block; }
+  .lean-ticket-action { margin-top: 7px; }
+  .lean-ticket-action .mqds-ticket-action { padding: 6px 10px; }
+  .lean-ticket-card .lean-stub-number { font-size: 1.2rem; }
+  .lean-ticket-card .lean-stub-label { font-size: .68rem; }
+  .lean-ticket-card .lean-stub-meta { font-size: .6rem; }
 }
 @media (max-width: 400px) {
   .lean-ticket-card > .mqds-card-stub::before {
@@ -189,6 +249,9 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
     height: auto;
     background-size: 10px 16px;
   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mqds-card.lean-ticket-card[data-stub="true"] { transition: none; }
 }
 @media (max-width: 700px) {
   .mqds-card.dashboard-request-ticket[data-stub="true"] { grid-template-columns: minmax(0, 1fr) 32%; }
