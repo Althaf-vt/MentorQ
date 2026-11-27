@@ -270,7 +270,7 @@ export const StudentDashboardPage: React.FC = () => {
 
       {/* ── Requests list ────────────────────────────────────────── */}
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="dashboard-ticket-grid">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} variant="ticket" label="Loading requests…" />
           ))}
@@ -299,7 +299,7 @@ export const StudentDashboardPage: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="space-y-4">
+          <div className="dashboard-ticket-grid">
             {paginatedTickets.map((t) => {
               const rawId = t._id || (t as { id?: string }).id
               const ticketId = typeof rawId === 'string' ? rawId : (rawId ? String(rawId) : '')
