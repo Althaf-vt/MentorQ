@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Navbar } from './components/layout/Navbar'
 import { Toaster } from '@/components/layout/Toaster'
@@ -28,6 +29,7 @@ import { MentorsDirectoryPage } from './pages/MentorsDirectoryPage'
 import { PublicRoute } from './routes/PublicRoute'
 import { RoleRoute } from './routes/RoleRoute'
 import { useRoleAuth } from './store/hooks/useRoleAuth'
+import { useThemeStore } from './store/themeStore'
 import './App.css'
 
 function RootRedirect() {
@@ -46,9 +48,18 @@ function RootRedirect() {
 }
 
 function App() {
+  const theme = useThemeStore((state) => state.theme)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-mqds', theme)
+  }, [theme])
+
   return (
     <BrowserRouter>
-      <div data-mqds="light" className="min-h-screen bg-[var(--mqds-canvas,#faf9f7)] text-[var(--mqds-text,#303331)] flex flex-col font-body">
+      <div
+        data-mqds={theme}
+        className="min-h-screen bg-[var(--mqds-canvas)] text-[var(--mqds-text)] flex flex-col font-body"
+      >
         <Navbar />
         <Toaster />
         <div className="flex-grow">
@@ -108,5 +119,3 @@ function App() {
 }
 
 export default App
-
-
