@@ -183,48 +183,40 @@ export const StudentDashboardPage: React.FC = () => {
 
       {/* ── Live-ready session banner (ACTIVE ticket) ─────────────── */}
       {liveReadyTicket && liveReadyId && (
-        <div
-          className="live-ready-ticket"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            padding: '14px 20px',
-            marginBottom: 20,
-            borderRadius: 10,
-            background: 'var(--mqds-primary)',
-            color: '#fff9ef',
-          }}
+        <article
+          className="ticket live-ready-ticket"
+          data-mqds="light"
+          tabIndex={0}
+          role="region"
+          aria-label="Active ready session ticket"
+          style={{ cursor: 'pointer', marginBottom: 20 }}
+          onClick={() => navigate(`/focus/${liveReadyId}`)}
         >
-          <div>
-            <p
-              className="font-mono font-semibold text-xs uppercase tracking-wider"
-              style={{ opacity: 0.7, marginBottom: 2 }}
-            >
-              Session ready
-            </p>
-            <p className="font-headline font-bold text-base">
-              Your mentor is ready — join your focus session now.
-            </p>
+          <div className="body">
+            <div className="stamp" aria-hidden="true">&lt;/&gt;</div>
+            <div>
+              <small>
+                {liveReadyTicket.mentor_id ? 'Mentor assigned' : '1:1 Session'} /{' '}
+                {liveReadyTicket.requested_minutes || 15} min session
+              </small>
+              <h2>{liveReadyTicket.topic}</h2>
+              <button
+                className="cta join-live"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigate(`/focus/${liveReadyId}`)
+                }}
+              >
+                Join session <b aria-hidden="true">→</b>
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            className="cta"
-            onClick={() => navigate(`/queue/${liveReadyId}`)}
-            style={{
-              background: '#fff9ef',
-              color: 'var(--mqds-primary)',
-              fontWeight: 700,
-              fontSize: '0.9rem',
-              fontFamily: 'var(--mqds-font)',
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-          >
-            Track →
-          </button>
-        </div>
+          <div className="stub">
+            <strong>Ready</strong>
+            <span>Mentor is ready</span>
+          </div>
+        </article>
       )}
 
       {/* ── Section title + filter pills ─────────────────────────── */}
@@ -312,6 +304,11 @@ export const StudentDashboardPage: React.FC = () => {
               const rawId = t._id || (t as { id?: string }).id
               const ticketId = typeof rawId === 'string' ? rawId : (rawId ? String(rawId) : '')
               const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
+              const queuedIdx = sortedTickets
+                .filter((item) => item.status === 'PENDING')
+                .findIndex((item) => (item._id || (item as { id?: string }).id) === ticketId)
+              const position = queuedIdx !== -1 ? queuedIdx + 1 : undefined
+
               return (
                 <RequestTicketCard
                   key={ticketId}
@@ -322,6 +319,7 @@ export const StudentDashboardPage: React.FC = () => {
                   tags={t.tags}
                   requestedMinutes={duration}
                   createdAt={t.createdAt || (t as { created_at?: string }).created_at}
+                  queuePosition={position}
                 />
               )
             })}

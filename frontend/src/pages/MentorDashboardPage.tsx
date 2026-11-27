@@ -347,48 +347,37 @@ export const MentorDashboardPage: React.FC = () => {
 
       {/* ── Active Focus Session Banner ──────────────────────────── */}
       {activeFocusTicket && activeFocusId && (
-        <div
-          className="live-ready-ticket"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            padding: '14px 20px',
-            marginBottom: 24,
-            borderRadius: 10,
-            background: 'var(--mqds-primary)',
-            color: '#fff9ef',
-          }}
+        <article
+          className="ticket live-ready-ticket"
+          data-mqds="light"
+          tabIndex={0}
+          role="region"
+          aria-label="Active focus room ticket"
+          style={{ marginBottom: 24, cursor: 'pointer' }}
+          onClick={() => handleStartFocusSession(activeFocusId)}
         >
-          <div>
-            <p
-              className="font-mono font-semibold text-xs uppercase tracking-wider"
-              style={{ opacity: 0.7, marginBottom: 2 }}
-            >
-              Active focus session
-            </p>
-            <p className="font-headline font-bold text-base">
-              Focus room open for "{activeFocusTicket.topic}"
-            </p>
+          <div className="body">
+            <div className="stamp" aria-hidden="true">&lt;/&gt;</div>
+            <div>
+              <small>Live room / {activeFocusTicket.requested_minutes || 15} min session</small>
+              <h2>{activeFocusTicket.topic}</h2>
+              <button
+                className="cta join-live"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleStartFocusSession(activeFocusId)
+                }}
+              >
+                Enter room <b aria-hidden="true">→</b>
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            className="cta"
-            onClick={() => handleStartFocusSession(activeFocusId)}
-            style={{
-              background: '#fff9ef',
-              color: 'var(--mqds-primary)',
-              fontWeight: 700,
-              fontSize: '0.9rem',
-              fontFamily: 'var(--mqds-font)',
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-          >
-            Enter Room →
-          </button>
-        </div>
+          <div className="stub">
+            <strong>Ready</strong>
+            <span>Active session</span>
+          </div>
+        </article>
       )}
 
       {/* ── Incoming Doubt Queue (Triage Workspace) ──────────────── */}

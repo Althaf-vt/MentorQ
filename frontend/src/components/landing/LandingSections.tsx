@@ -99,44 +99,42 @@ export function LandingSections({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="min-w-0" {...cardTiltHandlers}>
-            <div className="mqds-tilt-surface h-full">
-              <Card
-                variant="ticket"
-                data-mqds={lightTheme}
-                interactive
-                className="h-full"
-                stub={
-                  <div className="h-full flex flex-col justify-between p-5 text-[var(--mqds-ink)]">
-                    <div>
-                      <Badge tone="info">For learners</Badge>
-                      <strong className="block mt-3 text-3xl font-extrabold tracking-tight">
-                        01–60m
-                      </strong>
-                      <span className="block text-sm font-semibold opacity-80">
-                        Focused windows
-                      </span>
-                    </div>
-                    <small className="font-mono text-xs pt-3 border-t border-[#201d3540]">
-                      LIVE QUEUE CLARITY
-                    </small>
+          <div className="min-w-0 h-full">
+            <Card
+              variant="ticket"
+              data-mqds={lightTheme}
+              interactive
+              className="h-full"
+              stub={
+                <div className="h-full flex flex-col justify-between p-5 text-[var(--mqds-ink)]">
+                  <div>
+                    <Badge tone="info">For learners</Badge>
+                    <strong className="block mt-3 text-3xl font-extrabold tracking-tight">
+                      01–60m
+                    </strong>
+                    <span className="block text-sm font-semibold opacity-80">
+                      Focused windows
+                    </span>
                   </div>
-                }
-                actions={
-                  <TicketAction onClick={() => onOpenAuth('register')}>
-                    Start as a student →
-                  </TicketAction>
-                }
-              >
-                <h3 className="text-2xl font-bold tracking-tight text-[var(--mqds-ink)] mb-2">
-                  Skip scattered DMs and silent waitlists.
-                </h3>
-                <p className="text-[var(--mqds-muted-ink)] leading-relaxed m-0">
-                  Frame your question once before joining line. MentorQ keeps you updated from
-                  pending review to active room readiness so study time stays uninterrupted.
-                </p>
-              </Card>
-            </div>
+                  <small className="font-mono text-xs pt-3 border-t border-[#201d3540]">
+                    LIVE QUEUE CLARITY
+                  </small>
+                </div>
+              }
+              actions={
+                <TicketAction onClick={() => onOpenAuth('register')}>
+                  Start as a student →
+                </TicketAction>
+              }
+            >
+              <h3 className="text-2xl font-bold tracking-tight text-[var(--mqds-ink)] mb-2">
+                Skip scattered DMs and silent waitlists.
+              </h3>
+              <p className="text-[var(--mqds-muted-ink)] leading-relaxed m-0">
+                Frame your question once before joining line. MentorQ keeps you updated from
+                pending review to active room readiness so study time stays uninterrupted.
+              </p>
+            </Card>
           </div>
 
           <div className="min-w-0" {...cardTiltHandlers}>

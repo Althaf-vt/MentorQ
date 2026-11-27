@@ -120,6 +120,8 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   border: 0;
   border-radius: 7px;
   color: var(--ink);
+  -webkit-mask: radial-gradient(circle 14px at 0 50%, transparent 98%, black) left / 51% 100% no-repeat,
+    radial-gradient(circle 14px at 100% 50%, transparent 98%, black) right / 51% 100% no-repeat;
   mask: radial-gradient(circle 14px at 0 50%, transparent 98%, black) left / 51% 100% no-repeat,
     radial-gradient(circle 14px at 100% 50%, transparent 98%, black) right / 51% 100% no-repeat;
 }
