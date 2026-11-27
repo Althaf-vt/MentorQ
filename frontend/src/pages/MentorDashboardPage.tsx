@@ -1,17 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import {
-  Radio,
-  Video,
-  Sliders,
-  CheckCircle2,
-  Zap,
-  Inbox,
-  ChevronLeft,
-  ChevronRight,
-  MessageSquare,
-  Sparkles,
-} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGetMyMentorProfileQuery, useUpdateMyMentorProfileMutation } from '@/store/api/mentorApi'
 import {
   useGetMentorTicketsQuery,
@@ -24,16 +13,33 @@ import { useStartSessionMutation } from '@/store/api/sessionApi'
 import { socketService } from '@/services/socket.service'
 import { playNotificationSound } from '@/utils/audioUtils'
 import { useToastStore } from '@/store/toastStore'
+import { useAppSelector } from '@/store/hooks'
 import {
   Badge,
   Button,
-  Card,
   EmptyState,
-  Loader,
   Modal,
+  Skeleton,
+  Table,
   Textarea,
-  cardTiltHandlers,
 } from '@/design-system'
+import { MentorOrbit } from '@/components/preview/MentorOrbit'
+import { RequestTicketCard } from '@/components/tickets/RequestTicketCard'
+import { MentorTriageWorkspace } from '@/components/mentor/MentorTriageWorkspace'
+import {
+  SessionDetailModal,
+  type SessionDetailData,
+} from '@/components/session/SessionDetailModal'
+import type { Ticket } from '@/types/operational.types'
+
+const historyTime = new Intl.DateTimeFormat('en-IN', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
+const HISTORY_PER_PAGE = 5
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -52,15 +58,12 @@ export const MentorDashboardPage: React.FC = () => {
   const [updateTicketStatus] = useUpdateTicketStatusMutation()
   const [resolveWithGuidance, { isLoading: isResolvingGuidance }] = useResolveTicketWithGuidanceMutation()
 
-  // Pagination states
-  const [poolPage, setPoolPage] = useState(1)
-  const [activePage, setActivePage] = useState(1)
+  // Pagination & modal states
   const [historyPage, setHistoryPage] = useState(1)
-
-  // Guidance modal state
   const [guidanceModalData, setGuidanceModalData] = useState<{ ticketId: string } | null>(null)
   const [guidanceMessage, setGuidanceMessage] = useState('')
   const [guidanceError, setGuidanceError] = useState('')
+  const [selectedHistorySession, setSelectedHistorySession] = useState<SessionDetailData | null>(null)
   const showToast = useToastStore((state) => state.showToast)
 
   useEffect(() => {
@@ -87,9 +90,12 @@ export const MentorDashboardPage: React.FC = () => {
     }
   }, [refetchPool])
 
-  const isOnline = mentorProfileResp?.data?.is_online ?? false
+  const user = useAppSelector((state) => state.auth.user)
+  const profile = mentorProfileResp?.data
+  const isOnline = profile?.is_online ?? false
+  const mentorName = user?.fullName || ''
 
-  // Filter tickets by category
+  // Filter tickets
   const activeTicketsRaw = useMemo(
     () => tickets.filter((t) => t.status === 'PENDING' || t.status === 'APPROVED' || t.status === 'ACTIVE'),
     [tickets]
@@ -99,7 +105,7 @@ export const MentorDashboardPage: React.FC = () => {
     [tickets]
   )
 
-  // 1. Global Doubt Queue: Sorted by Oldest First (FIFO queue)
+  // 1. Pending pool: sorted by oldest first
   const sortedPendingPool = useMemo(() => {
     return [...pendingPool].sort((a, b) => {
       const timeA = new Date(a.createdAt || (a as { created_at?: string }).created_at || 0).getTime()
@@ -108,7 +114,7 @@ export const MentorDashboardPage: React.FC = () => {
     })
   }, [pendingPool])
 
-  // 2. Assigned / Active Focus Sessions: Sorted by Oldest First
+  // 2. Active tickets: sorted by oldest first
   const sortedActiveTickets = useMemo(() => {
     return [...activeTicketsRaw].sort((a, b) => {
       const timeA = new Date(a.createdAt || (a as { created_at?: string }).created_at || 0).getTime()
@@ -117,7 +123,7 @@ export const MentorDashboardPage: React.FC = () => {
     })
   }, [activeTicketsRaw])
 
-  // 3. Recent Completed Sessions: Sorted by Newest First
+  // 3. History: sorted by newest first
   const sortedHistoryTickets = useMemo(() => {
     return [...historyTicketsRaw].sort((a, b) => {
       const timeA = new Date(
@@ -130,24 +136,7 @@ export const MentorDashboardPage: React.FC = () => {
     })
   }, [historyTicketsRaw])
 
-  // Pagination parameters
-  const POOL_PER_PAGE = 4
-  const poolTotalPages = Math.max(1, Math.ceil(sortedPendingPool.length / POOL_PER_PAGE))
-  const currentPoolPage = Math.min(poolPage, poolTotalPages)
-  const paginatedPool = sortedPendingPool.slice(
-    (currentPoolPage - 1) * POOL_PER_PAGE,
-    currentPoolPage * POOL_PER_PAGE
-  )
-
-  const ACTIVE_PER_PAGE = 4
-  const activeTotalPages = Math.max(1, Math.ceil(sortedActiveTickets.length / ACTIVE_PER_PAGE))
-  const currentActivePage = Math.min(activePage, activeTotalPages)
-  const paginatedActive = sortedActiveTickets.slice(
-    (currentActivePage - 1) * ACTIVE_PER_PAGE,
-    currentActivePage * ACTIVE_PER_PAGE
-  )
-
-  const HISTORY_PER_PAGE = 5
+  // History pagination
   const historyTotalPages = Math.max(1, Math.ceil(sortedHistoryTickets.length / HISTORY_PER_PAGE))
   const currentHistoryPage = Math.min(historyPage, historyTotalPages)
   const paginatedHistory = sortedHistoryTickets.slice(
@@ -157,9 +146,7 @@ export const MentorDashboardPage: React.FC = () => {
 
   const toggleAvailability = async () => {
     try {
-      const profile = mentorProfileResp?.data
       if (!profile) return
-
       const parsedMinutes = parseInt(String(profile.daily_available_minutes || 60), 10)
 
       await updateProfile({
@@ -234,569 +221,493 @@ export const MentorDashboardPage: React.FC = () => {
     }
   }
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 font-body">
-      {/* Top Command Banner */}
-      <Card
-        variant="paper"
-        className="p-8 sm:p-10 relative overflow-hidden border border-[var(--mqds-paper-border)] shadow-md"
-      >
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-xs font-mono font-semibold text-[var(--mqds-primary)]">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Mentor Command Center</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--mqds-text)] font-headline tracking-tight">
-              Mentor Workspace
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--mqds-muted)] leading-relaxed max-w-xl">
-              Claim queue tickets, launch live focus rooms, or provide written guidance to unblock scholars.
-            </p>
-          </div>
+  // Active focus session ticket (if one exists)
+  const activeFocusTicket = sortedActiveTickets.find((t) => t.status === 'ACTIVE')
+  const activeFocusId = activeFocusTicket
+    ? (() => {
+        const r = activeFocusTicket._id || (activeFocusTicket as { id?: string }).id
+        return typeof r === 'string' ? r : r ? String(r) : ''
+      })()
+    : ''
 
-          <div className="flex items-center gap-3">
+  // Map history ticket to SessionDetailData
+  const mapTicketToSession = (t: Ticket): SessionDetailData => {
+    const ticketId = t._id || (t as { id?: string }).id || ''
+    const ended =
+      t.updatedAt ||
+      (t as { updated_at?: string }).updated_at ||
+      t.createdAt ||
+      (t as { created_at?: string }).created_at
+
+    return {
+      id: ticketId,
+      title: t.topic,
+      mentor: mentorName || 'You (Mentor)',
+      endedAt: ended,
+      outcome:
+        t.status === 'COMPLETED'
+          ? 'Mentorship session concluded and problem solved.'
+          : undefined,
+      guidance: t.guidance_message,
+      notes: t.guidance_message
+        ? [
+            {
+              title: t.topic,
+              description: t.guidance_message,
+              format: 'Guidance Note',
+              mentor: mentorName || 'You (Mentor)',
+            },
+          ]
+        : undefined,
+      messages: [
+        {
+          author: 'student',
+          text: t.description,
+          at: t.createdAt,
+        },
+        ...(t.guidance_message
+          ? [
+              {
+                author: 'mentor',
+                text: t.guidance_message,
+                at: ended,
+              },
+            ]
+          : []),
+      ],
+    }
+  }
+
+  const formatHistoryDate = (raw?: string | Date): string => {
+    if (!raw) return '—'
+    const d = new Date(raw)
+    return isNaN(d.getTime()) ? '—' : historyTime.format(d)
+  }
+
+  return (
+    <main className="preview-main">
+      {/* ── Hero ─────────────────────────────────────────────────── */}
+      <section className="hero">
+        <div>
+          <small>Mentor command center</small>
+          <h1>
+            {mentorName ? (
+              <>
+                {mentorName.split(' ')[0]}'s<br />
+                <span>triage queue.</span>
+              </>
+            ) : (
+              <>
+                Mentor<br />
+                <span>triage queue.</span>
+              </>
+            )}
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14 }}>
             <button
+              type="button"
               onClick={toggleAvailability}
               disabled={isUpdatingProfile}
-              className={`px-4 py-2 rounded-full border text-xs font-mono font-semibold flex items-center gap-2 cursor-pointer transition-colors shadow-xs ${
-                isOnline
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700'
-                  : 'bg-[var(--mqds-warning-surface)] border-[var(--mqds-danger-border)] text-[var(--mqds-danger)]'
-              }`}
+              className="cursor-pointer transition-all"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 16px',
+                borderRadius: 24,
+                fontSize: 13,
+                fontWeight: 700,
+                fontFamily: 'var(--mqds-font-mono)',
+                border: '1px solid var(--mqds-border-subtle)',
+                background: isOnline
+                  ? 'var(--mqds-success-surface, #e8f5e9)'
+                  : 'var(--mqds-surface)',
+                color: isOnline
+                  ? 'var(--mqds-success-text, #1b5e20)'
+                  : 'var(--mqds-muted)',
+              }}
             >
-              <Radio className={`w-3.5 h-3.5 ${isOnline ? 'animate-pulse text-emerald-600' : ''}`} />
-              <span>{isOnline ? 'Online • Available' : 'Offline • Busy'}</span>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: isOnline ? '#2e855e' : 'var(--mqds-muted)',
+                  boxShadow: isOnline ? '0 0 8px #2e855e88' : 'none',
+                }}
+              />
+              <span>{isOnline ? 'Online · Available for triage' : 'Offline · Unavailable'}</span>
             </button>
-            <Link to="/mentor/configuration">
-              <Button variant="secondary" className="!p-2.5 !min-h-0" aria-label="Mentor Configuration">
-                <Sliders className="w-4 h-4" />
-              </Button>
-            </Link>
           </div>
         </div>
-      </Card>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card variant="paper" className="p-5 border border-[var(--mqds-paper-border)] shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
-              Global Pool
-            </span>
-            <Inbox className="w-4 h-4 text-[var(--mqds-primary)]" />
-          </div>
-          <div className="text-2xl font-black text-[var(--mqds-text)] font-headline mt-2">
-            {pendingPool.length}
-          </div>
-          <p className="text-[11px] text-[var(--mqds-muted)] mt-1 font-mono">
-            Unclaimed doubt tickets
-          </p>
-        </Card>
+        {/* Orbit — right side of hero */}
+        <MentorOrbit />
+      </section>
 
-        <Card variant="paper" className="p-5 border border-[var(--mqds-paper-border)] shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
-              Assigned Active
-            </span>
-            <Zap className="w-4 h-4 text-amber-500" />
+      {/* ── Active Focus Session Banner ──────────────────────────── */}
+      {activeFocusTicket && activeFocusId && (
+        <div
+          className="live-ready-ticket"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '14px 20px',
+            marginBottom: 24,
+            borderRadius: 10,
+            background: 'var(--mqds-primary)',
+            color: '#fff9ef',
+          }}
+        >
+          <div>
+            <p
+              className="font-mono font-semibold text-xs uppercase tracking-wider"
+              style={{ opacity: 0.7, marginBottom: 2 }}
+            >
+              Active focus session
+            </p>
+            <p className="font-headline font-bold text-base">
+              Focus room open for "{activeFocusTicket.topic}"
+            </p>
           </div>
-          <div className="text-2xl font-black text-[var(--mqds-text)] font-headline mt-2">
-            {activeTicketsRaw.length}
-          </div>
-          <p className="text-[11px] text-[var(--mqds-muted)] mt-1 font-mono">
-            Awaiting session or guidance
-          </p>
-        </Card>
+          <button
+            type="button"
+            className="cta"
+            onClick={() => handleStartFocusSession(activeFocusId)}
+            style={{
+              background: '#fff9ef',
+              color: 'var(--mqds-primary)',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              fontFamily: 'var(--mqds-font)',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            Enter Room →
+          </button>
+        </div>
+      )}
 
-        <Card variant="paper" className="p-5 border border-[var(--mqds-paper-border)] shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
-              Resolved Sessions
-            </span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-black text-[var(--mqds-text)] font-headline mt-2">
-            {historyTicketsRaw.length}
-          </div>
-          <p className="text-[11px] text-[var(--mqds-muted)] mt-1 font-mono">
-            Completed mentorship interactions
-          </p>
-        </Card>
+      {/* ── Incoming Doubt Queue (Triage Workspace) ──────────────── */}
+      <div className="sectionTitle" style={{ marginTop: 28 }}>
+        <h2>Incoming triage pool</h2>
+        <div className="flex items-center gap-2">
+          <span
+            style={{
+              fontSize: 13,
+              fontFamily: 'var(--mqds-font-mono)',
+              color: 'var(--mqds-muted)',
+            }}
+          >
+            {sortedPendingPool.length}{' '}
+            {sortedPendingPool.length === 1 ? 'ticket waiting' : 'tickets waiting'}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              refetchPool()
+              refetchTickets()
+            }}
+            className="cursor-pointer"
+            style={{
+              padding: '4px 11px',
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: 'var(--mqds-font-mono)',
+              border: '1px solid var(--mqds-border-subtle)',
+              background: 'transparent',
+              color: 'var(--mqds-accent)',
+            }}
+          >
+            ↻ Refresh
+          </button>
+        </div>
       </div>
 
-      {/* 1. Global Pending Ticket Pool Section (FIFO Oldest First) */}
-      <Card variant="paper" className="p-6 sm:p-8 border border-[var(--mqds-paper-border)] shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--mqds-border-subtle)] pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--mqds-hover)] text-[var(--mqds-primary)] flex items-center justify-center">
-              <Inbox className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[var(--mqds-text)] font-headline">
-                Global Doubt Queue
-              </h2>
-              <p className="text-xs text-[var(--mqds-muted)] font-mono">
-                FIFO Queue (Oldest first) • Claim unassigned platform tickets.
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="text"
-            onClick={() => refetchPool()}
-            className="!p-0 !min-h-0 text-xs text-[var(--mqds-primary)] font-semibold self-start sm:self-auto"
-          >
-            Refresh Pool
-          </Button>
-        </div>
+      {isLoadingPool ? (
+        <Skeleton variant="ticket" label="Loading incoming triage pool…" />
+      ) : (
+        <MentorTriageWorkspace
+          tickets={sortedPendingPool}
+          onClaim={handleClaimTicket}
+          onDecline={async (id) => {
+            await updateTicketStatus({ id, status: 'CANCELLED' })
+            refetchPool()
+          }}
+          isClaiming={isClaiming}
+        />
+      )}
 
-        {isLoadingPool ? (
-          <div className="py-8 flex flex-col items-center justify-center gap-3">
-            <Loader />
-            <p className="text-xs font-mono text-[var(--mqds-muted)]">Loading ticket pool...</p>
+      {/* ── Assigned Tickets ─────────────────────────────────────── */}
+      {sortedActiveTickets.length > 0 && (
+        <section style={{ marginTop: 36 }}>
+          <div className="sectionTitle">
+            <h2>Assigned tickets</h2>
+            <span>
+              {sortedActiveTickets.length}{' '}
+              {sortedActiveTickets.length === 1 ? 'active' : 'active'}
+            </span>
           </div>
-        ) : sortedPendingPool.length === 0 ? (
-          <div className="py-6">
-            <EmptyState
-              title="Global Pool Empty"
-              description="No unassigned student tickets in the queue right now. You will be notified when new requests arrive."
-            />
-          </div>
-        ) : (
+
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {paginatedPool.map((t) => {
-                const ticketId = t._id || (t as { id?: string }).id || ''
-                const rawDate = t.createdAt || (t as { created_at?: string }).created_at
-                const dateStr = rawDate
-                  ? new Date(rawDate).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : ''
-                const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
+            {sortedActiveTickets.map((t) => {
+              const rawId = t._id || (t as { id?: string }).id
+              const ticketId =
+                typeof rawId === 'string' ? rawId : rawId ? String(rawId) : ''
+              const duration =
+                t.requested_minutes ||
+                (t as { requestedMinutes?: number }).requestedMinutes ||
+                15
 
-                return (
-                  <Card
-                    key={ticketId}
-                    variant="ticket"
-                    interactive
-                    {...cardTiltHandlers}
-                    className="shadow-xs"
-                    stub={
-                      <div className="flex flex-col items-center justify-between h-full text-center py-2 px-1">
-                        <Badge tone="warning" className="font-mono uppercase text-[10px]">
-                          Pending
-                        </Badge>
-                        <div className="font-mono text-xs text-[var(--mqds-muted)] my-2">
-                          {duration}m
-                        </div>
-                        <Button
-                          variant="primary"
-                          onClick={() => handleClaimTicket(ticketId)}
-                          disabled={isClaiming || !isOnline}
-                          className="!px-3 !py-1.5 !min-h-0 text-xs w-full"
-                          title={!isOnline ? 'Mark yourself as Available to claim tickets' : 'Claim this ticket'}
-                        >
-                          {isClaiming ? 'Claiming...' : 'Claim'}
-                        </Button>
-                      </div>
+              return (
+                <div key={ticketId}>
+                  <RequestTicketCard
+                    id={ticketId}
+                    topic={t.topic}
+                    description={t.description}
+                    status={
+                      t.status as
+                        | 'PENDING'
+                        | 'APPROVED'
+                        | 'ACTIVE'
+                        | 'COMPLETED'
+                        | 'CANCELLED'
                     }
+                    tags={t.tags}
+                    requestedMinutes={duration}
+                    createdAt={
+                      t.createdAt || (t as { created_at?: string }).created_at
+                    }
+                    actionLabel="Enter Room"
+                    onActionClick={() => handleStartFocusSession(ticketId)}
+                  />
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: 8,
+                    }}
                   >
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-[var(--mqds-primary)]">
-                          #{ticketId ? ticketId.slice(-6).toUpperCase() : '------'}
-                        </span>
-                        {dateStr && (
-                          <span className="text-[11px] font-mono text-[var(--mqds-muted)]">
-                            • {dateStr}
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-headline font-bold text-sm text-[var(--mqds-text)] leading-snug">
-                        {t.topic}
-                      </h3>
-                      <p className="font-body text-xs text-[var(--mqds-muted)] line-clamp-2">
-                        {t.description}
-                      </p>
-                      {t.tags && t.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {t.tags.map((tag) => (
-                            <Badge key={tag} tone="neutral" className="text-[10px] font-mono">
-                              #{tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                )
-              })}
-            </div>
-
-            {/* Pagination Controls for Pool */}
-            {sortedPendingPool.length > POOL_PER_PAGE && (
-              <div className="pt-4 border-t border-[var(--mqds-border-subtle)] flex items-center justify-between text-xs text-[var(--mqds-muted)]">
-                <span>
-                  Showing{' '}
-                  <strong className="text-[var(--mqds-text)]">
-                    {(currentPoolPage - 1) * POOL_PER_PAGE + 1}-
-                    {Math.min(currentPoolPage * POOL_PER_PAGE, sortedPendingPool.length)}
-                  </strong>{' '}
-                  of <strong className="text-[var(--mqds-text)]">{sortedPendingPool.length}</strong> pool tickets
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPoolPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPoolPage === 1}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Previous pool page"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-                  <span className="px-2 text-xs font-mono font-semibold text-[var(--mqds-text)]">
-                    Page {currentPoolPage} of {poolTotalPages}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPoolPage((p) => Math.min(poolTotalPages, p + 1))}
-                    disabled={currentPoolPage === poolTotalPages}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Next pool page"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
+                    <Button
+                      variant="secondary"
+                      style={{ fontSize: 12, minHeight: 0, padding: '6px 12px' }}
+                      onClick={() => setGuidanceModalData({ ticketId })}
+                    >
+                      Resolve with guidance
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })}
           </div>
-        )}
-      </Card>
+        </section>
+      )}
 
-      {/* 2. Your Assigned & Active Focus Sessions (Oldest First) */}
-      <Card variant="paper" className="p-6 sm:p-8 border border-[var(--mqds-paper-border)] shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--mqds-border-subtle)] pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--mqds-hover)] text-[var(--mqds-primary)] flex items-center justify-center">
-              <Zap className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[var(--mqds-text)] font-headline">
-                Your Assigned Active Sessions
-              </h2>
-              <p className="text-xs text-[var(--mqds-muted)] font-mono">
-                Chronological queue (Oldest first) • Focus mode live collaboration.
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="text"
-            onClick={() => refetchTickets()}
-            className="!p-0 !min-h-0 text-xs text-[var(--mqds-primary)] font-semibold self-start sm:self-auto"
-          >
-            Refresh Tickets
-          </Button>
+      {/* ── Completed Sessions Table ─────────────────────────────── */}
+      <section style={{ marginTop: 36 }}>
+        <div className="sectionTitle">
+          <h2>Completed sessions</h2>
+          <span>
+            {sortedHistoryTickets.length}{' '}
+            {sortedHistoryTickets.length === 1 ? 'session' : 'sessions'}
+          </span>
         </div>
 
         {isLoadingTickets ? (
-          <div className="py-8 flex flex-col items-center justify-center gap-3">
-            <Loader />
-            <p className="text-xs font-mono text-[var(--mqds-muted)]">Loading active tickets...</p>
-          </div>
-        ) : sortedActiveTickets.length === 0 ? (
-          <div className="py-6">
-            <EmptyState
-              title="No Active Assignments"
-              description="Claim tickets from the Global Doubt Queue above to begin working with students."
-            />
-          </div>
+          <Skeleton variant="table" label="Loading completed sessions…" rows={4} />
+        ) : sortedHistoryTickets.length === 0 ? (
+          <EmptyState
+            title="No completed sessions yet"
+            description="Sessions you mentor will be permanently recorded in your history archive."
+          />
         ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {paginatedActive.map((t) => {
-                const ticketId = t._id || (t as { id?: string }).id || ''
-                const rawDate = t.createdAt || (t as { created_at?: string }).created_at
-                const dateStr = rawDate
-                  ? new Date(rawDate).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : ''
-                const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
+          <>
+            <Table
+              caption="Mentor completed session history"
+              hideHeaders
+              className="dashboard-history-table"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">Topic</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedHistory.map((t) => {
+                  const rawId = t._id || (t as { id?: string }).id
+                  const ticketId =
+                    typeof rawId === 'string'
+                      ? rawId
+                      : rawId
+                      ? String(rawId)
+                      : ''
+                  const dateRaw =
+                    t.updatedAt ||
+                    (t as { updated_at?: string }).updated_at ||
+                    t.createdAt ||
+                    (t as { created_at?: string }).created_at
+                  const dateIso = (() => {
+                    if (!dateRaw) return new Date().toISOString()
+                    const d = new Date(dateRaw)
+                    return isNaN(d.getTime())
+                      ? new Date().toISOString()
+                      : d.toISOString()
+                  })()
 
-                return (
-                  <Card
-                    key={ticketId}
-                    variant="ticket"
-                    interactive
-                    {...cardTiltHandlers}
-                    className="shadow-xs"
-                    stub={
-                      <div className="flex flex-col items-center justify-between h-full text-center py-2 px-1">
-                        <Badge
-                          tone={t.status === 'ACTIVE' ? 'info' : 'warning'}
-                          className="font-mono uppercase text-[10px]"
+                  return (
+                    <tr key={ticketId}>
+                      <th scope="row">
+                        <button
+                          className="mqds-table-row-action"
+                          type="button"
+                          aria-label={'View session details for ' + t.topic}
+                          onClick={() =>
+                            setSelectedHistorySession(mapTicketToSession(t))
+                          }
                         >
-                          {t.status}
-                        </Badge>
-                        <div className="font-mono text-xs text-[var(--mqds-muted)] my-2">
-                          {duration}m
-                        </div>
-                        <div className="space-y-1.5 w-full">
-                          <Button
-                            variant="secondary"
-                            onClick={() => setGuidanceModalData({ ticketId })}
-                            className="!px-2 !py-1 !min-h-0 text-[10px] w-full flex items-center justify-center gap-1"
+                          <span
+                            className="mqds-table-row-stamp"
+                            aria-hidden="true"
                           >
-                            <MessageSquare className="w-3 h-3" />
-                            <span>Guide</span>
-                          </Button>
-                          <Button
-                            variant="primary"
-                            onClick={() => handleStartFocusSession(ticketId)}
-                            className="!px-2 !py-1 !min-h-0 text-[10px] w-full flex items-center justify-center gap-1"
-                          >
-                            <Video className="w-3 h-3" />
-                            <span>Focus</span>
-                          </Button>
-                        </div>
-                      </div>
-                    }
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-[var(--mqds-primary)]">
-                          #{ticketId ? ticketId.slice(-6).toUpperCase() : '------'}
-                        </span>
-                        {dateStr && (
-                          <span className="text-[11px] font-mono text-[var(--mqds-muted)]">
-                            • {dateStr}
+                            &rarr;
                           </span>
-                        )}
-                      </div>
-                      <h3 className="font-headline font-bold text-sm text-[var(--mqds-text)] leading-snug">
-                        {t.topic}
-                      </h3>
-                      <p className="font-body text-xs text-[var(--mqds-muted)] line-clamp-2">
-                        {t.description}
-                      </p>
-                      {t.tags && t.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {t.tags.map((tag) => (
-                            <Badge key={tag} tone="neutral" className="text-[10px] font-mono">
-                              #{tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                )
-              })}
-            </div>
+                          {t.topic}
+                        </button>
+                      </th>
+                      <td data-align="end">
+                        <time dateTime={dateIso}>{formatHistoryDate(dateRaw)}</time>
+                      </td>
+                      <td data-align="end">
+                        <Badge
+                          tone={
+                            t.status === 'COMPLETED' ? 'success' : 'danger'
+                          }
+                        >
+                          {t.status === 'COMPLETED' ? 'Completed' : 'Cancelled'}
+                        </Badge>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </Table>
 
-            {/* Pagination Controls for Active */}
-            {sortedActiveTickets.length > ACTIVE_PER_PAGE && (
-              <div className="pt-4 border-t border-[var(--mqds-border-subtle)] flex items-center justify-between text-xs text-[var(--mqds-muted)]">
-                <span>
-                  Showing{' '}
-                  <strong className="text-[var(--mqds-text)]">
-                    {(currentActivePage - 1) * ACTIVE_PER_PAGE + 1}-
-                    {Math.min(currentActivePage * ACTIVE_PER_PAGE, sortedActiveTickets.length)}
-                  </strong>{' '}
-                  of <strong className="text-[var(--mqds-text)]">{sortedActiveTickets.length}</strong> active tickets
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setActivePage((p) => Math.max(1, p - 1))}
-                    disabled={currentActivePage === 1}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Previous active page"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-                  <span className="px-2 text-xs font-mono font-semibold text-[var(--mqds-text)]">
-                    Page {currentActivePage} of {activeTotalPages}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setActivePage((p) => Math.min(activeTotalPages, p + 1))}
-                    disabled={currentActivePage === activeTotalPages}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Next active page"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Card>
-
-      {/* 3. Recent Completed Sessions (Newest First) */}
-      <Card variant="paper" className="p-6 sm:p-8 border border-[var(--mqds-paper-border)] shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-[var(--mqds-border-subtle)] pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--mqds-hover)] text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[var(--mqds-text)] font-headline">
-                Recent Resolved Sessions
-              </h2>
-              <p className="text-xs text-[var(--mqds-muted)] font-mono">
-                Order by newest resolution first.
-              </p>
-            </div>
-          </div>
-          <Badge tone="success" className="font-mono text-xs">
-            {sortedHistoryTickets.length} Resolved
-          </Badge>
-        </div>
-
-        {sortedHistoryTickets.length === 0 ? (
-          <p className="text-xs font-mono text-[var(--mqds-muted)] py-4 text-center">
-            No completed sessions recorded yet.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              {paginatedHistory.map((t) => {
-                const rawDate =
-                  t.createdAt || (t as { created_at?: string }).created_at || (t as { updatedAt?: string }).updatedAt
-                const dateStr = rawDate
-                  ? new Date(rawDate).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : ''
-
-                return (
-                  <div
-                    key={t._id}
-                    className="p-3.5 rounded-xl border border-[var(--mqds-border-subtle)] bg-[var(--mqds-surface)] flex items-center justify-between text-xs text-[var(--mqds-text)] hover:border-[var(--mqds-primary)]/40 transition-colors"
-                  >
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-[var(--mqds-text)]">{t.topic}</span>
-                      {dateStr && (
-                        <p className="text-[11px] font-mono text-[var(--mqds-muted)]">
-                          Resolved on {dateStr}
-                        </p>
-                      )}
-                    </div>
-                    <Badge tone="success" className="font-mono text-[10px] uppercase">
-                      {t.status}
-                    </Badge>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Pagination Controls for Completed */}
+            {/* Pagination */}
             {sortedHistoryTickets.length > HISTORY_PER_PAGE && (
-              <div className="pt-3 border-t border-[var(--mqds-border-subtle)] flex items-center justify-between text-xs text-[var(--mqds-muted)]">
+              <div
+                className="flex items-center justify-between"
+                style={{
+                  marginTop: 16,
+                  paddingTop: 14,
+                  borderTop: '1px solid var(--mqds-border-subtle)',
+                  fontSize: 12,
+                  color: 'var(--mqds-muted)',
+                  fontFamily: 'var(--mqds-font-mono)',
+                }}
+              >
                 <span>
-                  Showing{' '}
-                  <strong className="text-[var(--mqds-text)]">
-                    {(currentHistoryPage - 1) * HISTORY_PER_PAGE + 1}-
-                    {Math.min(currentHistoryPage * HISTORY_PER_PAGE, sortedHistoryTickets.length)}
+                  Page{' '}
+                  <strong style={{ color: 'var(--mqds-text)' }}>
+                    {currentHistoryPage}
                   </strong>{' '}
-                  of <strong className="text-[var(--mqds-text)]">{sortedHistoryTickets.length}</strong> resolved sessions
+                  of{' '}
+                  <strong style={{ color: 'var(--mqds-text)' }}>
+                    {historyTotalPages}
+                  </strong>
                 </span>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="secondary"
                     onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                     disabled={currentHistoryPage === 1}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Previous history page"
+                    className="!p-1.5 !min-h-0"
+                    aria-label="Previous page"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </Button>
-                  <span className="px-2 text-xs font-mono font-semibold text-[var(--mqds-text)]">
-                    Page {currentHistoryPage} of {historyTotalPages}
-                  </span>
                   <Button
                     variant="secondary"
-                    onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
+                    onClick={() =>
+                      setHistoryPage((p) => Math.min(historyTotalPages, p + 1))
+                    }
                     disabled={currentHistoryPage === historyTotalPages}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Next history page"
+                    className="!p-1.5 !min-h-0"
+                    aria-label="Next page"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
-      </Card>
+      </section>
 
-      {/* Guidance Resolution Modal */}
-      <Modal
-        open={Boolean(guidanceModalData)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setGuidanceModalData(null)
-            setGuidanceMessage('')
-            setGuidanceError('')
+      {/* ── Guidance Modal ───────────────────────────────────────── */}
+      {guidanceModalData && (
+        <Modal
+          open={Boolean(guidanceModalData)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setGuidanceModalData(null)
+              setGuidanceError('')
+            }
+          }}
+          variant="ticket"
+          ticketHeader={{
+            leading: '✎',
+            label: 'MENTOR GUIDANCE NOTES',
+          }}
+          title="Provide Guidance & Resolve"
+          description="Provide written guidance, key takeaways, and next steps to resolve this ticket."
+          actions={
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <Button
+                variant="secondary"
+                onClick={() => setGuidanceModalData(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                disabled={isResolvingGuidance}
+                onClick={submitGuidance}
+              >
+                {isResolvingGuidance ? 'Submitting…' : 'Resolve Ticket'}
+              </Button>
+            </div>
           }
-        }}
-        variant="ticket"
-        ticketHeader={{
-          leading: 'NOTE',
-          label: 'MENTOR GUIDANCE RESOLUTION',
-        }}
-        title="Provide Guidance &amp; Resolve"
-        description="Provide resources, links, or architectural advice to resolve this student's doubt directly without launching Focus Mode."
-        actions={
-          <div className="flex justify-end gap-3 w-full">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setGuidanceModalData(null)
-                setGuidanceMessage('')
+        >
+          <div style={{ display: 'grid', gap: 12 }}>
+            <Textarea
+              label="Guidance Message"
+              value={guidanceMessage}
+              onChange={(e) => {
+                setGuidanceMessage(e.target.value)
                 setGuidanceError('')
               }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              disabled={isResolvingGuidance || !guidanceMessage.trim()}
-              onClick={submitGuidance}
-              className="flex items-center gap-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>{isResolvingGuidance ? 'Resolving...' : 'Submit & Resolve'}</span>
-            </Button>
+              rows={4}
+              maxLength={1000}
+              placeholder="Explain the solution, concept references, or next steps..."
+              error={guidanceError}
+            />
           </div>
-        }
-      >
-        <div className="space-y-4 pt-2">
-          <Textarea
-            label="Guidance Message"
-            value={guidanceMessage}
-            onChange={(e) => {
-              setGuidanceMessage(e.target.value)
-              if (guidanceError) setGuidanceError('')
-            }}
-            rows={5}
-            placeholder="e.g. Check out this documentation link, ensure useEffect has proper dependencies, or consider using useMemo..."
-            error={guidanceError || undefined}
-          />
-        </div>
-      </Modal>
-    </div>
+        </Modal>
+      )}
+
+      {/* ── Session Detail Modal (History details) ────────────────── */}
+      <SessionDetailModal
+        isOpen={Boolean(selectedHistorySession)}
+        session={selectedHistorySession}
+        onClose={() => setSelectedHistorySession(null)}
+      />
+    </main>
   )
 }
