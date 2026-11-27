@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { useDispatch } from 'react-redux'
 import { setCredentials } from '@/store/slices/authSlice'
 import { useAdminLoginMutation } from '@/store/api/adminAuthApi'
-import { Loader2 } from 'lucide-react'
+import { Button, Input } from '@/design-system'
 import type { User } from '@/types/auth.types'
 
 const adminLoginSchema = z.object({
@@ -34,14 +34,13 @@ export function AdminLoginPage() {
       dispatch(
         setCredentials({
           token: response.access_token,
-          // Cast the AdminUser to User type required by the slice
           user: {
             _id: response.admin.id,
             email: response.admin.email,
             role: response.admin.role,
             full_name: 'Admin User',
             is_verified: true,
-          } as unknown as User, 
+          } as unknown as User,
         }),
       )
       navigate('/admin/dashboard', { replace: true })
@@ -53,60 +52,60 @@ export function AdminLoginPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-white">Sign in to your account</h2>
+        <h2 className="text-xl font-headline font-bold text-[var(--mqds-text,#f4f7f2)]">
+          Admin Sign In
+        </h2>
+        <p className="text-xs text-[var(--mqds-muted,#cbc6df)] mt-1 font-mono">
+          Enter credentials to access administrative controls
+        </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         {error && (
-          <div className="p-3 rounded-xl bg-red-900/50 text-red-200 text-sm border border-red-800">
-            {'data' in error ? (error.data as any).message : 'Login failed. Please check your credentials.'}
+          <div className="p-3 rounded-xl bg-[var(--mqds-danger,#9b253b)]/30 text-[var(--mqds-error,#ffb4bd)] text-xs border border-[var(--mqds-danger-border,#b45965)]">
+            {'data' in error ? ((error.data as { message?: string }).message || 'Login failed.') : 'Login failed. Please check credentials.'}
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-300">Email address</label>
-          <div className="mt-1">
-            <input
-              type="email"
-              {...register('email')}
-              className="block w-full rounded-xl bg-zinc-800 border-zinc-700 text-white focus:border-zinc-500 focus:ring-zinc-500 sm:text-sm transition-colors py-2 px-3"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
-            )}
-          </div>
-        </div>
+        <Input
+          label="Email Address"
+          type="email"
+          placeholder="admin@mentorq.com"
+          {...register('email')}
+          error={errors.email?.message}
+        />
 
         <div>
-          <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-zinc-300">Password</label>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--mqds-text)]">
+              Password
+            </span>
             <button
               type="button"
               onClick={() => navigate('/admin/forgot-password')}
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
+              className="text-xs text-[var(--mqds-accent,#c5baff)] hover:underline cursor-pointer"
             >
               Forgot password?
             </button>
           </div>
-          <div className="mt-1">
-            <input
-              type="password"
-              {...register('password')}
-              className="block w-full rounded-xl bg-zinc-800 border-zinc-700 text-white focus:border-zinc-500 focus:ring-zinc-500 sm:text-sm transition-colors py-2 px-3"
-            />
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
-            )}
-          </div>
+          <Input
+            label=""
+            type="password"
+            placeholder="••••••••"
+            {...register('password')}
+            error={errors.password?.message}
+          />
         </div>
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
           disabled={isLoading}
-          className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-zinc-900 bg-white hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full justify-center !min-h-[44px] mt-2"
         >
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign in'}
-        </button>
+          <span>{isLoading ? 'Signing In...' : 'Sign In to Console'}</span>
+          <span aria-hidden="true">&rarr;</span>
+        </Button>
       </form>
     </div>
   )

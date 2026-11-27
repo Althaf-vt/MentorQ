@@ -1,148 +1,435 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Clock, ArrowLeft, AlertCircle, CheckCircle2, Loader2, PlayCircle, XCircle, MessageSquare } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useGetTicketByIdQuery, useGetQueuePositionQuery, useUpdateTicketStatusMutation } from '@/store/api/ticketApi'
 import { socketService } from '@/services/socket.service'
 import { playNotificationSound } from '@/utils/audioUtils'
-
 import { useAppSelector } from '@/store/hooks'
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Modal,
+  Skeleton,
+  TicketAction,
+  lightTheme,
+} from '@/design-system'
 
 export const QueueTrackerPage: React.FC = () => {
   const { ticketId } = useParams<{ ticketId: string }>()
   const navigate = useNavigate()
   const user = useAppSelector((s) => s.auth.user)
   const { data: ticket, isLoading, refetch } = useGetTicketByIdQuery(ticketId || '', { skip: !ticketId })
-  const { data: posData, refetch: refetchPos } = useGetQueuePositionQuery(ticketId || '', { skip: !ticketId || ticket?.status !== 'PENDING' })
+  const { data: posData, refetch: refetchPos } = useGetQueuePositionQuery(ticketId || '', {
+    skip: !ticketId || ticket?.status !== 'PENDING',
+  })
   const [updateStatus, { isLoading: isCancelling }] = useUpdateTicketStatusMutation()
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
 
   useEffect(() => {
     socketService.connect()
-    if (ticketId) {
-      socketService.emit('joinTicket', ticketId)
-    }
-    if (user?.id) {
-      socketService.emit('joinUser', user.id)
-    }
+    if (ticketId) socketService.emit('joinTicket', ticketId)
+    if (user?.id) socketService.emit('joinUser', user.id)
 
-    const onUp = () => { refetch(); refetchPos() }
-    const onFocusStarted = (data: any) => {
-      console.log('Focus mode started event received:', data)
-      playNotificationSound()
-      refetch()
-      refetchPos()
-    }
+    const onQueueUp = () => { refetch(); refetchPos() }
+    const onFocusStarted = () => { playNotificationSound(); refetch(); refetchPos() }
 
     socketService.on('focus_mode_started', onFocusStarted)
-    socketService.on('queueUpdate', onUp)
-    socketService.on('sessionUpdate', onUp)
+    socketService.on('queueUpdate', onQueueUp)
+    socketService.on('sessionUpdate', onQueueUp)
 
     return () => {
       if (ticketId) socketService.emit('leaveTicket', ticketId)
       socketService.off('focus_mode_started', onFocusStarted)
-      socketService.off('queueUpdate', onUp)
-      socketService.off('sessionUpdate', onUp)
+      socketService.off('queueUpdate', onQueueUp)
+      socketService.off('sessionUpdate', onQueueUp)
     }
   }, [ticketId, user?.id, refetch, refetchPos])
 
-  if (isLoading) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-2"><Loader2 className="animate-spin text-[#5948d3]" /><p className="text-xs text-slate-500">Loading...</p></div>
-  if (!ticket) return <div className="max-w-md mx-auto my-12 p-6 bg-white rounded-xl border text-center space-y-3"><AlertCircle className="mx-auto text-red-500" /><p className="text-sm">Ticket not found.</p><Link to="/dashboard" className="inline-block px-4 py-2 bg-[#5948d3] text-white text-xs rounded-full">Back to Dashboard</Link></div>
+  // ── Loading ──────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <main className="preview-main" style={{ paddingTop: 40 }}>
+        <Skeleton variant="ticket" label="Loading request details…" />
+      </main>
+    )
+  }
 
+  // ── Not found ────────────────────────────────────────────────────────────
+  if (!ticket) {
+    return (
+      <main className="preview-main" style={{ paddingTop: 40 }}>
+        <EmptyState
+          title="Request Not Found"
+          description="This request could not be found or has already expired."
+          action={
+            <Button variant="primary" onClick={() => navigate('/dashboard')}>
+              Back to dashboard
+            </Button>
+          }
+        />
+      </main>
+    )
+  }
+
+  const currentTicketId = ticket._id || (ticket as { id?: string }).id || ticketId || ''
   const pos = posData?.position ?? 1
-  return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-slate-600 text-xs font-semibold"><ArrowLeft className="w-4 h-4" /> Back</button>
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#5948d3]/10 text-[#5948d3]">Ticket #{ticket._id.slice(-6)}</span>
-      </div>
+  const waitMinutes = pos * 10
 
-      <div className="bg-white rounded-2xl p-6 border shadow-sm space-y-5">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">{ticket.topic}</h1>
-          <p className="text-xs text-slate-500 mt-1">{ticket.description}</p>
+  const isQueued = ticket.status === 'PENDING'
+  const isActive = ticket.status === 'ACTIVE' || ticket.status === 'APPROVED'
+  const isCompleted = ticket.status === 'COMPLETED'
+  const isCancelled = ticket.status === 'CANCELLED'
+  const isClosed = isCancelled || isCompleted
+
+  const ahead = isQueued ? Math.max(0, pos - 1) : 0
+
+  const badgeTone: 'info' | 'warning' | 'success' | 'danger' | 'neutral' =
+    isCancelled ? 'danger' : isActive ? 'success' : isCompleted ? 'info' : 'warning'
+
+  const badgeLabel = isCancelled
+    ? 'Cancelled'
+    : isActive
+    ? 'Session ready'
+    : isCompleted
+    ? 'Completed'
+    : 'In queue'
+
+  // Progress step states
+  const stepMentorReview: 'complete' | 'current' | 'upcoming' =
+    isQueued || isActive || isCompleted ? 'complete' : 'current'
+  const stepInQueue: 'complete' | 'current' | 'upcoming' =
+    isActive || isCompleted ? 'complete' : isQueued ? 'current' : 'upcoming'
+  const stepSession: 'complete' | 'current' | 'upcoming' =
+    isCompleted ? 'complete' : isActive ? 'current' : 'upcoming'
+
+  return (
+    <main className="preview-main" style={{ paddingTop: 40 }}>
+
+      {/* ── Dashboard-ticket stub Card (perforated ticket preview) ──── */}
+      <Card
+        data-mqds={lightTheme}
+        className="dashboard-request-ticket"
+        variant="ticket"
+        interactive
+        stub={
+          <div
+            className="stub"
+            style={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              gap: 4,
+              padding: '16px 14px',
+            }}
+          >
+            <strong
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                letterSpacing: '-0.03em',
+                color: 'var(--mqds-ink)',
+              }}
+            >
+              {isQueued ? `#${pos}` : isCancelled ? '—' : isCompleted ? '✓' : '→'}
+            </strong>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--mqds-muted-ink)' }}>
+              {isQueued
+                ? 'in queue'
+                : isCancelled
+                ? 'cancelled'
+                : isCompleted
+                ? 'completed'
+                : 'session ready'}
+            </span>
+            {isQueued && (
+              <small style={{ fontSize: '0.72rem', color: 'var(--mqds-muted-ink)', marginTop: 2 }}>
+                ~{waitMinutes} min
+              </small>
+            )}
+          </div>
+        }
+      >
+        {/* Body: horizontal layout (stamp left, content right) */}
+        <div className="body">
+          <div className="stamp" aria-hidden="true">{'</>'}</div>
+          <div>
+            <small style={{ color: 'var(--mqds-muted-ink)', fontSize: '0.78rem' }}>
+              {ticket.requested_minutes || 15} min session
+            </small>
+            <h2
+              style={{
+                margin: '4px 0 8px',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                color: 'var(--mqds-ink)',
+              }}
+            >
+              {ticket.topic}
+            </h2>
+            <div className="dashboard-ticket-action">
+              <TicketAction
+                onClick={() =>
+                  isActive ? navigate(`/focus/${currentTicketId}`) : undefined
+                }
+              >
+                {isQueued ? 'View queue' : isActive ? 'Join session' : 'View request'}
+              </TicketAction>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Detail card (request-detail-content laid out inline) ───── */}
+      <Card
+        data-mqds={lightTheme}
+        variant="paper"
+        className="request-detail"
+        style={{ marginTop: 20 }}
+      >
+        {/* Header: title + badge + meta */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 16,
+            paddingBottom: 16,
+            borderBottom: '1px solid #dacbe7',
+          }}
+        >
+          <div>
+            <p
+              style={{
+                margin: '0 0 4px',
+                fontSize: '0.78rem',
+                color: 'var(--mqds-muted-ink)',
+                fontFamily: 'var(--mqds-font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {ticket.requested_minutes || 15} min session
+            </p>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
+                fontWeight: 700,
+                color: 'var(--mqds-ink)',
+              }}
+            >
+              {ticket.topic}
+            </h1>
+          </div>
+          <Badge tone={badgeTone}>{badgeLabel}</Badge>
         </div>
 
-        {ticket.status === 'PENDING' && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#f4f4f1] p-4 rounded-xl flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-[#5948d3] text-white flex items-center justify-center font-bold text-lg">#{pos}</span>
-              <div><p className="text-[10px] uppercase text-slate-400 font-semibold">Queue Position</p><p className="text-xs font-bold text-slate-700">{pos === 1 ? 'Next!' : `${pos - 1} ahead`}</p></div>
-            </div>
-            <div className="bg-[#f4f4f1] p-4 rounded-xl flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center"><Clock className="w-5 h-5" /></span>
-              <div><p className="text-[10px] uppercase text-slate-400 font-semibold">Est. Wait</p><p className="text-xs font-bold text-slate-700">~{pos * 10}m</p></div>
-            </div>
-          </div>
-        )}
+        {/* Detail content grid */}
+        <div className="request-detail-content">
 
-        {ticket.status === 'ACTIVE' && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2"><CheckCircle2 className="text-emerald-600" /><p className="text-xs font-bold text-emerald-900">Your session is active!</p></div>
-            <button onClick={() => navigate(`/focus/${ticket._id}`)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-full font-bold flex items-center gap-1 shadow-md shadow-emerald-500/20 animate-pulse"><PlayCircle className="w-4 h-4" /> Enter Focus Mode</button>
-          </div>
-        )}
+          {/* Queue facts — only when PENDING */}
+          {isQueued && (
+            <dl className="request-queue-facts">
+              <div>
+                <dt>Queue position</dt>
+                <dd>#{pos}</dd>
+              </div>
+              <div>
+                <dt>Estimated wait</dt>
+                <dd>{pos === 1 ? 'Next in line' : `~${waitMinutes} min`}</dd>
+              </div>
+            </dl>
+          )}
 
-        {ticket.status === 'COMPLETED' && ticket.guidance_message && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-2">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-blue-600" />
-              <p className="text-xs font-bold text-blue-900">Mentor Guidance</p>
+          {/* Summary paragraph */}
+          <p className="request-detail-summary">
+            {isCancelled
+              ? 'You cancelled this request. It is no longer active.'
+              : isCompleted
+              ? 'Your session has been completed. Thank you for learning with MentorQ.'
+              : isActive
+              ? 'Your mentor is ready. Join your focus session now to get started.'
+              : isQueued
+              ? ahead === 0
+                ? "You're next in line. Your mentor will claim your request shortly."
+                : `${ahead} ${ahead === 1 ? 'session is' : 'sessions are'} ahead of you in the queue.`
+              : 'Your request is awaiting mentor review.'}
+          </p>
+
+          {/* ACTIVE: session join banner */}
+          {isActive && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: '12px 16px',
+                borderRadius: 8,
+                background: 'var(--mqds-primary)',
+                color: '#fff9ef',
+              }}
+            >
+              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                Your mentor is waiting in the focus room
+              </span>
+              <Button
+                variant="primary"
+                onClick={() => navigate(`/focus/${currentTicketId}`)}
+                style={{ background: '#fff9ef', color: 'var(--mqds-primary)', fontWeight: 700 }}
+              >
+                Join session →
+              </Button>
             </div>
-            <p className="text-xs text-blue-800 whitespace-pre-wrap leading-relaxed">{ticket.guidance_message}</p>
-          </div>
-        )}
+          )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex gap-1">{ticket.tags?.map(t => <span key={t} className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">#{t}</span>)}</div>
-          {ticket.status === 'PENDING' && (
-            <button onClick={() => setIsCancelModalOpen(true)} disabled={isCancelling} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs rounded-lg flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Cancel</button>
+          {/* COMPLETED: mentor guidance callout */}
+          {isCompleted && ticket.guidance_message && (
+            <div
+              style={{
+                padding: '14px 16px',
+                border: '1px solid #dacbe7',
+                borderRadius: 8,
+                background: '#f1e8f6',
+              }}
+            >
+              <p
+                style={{
+                  margin: '0 0 6px',
+                  fontSize: '0.78rem',
+                  fontWeight: 650,
+                  color: 'var(--mqds-muted-ink)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Mentor guidance
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '0.9rem',
+                  lineHeight: 1.5,
+                  color: 'var(--mqds-ink)',
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {ticket.guidance_message}
+              </p>
+            </div>
+          )}
+
+          {/* Progress steps — not shown for cancelled */}
+          {!isCancelled && (
+            <ol className="request-progress" aria-label="Request progress">
+              <li data-step="complete">
+                Request sent <span>Completed</span>
+              </li>
+              <li
+                data-step={stepMentorReview}
+                aria-current={stepMentorReview === 'current' ? 'step' : undefined}
+              >
+                Mentor review{' '}
+                <span>
+                  {stepMentorReview === 'complete'
+                    ? 'Approved'
+                    : stepMentorReview === 'current'
+                    ? 'Awaiting response'
+                    : 'After acceptance'}
+                </span>
+              </li>
+              <li
+                data-step={stepInQueue}
+                aria-current={stepInQueue === 'current' ? 'step' : undefined}
+              >
+                In queue{' '}
+                <span>
+                  {stepInQueue === 'complete'
+                    ? 'Session started'
+                    : stepInQueue === 'current'
+                    ? 'Waiting for session'
+                    : 'After approval'}
+                </span>
+              </li>
+              <li
+                data-step={stepSession}
+                aria-current={stepSession === 'current' ? 'step' : undefined}
+              >
+                Focus session{' '}
+                <span>
+                  {stepSession === 'complete'
+                    ? 'Completed'
+                    : stepSession === 'current'
+                    ? 'Live now'
+                    : 'After queue'}
+                </span>
+              </li>
+            </ol>
+          )}
+
+          {/* Cancelled meta */}
+          {isCancelled && (
+            <p className="request-detail-meta">Request cancelled</p>
           )}
         </div>
-      </div>
 
-      <div className="bg-white rounded-xl p-5 border shadow-sm">
-        <h3 className="font-bold text-sm text-slate-800 mb-3">Timeline</h3>
-        <div className="space-y-3">
-          {ticket.status_history?.map((h, i) => (
-            <div key={i} className="flex gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#5948d3] mt-1.5" />
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-800">{h.status}</p>
-                <p className="text-[10px] text-slate-400">{new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                {h.feedback_note && <p className="text-xs text-slate-500 italic mt-0.5">{h.feedback_note}</p>}
-              </div>
-            </div>
-          ))}
+        {/* Footer actions */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            marginTop: 20,
+            paddingTop: 16,
+            borderTop: '1px solid #dacbe7',
+            flexWrap: 'wrap',
+          }}
+        >
+          {!isClosed && (
+            <Button
+              variant="danger-subtle"
+              onClick={() => setIsCancelModalOpen(true)}
+              disabled={isCancelling}
+            >
+              Cancel request
+            </Button>
+          )}
+          <Button onClick={() => navigate('/dashboard')}>Done</Button>
         </div>
-      </div>
+      </Card>
 
-      {isCancelModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
-              <AlertCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="font-bold text-lg text-slate-900">Cancel Ticket?</h2>
-              <p className="text-xs text-slate-500 mt-1">Are you sure you want to cancel this mentorship request? You will lose your position in the queue.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button onClick={() => setIsCancelModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-50">Keep Ticket</button>
-              <button 
-                onClick={async () => {
-                  await updateStatus({ id: ticket._id, status: 'CANCELLED' });
-                  setIsCancelModalOpen(false);
-                  navigate('/dashboard');
-                }} 
-                disabled={isCancelling} 
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold flex justify-center items-center gap-2 disabled:opacity-50"
-              >
-                {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
-              </button>
-            </div>
+      {/* ── Cancel Confirmation Modal ────────────────────────────────── */}
+      <Modal
+        open={isCancelModalOpen}
+        onOpenChange={setIsCancelModalOpen}
+        variant="danger"
+        title="Cancel this request?"
+        description={
+          isQueued
+            ? "You'll lose your place in the queue. You can send a new request later."
+            : 'Your mentor will no longer be able to review this request. You can send a new one later.'
+        }
+        actions={
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <Button variant="secondary" onClick={() => setIsCancelModalOpen(false)}>
+              Keep request
+            </Button>
+            <Button
+              variant="danger"
+              disabled={isCancelling}
+              onClick={async () => {
+                await updateStatus({ id: currentTicketId, status: 'CANCELLED' })
+                setIsCancelModalOpen(false)
+                navigate('/dashboard')
+              }}
+            >
+              {isCancelling ? 'Cancelling…' : 'Cancel request'}
+            </Button>
           </div>
-        </div>
-      )}
-    </div>
+        }
+      />
+    </main>
   )
 }

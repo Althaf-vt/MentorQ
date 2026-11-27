@@ -1,25 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, X, Sparkles } from 'lucide-react'
+import { darkTheme } from '@/design-system'
 import type { Message } from '@/types/operational.types'
 
-interface SessionChatDrawerProps {
+export interface SessionChatDrawerProps {
   messages: Message[]
   currentUserId?: string
-  onClose: () => void
+  mentorName?: string
+  studentName?: string
+  onClose?: () => void
   onSendMessage: (text: string) => void
+  isMentor?: boolean
+  isEnded?: boolean
+  className?: string
 }
 
 export const SessionChatDrawer: React.FC<SessionChatDrawerProps> = ({
   messages,
   currentUserId,
+  mentorName,
+  studentName,
   onClose,
   onSendMessage,
+  isMentor = false,
+  isEnded = false,
+  className = '',
 }) => {
   const [msg, setMsg] = useState('')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const threadRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (threadRef.current) {
+      threadRef.current.scrollTop = threadRef.current.scrollHeight
+    }
   }
 
   useEffect(() => {
@@ -34,82 +46,160 @@ export const SessionChatDrawer: React.FC<SessionChatDrawerProps> = ({
     if (!txt) setMsg('')
   }
 
-  const QUICK_CHIPS = ['Try this approach', 'Great progress!', 'Let me check', 'Review this link']
+  const QUICK_CHIPS = isMentor
+    ? ['Try this approach', 'Great progress!', 'Let me check', 'Review this link']
+    : ['Here is the error', 'Makes sense!', 'Could you clarify?', 'Testing now']
 
   return (
-    <div className="w-full md:w-80 bg-white border-l flex flex-col justify-between h-[50vh] md:h-full shadow-lg">
-      <div className="p-3 border-b flex items-center justify-between bg-[#faf9f7]">
-        <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-[#5948d3]" />
-          <span className="text-xs font-bold text-slate-700 uppercase">Live Chat</span>
+    <aside
+      className={`live-chat ${className}`}
+      data-mqds={darkTheme}
+      aria-label="Live Session Chat"
+    >
+      {/* ── Chat Header ────────────────────────────────────────── */}
+      <div className="live-chat-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2
+            id="live-chat-title"
+            style={{ margin: 0, fontSize: 'clamp(1rem, 3vw, 1.25rem)' }}
+          >
+            Live discussion
+          </h2>
+          <span>Real-time</span>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-          <X className="w-4 h-4" />
-        </button>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close chat"
+            style={{
+              background: 'transparent',
+              border: '1px solid #51496f',
+              borderRadius: '50%',
+              width: 28,
+              height: 28,
+              display: 'grid',
+              placeItems: 'center',
+              color: '#f4f7f2',
+              cursor: 'pointer',
+              fontSize: 16,
+              lineHeight: 1,
+            }}
+          >
+            &times;
+          </button>
+        )}
       </div>
 
-      <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-[#faf9f7]/50 text-xs text-slate-700">
+      {/* ── Scrollable Message Thread ──────────────────────────── */}
+      <div
+        className="live-thread"
+        ref={threadRef}
+        role="log"
+        aria-label="Session messages"
+        tabIndex={0}
+      >
         {messages.length === 0 ? (
-          <div className="text-center py-8 text-slate-400">
-            No messages yet. Send a message or use quick chips below to collaborate!
-          </div>
+          <p style={{ color: '#d5d0e8', margin: 0, fontSize: '0.85rem' }}>
+            No messages yet. Send a note or choose a quick suggestion below to collaborate.
+          </p>
         ) : (
           messages.map((m) => {
-            const isMe = m.sender_id === currentUserId
+            const isStudent =
+              m.sender_id === currentUserId ? !isMentor : isMentor
+            const author = isStudent ? 'student' : 'mentor'
+            const authorLabel = isStudent
+              ? isMentor
+                ? studentName || 'Student'
+                : 'You'
+              : isMentor
+              ? 'You'
+              : mentorName || 'Mentor'
+
             const timeStr = m.sent_at
-              ? new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              ? new Date(m.sent_at).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
               : ''
+
             return (
-              <div key={m._id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                <div
-                  className={`px-3 py-1.5 rounded-xl max-w-[85%] shadow-sm ${
-                    isMe
-                      ? 'bg-[#5948d3] text-white rounded-br-none'
-                      : 'bg-white text-slate-800 border rounded-bl-none'
-                  }`}
-                >
-                  <p className="break-words">{m.message_text}</p>
+              <article
+                key={m._id}
+                className="live-message"
+                data-author={author}
+              >
+                <div>
+                  <strong>{authorLabel}</strong>
+                  {timeStr && <time>{timeStr}</time>}
                 </div>
-                {timeStr && (
-                  <span className="text-[9px] text-slate-400 px-1 mt-0.5">{timeStr}</span>
-                )}
-              </div>
+                <p>{m.message_text}</p>
+              </article>
             )
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Action Chips */}
-      <div className="p-2 border-t bg-[#faf9f7] flex gap-1.5 overflow-x-auto text-[10px]">
-        {QUICK_CHIPS.map((chip) => (
-          <button
-            key={chip}
-            type="button"
-            onClick={() => handleSend(undefined, chip)}
-            className="px-2.5 py-1 rounded-full bg-[#5948d3]/10 text-[#5948d3] hover:bg-[#5948d3] hover:text-white transition-colors whitespace-nowrap font-medium cursor-pointer"
+      {/* ── Footer: Quick Chips & Composer ───────────────────── */}
+      <div>
+        {!isEnded && (
+          <div
+            style={{
+              padding: '8px 16px',
+              borderTop: '1px solid #cbc6df26',
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+            }}
           >
-            {chip}
-          </button>
-        ))}
-      </div>
+            {QUICK_CHIPS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => handleSend(undefined, chip)}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 16,
+                  background: '#302c4c',
+                  border: '1px solid #51496f',
+                  color: '#ded0fa',
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--mqds-font-mono)',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                }}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        )}
 
-      <form onSubmit={(e) => handleSend(e)} className="p-2 border-t flex gap-1.5 bg-white">
-        <input
-          type="text"
-          value={msg}
-          onChange={(e) => setMsg(e.target.value)}
-          placeholder="Send message..."
-          className="flex-1 px-3 py-1.5 border rounded-full text-xs focus:outline-none focus:ring-1 focus:ring-[#5948d3] bg-white text-slate-700"
-        />
-        <button
-          type="submit"
-          disabled={!msg.trim()}
-          className="p-1.5 bg-[#5948d3] hover:bg-[#4837b5] text-white rounded-full disabled:opacity-50 transition-colors"
-        >
-          <Send className="w-3.5 h-3.5" />
-        </button>
-      </form>
-    </div>
+        {isEnded ? (
+          <p className="live-chat-closed">
+            This session has ended. You can still read the conversation here.
+          </p>
+        ) : (
+          <form className="live-composer" onSubmit={(e) => handleSend(e)}>
+            <label htmlFor="session-message">
+              {isMentor ? 'Message your student' : 'Message your mentor'}
+            </label>
+            <div>
+              <input
+                id="session-message"
+                type="text"
+                value={msg}
+                maxLength={1000}
+                onChange={(e) => setMsg(e.target.value)}
+                placeholder="Write a message or paste a link…"
+              />
+              <button className="cta" type="submit" disabled={!msg.trim()}>
+                Send <span aria-hidden="true">&rarr;</span>
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </aside>
   )
 }

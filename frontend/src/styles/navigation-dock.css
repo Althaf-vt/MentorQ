@@ -1,0 +1,346 @@
+.preview-header {
+  background: var(--mqds-navy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 max(5%, calc((100vw - 1320px) / 2));
+  height: 74px;
+  gap: 5vw;
+}
+.preview-header .wordmark {
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -1.8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.preview-header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+@media (max-width: 700px) {
+  .preview-header { height: auto; min-height: 62px; gap: 8px; padding: 10px 4%; flex-wrap: wrap; }
+  .preview-header .wordmark { font-size: 24px; }
+  .preview-header .site-nav { gap: 0; margin-left: auto; }
+  .preview-header .site-nav a { font-size: 13px; padding: 7px; }
+}
+
+.navigation-dock { display: contents; }
+.navigation-dock :is(.dock-icon, .dock-tooltip) { display: none; }
+.preview-header .dock-theme-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid #c8aff75c;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.preview-header .dock-theme-btn svg { width: 17px; height: 17px; }
+
+@media (max-width: 899px) {
+  .preview-header {
+    --mqds-text: #f4f7f2;
+    --mqds-border: #89839b;
+    --mqds-hover: #3b355a;
+    --mqds-focus: #c5baff;
+  }
+}
+
+@media (min-width: 900px) {
+  .preview-header {
+    background: transparent;
+    padding: 0;
+    height: auto;
+    gap: 0;
+  }
+  .preview-header.landing-header {
+    padding: max(18px, env(safe-area-inset-top)) max(5%, calc((100vw - 1320px) / 2)) 0;
+    justify-content: flex-end;
+    min-height: 58px;
+  }
+  .preview-header.landing-header .dock-theme-btn {
+    border-color: var(--mqds-border);
+    background: var(--mqds-surface);
+    color: var(--mqds-text);
+  }
+  .preview-header.landing-header .dock-theme-btn:hover {
+    background: var(--mqds-hover);
+  }
+  .preview-header > .wordmark {
+    position: fixed;
+    z-index: 35;
+    inset-block-start: max(18px, env(safe-area-inset-top));
+    inset-inline-start: max(5%, calc((100% - 1320px) / 2));
+  }
+  .preview-header .brand-mark {
+    position: relative;
+    filter: drop-shadow(0 1px 2px #201d3590);
+    transition: opacity .2s ease, filter .2s ease;
+  }
+  .preview-header > .wordmark::before,
+  .preview-header > .wordmark::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+  .preview-header > .wordmark::before {
+    mask: var(--wordmark-mask) center / contain no-repeat;
+    background:
+      linear-gradient(153deg, #fffdf9b3, #e8d5ff52 34%, transparent 37% 56%, #631dc049 77%, #ffb59959),
+      linear-gradient(22deg, transparent 38%, #f7eaff61 47%, #fffdf6a8 49%, transparent 52%);
+    -webkit-backdrop-filter: blur(2px) saturate(150%) brightness(.82);
+    backdrop-filter: blur(2px) saturate(150%) brightness(.82);
+  }
+  .preview-header > .wordmark::after {
+    z-index: 1;
+    mask:
+      var(--wordmark-mask) center / contain no-repeat,
+      var(--wordmark-mask) calc(50% + .5px) calc(50% + 1px) / contain no-repeat;
+    mask-composite: subtract;
+    background: linear-gradient(145deg, #fff, #fffcf4 30%, #dec5ff 61%, #ffd5bc);
+  }
+  .preview-header > .wordmark[data-scrolled]:not(:hover, :focus-visible)::before,
+  .preview-header > .wordmark[data-scrolled]:not(:hover, :focus-visible)::after { opacity: 1; }
+  .preview-header > .wordmark[data-scrolled]:not(:hover, :focus-visible) .brand-mark {
+    opacity: .50;
+    filter: drop-shadow(.3px 1px 1px #201d35c9);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .preview-header > .wordmark[data-scrolled]:not(:hover, :focus-visible) .brand-mark { opacity: .68; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .preview-header > .wordmark::before,
+    .preview-header > .wordmark::after,
+    .preview-header .brand-mark { transition: none; }
+  }
+
+  .navigation-dock {
+    --dock-surface: var(--mqds-navy);
+    --dock-border: #c8aff75c;
+    --dock-glass-top: color-mix(in srgb, var(--dock-surface) 58%, transparent);
+    --dock-glass-bottom: color-mix(in srgb, var(--dock-surface) 73%, transparent);
+    --dock-glass-sheen: #e8ddff30;
+    --dock-glass-edge: #b69aef24;
+    --dock-glass-light: brightness(.88);
+    --dock-glass-rim: inset 0 1px 1px #e8ddff59, inset 0 -1px 2px #120c2e56;
+    --dock-shadow: 0 8px 22px #100b245e, 0 2px 6px #100b2433;
+    --dock-divider: #c8aff747;
+    --dock-ink: #eee8fb;
+    --dock-tile: #c8aff714;
+    --dock-tile-hover: #c8aff733;
+    --dock-avatar: #c8aff72b;
+    --dock-avatar-hover: #5343c2;
+    --dock-tooltip-ink: var(--mqds-ivory);
+    --dock-indicator: var(--mqds-peach);
+    position: fixed;
+    z-index: 35;
+    inset: auto auto max(16px, env(safe-area-inset-bottom)) 50%;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 64px;
+    max-width: calc(100vw - 32px);
+    padding: 0 16px 12px;
+    border: 1px solid transparent;
+    border-radius: 20px;
+    background: var(--dock-surface);
+    box-shadow: var(--dock-glass-rim), var(--dock-shadow);
+    transform: translateX(-50%);
+  }
+
+  .navigation-dock[data-dock-theme="light"] {
+    --dock-surface: var(--mqds-ivory);
+    --dock-border: #ae99c4;
+    --dock-glass-top: color-mix(in srgb, var(--dock-surface) 60%, transparent);
+    --dock-glass-bottom: color-mix(in srgb, var(--dock-surface) 72%, transparent);
+    --dock-glass-sheen: #ffffffa6;
+    --dock-glass-edge: #c8aff747;
+    --dock-glass-light: brightness(1.06);
+    --dock-glass-rim: inset 0 1px 1px #ffffffe0, inset 0 -1px 2px #65448539;
+    --dock-shadow: 0 8px 22px #25164433, 0 2px 6px #25164424;
+    --dock-divider: #c9b7da;
+    --dock-ink: var(--mqds-ink);
+    --dock-tile: color-mix(in srgb, var(--mqds-paper-hover) 67%, transparent);
+    --dock-tile-hover: #e6d9fb;
+    --dock-avatar: #ebddfa;
+    --dock-avatar-hover: #dac6f6;
+    --dock-tooltip-ink: var(--mqds-ink);
+    --dock-indicator: var(--mqds-primary);
+    --dock-focus: var(--mqds-primary);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .navigation-dock {
+      background:
+        radial-gradient(ellipse at 18% -26%, var(--dock-glass-sheen), transparent 62%),
+        radial-gradient(ellipse at 92% 145%, var(--dock-glass-edge), transparent 62%),
+        linear-gradient(165deg, var(--dock-glass-top), var(--dock-glass-bottom));
+      -webkit-backdrop-filter: blur(12px) saturate(145%) var(--dock-glass-light);
+      backdrop-filter: blur(12px) saturate(145%) var(--dock-glass-light);
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .navigation-dock,
+      .navigation-dock[data-dock-theme="light"] {
+        --dock-glass-top: color-mix(in srgb, var(--dock-surface) 77%, transparent);
+        --dock-glass-bottom: color-mix(in srgb, var(--dock-surface) 86%, transparent);
+      }
+    }
+  }
+
+  .navigation-dock .site-nav {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+  }
+  .navigation-dock .site-nav::before,
+  .navigation-dock .dock-destination-label { display: none; }
+
+  .navigation-dock .site-nav a,
+  .navigation-dock .dock-account-item {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: var(--dock-size, 40px);
+    height: var(--dock-size, 40px);
+    padding: 0;
+    border-radius: 9px;
+    color: var(--mqds-text);
+  }
+
+  .navigation-dock .dock-icon,
+  .navigation-dock .dock-account-item > button {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: var(--dock-ink);
+    transform: none;
+    transition: background-color .18s ease, border-color .18s ease;
+  }
+
+  .navigation-dock .dock-icon {
+    border-radius: 9px;
+    background: var(--dock-tile);
+  }
+  .navigation-dock .dock-theme-btn {
+    border: 1px solid var(--dock-border);
+    border-radius: 50%;
+    background: var(--dock-tile);
+    cursor: pointer;
+  }
+  .navigation-dock .dock-theme-btn:hover { background: var(--dock-tile-hover); }
+  .navigation-dock .dock-icon svg,
+  .navigation-dock .dock-theme-btn svg { width: 50%; height: 50%; }
+  .navigation-dock .mqds-bell-shape { scale: var(--dock-glyph-scale, 1); }
+
+  .navigation-dock .dock-tooltip {
+    position: absolute;
+    z-index: 1;
+    display: block;
+    left: 50%;
+    bottom: 100%;
+    width: max-content;
+    padding: 3px 8px;
+    border: 1px solid var(--dock-border);
+    border-radius: 6px;
+    background: var(--dock-surface);
+    color: var(--dock-tooltip-ink);
+    box-shadow: 0 3px 10px #0d0b1d66;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 0);
+    transition: opacity .2s ease, transform .2s var(--mqds-ease-out);
+    font-size: .75rem;
+    font-weight: 650;
+    line-height: 1.25;
+  }
+
+  .navigation-dock [data-dock-item]:is(:focus-visible, :has(:focus-visible)) > .dock-tooltip {
+    opacity: 1;
+    transform: translate(-50%, -10px);
+  }
+  @media (hover: hover) {
+    .navigation-dock [data-dock-item]:hover > .dock-tooltip {
+      opacity: 1;
+      transform: translate(-50%, -10px);
+    }
+  }
+
+  .navigation-dock .site-nav a:hover { background: transparent; }
+  .navigation-dock[data-dock-theme="light"] :is(.site-nav a, .dock-account-item > button):focus-visible {
+    outline-color: var(--dock-focus);
+  }
+  .navigation-dock a:not([aria-current]):is(:hover, :focus-visible) .dock-icon {
+    background: var(--dock-tile-hover);
+  }
+  .navigation-dock .site-nav a[aria-current="location"] { color: var(--mqds-lilac); }
+  .navigation-dock a[aria-current] .dock-icon {
+    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+    background: var(--mqds-primary);
+    color: #fff;
+  }
+  .navigation-dock a[aria-current]::after {
+    content: "";
+    position: absolute;
+    inset: auto auto -8px 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--dock-indicator);
+    transform: translateX(-50%);
+  }
+
+  .navigation-dock .header-actions {
+    position: relative;
+    align-items: flex-end;
+    gap: 16px;
+    margin: 0;
+    padding-inline-start: 8px;
+  }
+  .navigation-dock .header-actions::before {
+    content: "";
+    position: absolute;
+    inset: auto auto 4px 0;
+    width: 1px;
+    height: 32px;
+    background: var(--dock-divider);
+  }
+
+  .navigation-dock .account {
+    background: var(--dock-avatar);
+    color: var(--dock-ink);
+    font-size: calc(12px * var(--dock-glyph-scale, 1));
+    font-weight: 750;
+  }
+  .navigation-dock .dock-account-item > .account:hover {
+    background: var(--dock-avatar-hover);
+    transform: none;
+  }
+  .navigation-dock[data-dock-theme="light"] .dock-account-item > button {
+    border-color: var(--dock-border);
+  }
+  .navigation-dock[data-dock-theme="light"] .mqds-notification-bell {
+    background: var(--dock-tile);
+  }
+  .navigation-dock[data-dock-theme="light"] .mqds-notification-bell:is(:hover, [aria-expanded="true"]) {
+    background: var(--dock-tile-hover);
+    border-color: var(--dock-focus);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .navigation-dock :is(.dock-icon, .dock-account-item > button, .dock-tooltip) { transition: none; }
+    .navigation-dock [data-dock-item] > .dock-tooltip { transform: translate(-50%, -10px); }
+  }
+}

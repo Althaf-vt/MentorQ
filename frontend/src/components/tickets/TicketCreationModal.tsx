@@ -1,10 +1,15 @@
 import React, { useState } from 'react'
-import { X, Send, Clock, Tag, AlertCircle, Check } from 'lucide-react'
+import { AlertCircle, Check } from 'lucide-react'
 import { useCreateTicketMutation } from '@/store/api/ticketApi'
 import { useToastStore } from '@/store/toastStore'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import {
+  Modal,
+  Button,
+  Select,
+} from '@/design-system'
 
 interface Props {
   isOpen: boolean
@@ -13,6 +18,7 @@ interface Props {
 }
 
 const CATS = ['React', 'System Design', 'Database', 'API Design', 'DevOps', 'Frontend', 'Backend']
+const DURATIONS = [5, 10, 15, 20, 30, 45, 60]
 
 const ticketSchema = z.object({
   topic: z.string()
@@ -35,7 +41,7 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
   const showToast = useToastStore((state) => state.showToast)
   const [createTicket, { isLoading }] = useCreateTicketMutation()
   const [globalError, setGlobalError] = useState('')
-  
+
   const { register, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<TicketFormValues>({
     resolver: zodResolver(ticketSchema),
     defaultValues: {
@@ -45,8 +51,6 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
       tags: ['React']
     }
   })
-
-  if (!isOpen) return null
 
   const selectedTags = watch('tags')
 
@@ -69,86 +73,171 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
       reset()
       if (onSuccess) onSuccess()
       onClose()
-    } catch (err: any) {
-      const errMsg = err?.data?.message || 'Failed to submit ticket.'
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string | string[] } }
+      const errMsg = error?.data?.message || 'Failed to submit ticket.'
       setGlobalError(Array.isArray(errMsg) ? errMsg.join(', ') : errMsg)
       showToast('Validation failed. Please check your inputs.', 'error')
     }
   }
 
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="w-full max-w-xl bg-[#faf9f7] rounded-2xl shadow-2xl border border-[#e1e3e0] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e1e3e0] bg-white">
-          <div>
-            <h2 className="font-bold text-lg text-slate-800">Request Mentorship Session</h2>
-            <p className="text-xs text-slate-500">Submit your question to enter the queue</p>
-          </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+    <Modal
+      open={isOpen}
+      onOpenChange={handleModalClose}
+      variant="ticket"
+      className="session-request-dialog"
+      ticketHeader={{
+        leading: '→',
+        label: 'SESSION REQUEST',
+      }}
+      title="Request a session"
+      description="Describe your problem and enter the live mentorship queue."
+    >
+      {/* Global error banner uses valid design-system tokens */}
+      {globalError && (
+        <div
+          className="flex items-center gap-2 p-3 mb-4 rounded-lg text-sm"
+          style={{
+            background: 'var(--mqds-warning-surface)',
+            color: 'var(--mqds-danger)',
+            border: '1px solid var(--mqds-danger-border)',
+          }}
+        >
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{globalError}</span>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
-          {globalError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{globalError}</div>}
-          
-          <div>
-            <label className="block text-xs font-semibold uppercase text-slate-700 mb-1">Topic</label>
-            <input 
-              type="text" 
-              {...register('topic')}
-              placeholder="e.g. Debugging React useEffect loop" 
-              className={`w-full px-3 py-2 rounded-xl border text-sm bg-white ${errors.topic ? 'border-red-500 focus:ring-red-500' : ''}`} 
-            />
-            {errors.topic && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.topic.message}</p>}
-          </div>
+      )}
 
-          <div>
-            <label className="block text-xs font-semibold uppercase text-slate-700 mb-1">Description</label>
-            <textarea 
-              rows={3} 
-              {...register('description')}
-              placeholder="Problem description..." 
-              className={`w-full px-3 py-2 rounded-xl border text-sm bg-white resize-none ${errors.description ? 'border-red-500 focus:ring-red-500' : ''}`} 
-            />
-            {errors.description && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.description.message}</p>}
-          </div>
+      {/* .mqds-session-request-form 2-col grid (session-request-form.css) */}
+      <form className="mqds-session-request-form" onSubmit={handleSubmit(onSubmit)}>
 
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-700 flex items-center gap-1 mb-1"><Clock className="w-3.5 h-3.5 text-[#5948d3]" /> Duration (Minutes)</label>
-            <input 
-              type="number"
-              min="5"
-              step="1"
-              {...register('requested_minutes', { valueAsNumber: true })}
-              className={`w-full px-3 py-2 rounded-xl border text-sm bg-white ${errors.requested_minutes ? 'border-red-500 focus:ring-red-500' : ''}`}
-            />
-            {errors.requested_minutes && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.requested_minutes.message}</p>}
-          </div>
+        {/* Topic — full-width via CSS: label:has(input[name="topic"]) { grid-column: 1 / -1 } */}
+        <label>
+          Topic
+          <input
+            {...register('topic')}
+            placeholder="What are you working on?"
+            autoFocus
+          />
+          {errors.topic && (
+            <span
+              className="flex items-center gap-1 text-xs font-mono"
+              style={{ color: 'var(--mqds-danger)' }}
+            >
+              <AlertCircle className="w-3 h-3" /> {errors.topic.message}
+            </span>
+          )}
+        </label>
 
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-700 flex items-center gap-1 mb-1"><Tag className="w-3.5 h-3.5 text-[#5948d3]" /> Tags</label>
-            <div className="flex flex-wrap gap-1.5">
-              {CATS.map(c => (
-                <button 
-                  key={c} 
-                  type="button" 
-                  onClick={() => toggleTag(c)} 
-                  className={`px-2.5 py-1 rounded-full text-xs flex items-center gap-1 ${selectedTags.includes(c) ? 'bg-[#5948d3] text-white' : 'bg-[#eeeeeb] text-slate-700'}`}
+        {/* Description — explicit full-width since no matching label selector */}
+        <label style={{ gridColumn: '1 / -1' }}>
+          Describe your problem
+          <textarea
+            {...register('description')}
+            rows={3}
+            placeholder="Describe your issue, what you've tried, and any relevant code snippets…"
+            style={{
+              width: '100%',
+              minHeight: 80,
+              padding: '9px 11px',
+              borderRadius: 7,
+              border: '1px solid #aa95ad',
+              background: '#f1e8f6',
+              color: '#251644',
+              fontSize: 16,
+              fontFamily: 'var(--mqds-font, Inter)',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+              transition: 'border-color .18s ease',
+            }}
+          />
+          {errors.description && (
+            <span
+              className="flex items-center gap-1 text-xs font-mono"
+              style={{ color: 'var(--mqds-danger)' }}
+            >
+              <AlertCircle className="w-3 h-3" /> {errors.description.message}
+            </span>
+          )}
+        </label>
+
+        {/* Duration — full-width to avoid blank right column */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <Select
+            label="Duration"
+            {...register('requested_minutes', { valueAsNumber: true })}
+            error={errors.requested_minutes?.message}
+          >
+            {DURATIONS.map(m => (
+              <option key={m} value={m}>{m} minutes</option>
+            ))}
+          </Select>
+        </div>
+
+        {/* Tags */}
+        <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span
+            className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: '#463450' }}
+          >
+            Tags{' '}
+            <span className="font-normal normal-case" style={{ color: '#7c6680' }}>
+              (select 1–5)
+            </span>
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {CATS.map((c) => {
+              const isSelected = selectedTags?.includes(c)
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleTag(c)}
+                  className="flex items-center gap-1.5 cursor-pointer transition-colors"
+                  style={{
+                    padding: '5px 11px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: isSelected ? 'none' : '1px solid #aa95ad',
+                    background: isSelected ? '#302153' : '#f1e8f6',
+                    color: isSelected ? '#fff9ef' : '#463450',
+                  }}
                 >
-                  {c}{selectedTags.includes(c) && <Check className="w-3 h-3" strokeWidth={3} />}
+                  <span>{c}</span>
+                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                 </button>
-              ))}
-            </div>
-            {errors.tags && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.tags.message}</p>}
+              )
+            })}
           </div>
+          {errors.tags && (
+            <span
+              className="flex items-center gap-1 text-xs font-mono"
+              style={{ color: 'var(--mqds-danger)' }}
+            >
+              <AlertCircle className="w-3 h-3" /> {errors.tags.message}
+            </span>
+          )}
+        </div>
 
-          <div className="pt-3 border-t border-[#e1e3e0] flex justify-between items-center">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl border text-slate-600 text-sm">Cancel</button>
-            <button type="submit" disabled={isLoading} className="px-5 py-2 rounded-full bg-[#5948d3] hover:bg-[#4d39c7] text-white text-sm flex items-center gap-2 shadow disabled:opacity-50">
-              <span>{isLoading ? 'Submitting...' : 'Submit Ticket'}</span>
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Submit — .submit-request + .cta hooks into session-request-form.css: grid-column: 1 / -1 */}
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isLoading}
+          className="submit-request cta"
+        >
+          <span>{isLoading ? 'Submitting…' : 'Send request'}</span>
+          <span aria-hidden="true">{isLoading ? '…' : '→'}</span>
+        </Button>
+      </form>
+    </Modal>
   )
 }

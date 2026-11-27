@@ -1,17 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import {
-  Radio,
-  Video,
-  Sliders,
-  CheckCircle2,
-  Clock,
-  Zap,
-  Inbox,
-  ChevronLeft,
-  ChevronRight,
-  MessageSquare,
-} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGetMyMentorProfileQuery, useUpdateMyMentorProfileMutation } from '@/store/api/mentorApi'
 import {
   useGetMentorTicketsQuery,
@@ -24,6 +13,33 @@ import { useStartSessionMutation } from '@/store/api/sessionApi'
 import { socketService } from '@/services/socket.service'
 import { playNotificationSound } from '@/utils/audioUtils'
 import { useToastStore } from '@/store/toastStore'
+import { useAppSelector } from '@/store/hooks'
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Modal,
+  Skeleton,
+  Table,
+  Textarea,
+} from '@/design-system'
+import { MentorOrbit } from '@/components/preview/MentorOrbit'
+import { RequestTicketCard } from '@/components/tickets/RequestTicketCard'
+import { MentorTriageWorkspace } from '@/components/mentor/MentorTriageWorkspace'
+import {
+  SessionDetailModal,
+  type SessionDetailData,
+} from '@/components/session/SessionDetailModal'
+import type { Ticket } from '@/types/operational.types'
+
+const historyTime = new Intl.DateTimeFormat('en-IN', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
+const HISTORY_PER_PAGE = 5
 
 export const MentorDashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -42,15 +58,12 @@ export const MentorDashboardPage: React.FC = () => {
   const [updateTicketStatus] = useUpdateTicketStatusMutation()
   const [resolveWithGuidance, { isLoading: isResolvingGuidance }] = useResolveTicketWithGuidanceMutation()
 
-  // Pagination states
-  const [poolPage, setPoolPage] = useState(1)
-  const [activePage, setActivePage] = useState(1)
+  // Pagination & modal states
   const [historyPage, setHistoryPage] = useState(1)
-
-  // Guidance modal state
-  const [guidanceModalData, setGuidanceModalData] = useState<{ticketId: string} | null>(null)
+  const [guidanceModalData, setGuidanceModalData] = useState<{ ticketId: string } | null>(null)
   const [guidanceMessage, setGuidanceMessage] = useState('')
   const [guidanceError, setGuidanceError] = useState('')
+  const [selectedHistorySession, setSelectedHistorySession] = useState<SessionDetailData | null>(null)
   const showToast = useToastStore((state) => state.showToast)
 
   useEffect(() => {
@@ -77,9 +90,12 @@ export const MentorDashboardPage: React.FC = () => {
     }
   }, [refetchPool])
 
-  const isOnline = mentorProfileResp?.data?.is_online ?? false
+  const user = useAppSelector((state) => state.auth.user)
+  const profile = mentorProfileResp?.data
+  const isOnline = profile?.is_online ?? false
+  const mentorName = user?.fullName || ''
 
-  // Filter tickets by category
+  // Filter tickets
   const activeTicketsRaw = useMemo(
     () => tickets.filter((t) => t.status === 'PENDING' || t.status === 'APPROVED' || t.status === 'ACTIVE'),
     [tickets]
@@ -89,57 +105,51 @@ export const MentorDashboardPage: React.FC = () => {
     [tickets]
   )
 
-  // 1. Global Doubt Queue: Sorted by Oldest First (FIFO queue)
+  // 1. Pending pool: sorted by oldest first
   const sortedPendingPool = useMemo(() => {
     return [...pendingPool].sort((a, b) => {
-      const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime()
-      const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime()
+      const timeA = new Date(a.createdAt || (a as { created_at?: string }).created_at || 0).getTime()
+      const timeB = new Date(b.createdAt || (b as { created_at?: string }).created_at || 0).getTime()
       return timeA - timeB
     })
   }, [pendingPool])
 
-  // 2. Assigned / Active Focus Sessions: Sorted by Oldest First
+  // 2. Active tickets: sorted by oldest first
   const sortedActiveTickets = useMemo(() => {
     return [...activeTicketsRaw].sort((a, b) => {
-      const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime()
-      const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime()
+      const timeA = new Date(a.createdAt || (a as { created_at?: string }).created_at || 0).getTime()
+      const timeB = new Date(b.createdAt || (b as { created_at?: string }).created_at || 0).getTime()
       return timeA - timeB
     })
   }, [activeTicketsRaw])
 
-  // 3. Recent Completed Sessions: Sorted by Newest First
+  // 3. History: sorted by newest first
   const sortedHistoryTickets = useMemo(() => {
     return [...historyTicketsRaw].sort((a, b) => {
-      const timeA = new Date(a.createdAt || (a as any).created_at || (a as any).updatedAt || 0).getTime()
-      const timeB = new Date(b.createdAt || (b as any).created_at || (b as any).updatedAt || 0).getTime()
+      const timeA = new Date(
+        a.createdAt || (a as { created_at?: string }).created_at || (a as { updatedAt?: string }).updatedAt || 0
+      ).getTime()
+      const timeB = new Date(
+        b.createdAt || (b as { created_at?: string }).created_at || (b as { updatedAt?: string }).updatedAt || 0
+      ).getTime()
       return timeB - timeA
     })
   }, [historyTicketsRaw])
 
-  // Pagination parameters
-  const POOL_PER_PAGE = 4
-  const poolTotalPages = Math.max(1, Math.ceil(sortedPendingPool.length / POOL_PER_PAGE))
-  const currentPoolPage = Math.min(poolPage, poolTotalPages)
-  const paginatedPool = sortedPendingPool.slice((currentPoolPage - 1) * POOL_PER_PAGE, currentPoolPage * POOL_PER_PAGE)
-
-  const ACTIVE_PER_PAGE = 4
-  const activeTotalPages = Math.max(1, Math.ceil(sortedActiveTickets.length / ACTIVE_PER_PAGE))
-  const currentActivePage = Math.min(activePage, activeTotalPages)
-  const paginatedActive = sortedActiveTickets.slice((currentActivePage - 1) * ACTIVE_PER_PAGE, currentActivePage * ACTIVE_PER_PAGE)
-
-  const HISTORY_PER_PAGE = 5
+  // History pagination
   const historyTotalPages = Math.max(1, Math.ceil(sortedHistoryTickets.length / HISTORY_PER_PAGE))
   const currentHistoryPage = Math.min(historyPage, historyTotalPages)
-  const paginatedHistory = sortedHistoryTickets.slice((currentHistoryPage - 1) * HISTORY_PER_PAGE, currentHistoryPage * HISTORY_PER_PAGE)
+  const paginatedHistory = sortedHistoryTickets.slice(
+    (currentHistoryPage - 1) * HISTORY_PER_PAGE,
+    currentHistoryPage * HISTORY_PER_PAGE
+  )
 
   const toggleAvailability = async () => {
     try {
-      const profile = mentorProfileResp?.data;
-      if (!profile) return;
+      if (!profile) return
+      const parsedMinutes = parseInt(String(profile.daily_available_minutes || 60), 10)
 
-      const parsedMinutes = parseInt(String(profile.daily_available_minutes || 60), 10);
-
-      await updateProfile({ 
+      await updateProfile({
         isOnline: !isOnline,
         dailyAvailability: parsedMinutes,
         operatingHours: {
@@ -182,420 +192,511 @@ export const MentorDashboardPage: React.FC = () => {
 
   const submitGuidance = async () => {
     if (!guidanceModalData || !guidanceMessage.trim()) return
-    const msg = guidanceMessage.trim();
+    const msg = guidanceMessage.trim()
     if (msg.length < 10) {
-      setGuidanceError('Guidance message must be at least 10 characters long');
-      return;
+      setGuidanceError('Guidance message must be at least 10 characters long')
+      return
     }
     if (msg.length > 1000) {
-      setGuidanceError('Guidance message cannot exceed 1000 characters');
-      return;
+      setGuidanceError('Guidance message cannot exceed 1000 characters')
+      return
     }
     if (!/^(?=.*[a-zA-Z0-9])[a-zA-Z0-9\s\S]+$/.test(msg)) {
-      setGuidanceError('Guidance message must contain meaningful alphanumeric text');
-      return;
+      setGuidanceError('Guidance message must contain meaningful alphanumeric text')
+      return
     }
-    
+
     setGuidanceError('')
-    
+
     try {
       await resolveWithGuidance({ id: guidanceModalData.ticketId, message: msg }).unwrap()
       showToast('Ticket resolved with guidance', 'success')
       setGuidanceModalData(null)
       setGuidanceMessage('')
       refetchTickets()
-    } catch (err: any) {
-      showToast(err?.data?.message || 'Failed to resolve ticket', 'error')
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } }
+      showToast(error?.data?.message || 'Failed to resolve ticket', 'error')
       console.error(err)
     }
   }
 
+  // Active focus session ticket (if one exists)
+  const activeFocusTicket = sortedActiveTickets.find((t) => t.status === 'ACTIVE')
+  const activeFocusId = activeFocusTicket
+    ? (() => {
+        const r = activeFocusTicket._id || (activeFocusTicket as { id?: string }).id
+        return typeof r === 'string' ? r : r ? String(r) : ''
+      })()
+    : ''
+
+  // Map history ticket to SessionDetailData
+  const mapTicketToSession = (t: Ticket): SessionDetailData => {
+    const ticketId = t._id || (t as { id?: string }).id || ''
+    const ended =
+      t.updatedAt ||
+      (t as { updated_at?: string }).updated_at ||
+      t.createdAt ||
+      (t as { created_at?: string }).created_at
+
+    return {
+      id: ticketId,
+      title: t.topic,
+      mentor: mentorName || 'You (Mentor)',
+      endedAt: ended,
+      outcome:
+        t.status === 'COMPLETED'
+          ? 'Mentorship session concluded and problem solved.'
+          : undefined,
+      guidance: t.guidance_message,
+      notes: t.guidance_message
+        ? [
+            {
+              title: t.topic,
+              description: t.guidance_message,
+              format: 'Guidance Note',
+              mentor: mentorName || 'You (Mentor)',
+            },
+          ]
+        : undefined,
+      messages: [
+        {
+          author: 'student',
+          text: t.description,
+          at: t.createdAt,
+        },
+        ...(t.guidance_message
+          ? [
+              {
+                author: 'mentor',
+                text: t.guidance_message,
+                at: ended,
+              },
+            ]
+          : []),
+      ],
+    }
+  }
+
+  const formatHistoryDate = (raw?: string | Date): string => {
+    if (!raw) return '—'
+    const d = new Date(raw)
+    return isNaN(d.getTime()) ? '—' : historyTime.format(d)
+  }
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6 font-body">
-      {/* Top Banner */}
-      <div className="bg-slate-900 text-white p-6 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+    <main className="preview-main">
+      {/* ── Hero ─────────────────────────────────────────────────── */}
+      <section className="hero">
         <div>
-          <span className="text-xs font-bold text-[#8172fe] uppercase tracking-wider">Command Center</span>
-          <h1 className="text-2xl font-black font-headline">Mentor Dashboard</h1>
-          <p className="text-xs text-slate-400">Manage queue tickets, launch live focus sessions, and configure availability.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleAvailability}
-            disabled={isUpdatingProfile}
-            className={`px-4 py-2 rounded-2xl border text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors ${
-              isOnline
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-            }`}
-          >
-            <Radio className="w-4 h-4" />
-            <span>{isOnline ? 'Available' : 'Offline'}</span>
-          </button>
-          <Link to="/mentor/configuration" className="p-2 rounded-2xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
-            <Sliders className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-
-      {/* 1. Global Pending Ticket Pool Section (FIFO Oldest First) */}
-      <div className="bg-white rounded-2xl border p-5 space-y-4">
-        <div className="flex items-center justify-between border-b pb-3">
-          <div className="flex items-center gap-2">
-            <Inbox className="w-4 h-4 text-[#5948d3]" />
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Global Doubt Queue</h2>
-              <p className="text-[10px] text-slate-400">FIFO Queue (Oldest first) • Claim unassigned platform tickets.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => refetchPool()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
-              Refresh Pool
-            </button>
-          </div>
-        </div>
-
-        {isLoadingPool ? (
-          <div className="py-6 text-center text-xs text-slate-400">Loading pool...</div>
-        ) : sortedPendingPool.length === 0 ? (
-          <p className="py-6 text-center text-xs text-slate-400">No pending student tickets in the global pool right now.</p>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {paginatedPool.map((t) => {
-                const dateStr = t.createdAt || (t as any).created_at
-                  ? new Date(t.createdAt || (t as any).created_at).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : ''
-                return (
-                  <div
-                    key={t._id}
-                    className="p-4 rounded-xl border bg-[#f9f8ff] border-[#e9e6ff] flex flex-col justify-between space-y-3"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <span className="px-2 py-0.5 rounded text-[8px] font-bold uppercase bg-[#5948d3]/10 text-[#5948d3]">
-                          PENDING
-                        </span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {t.requested_minutes || 15}m
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-xs text-slate-900">{t.topic}</h3>
-                      <p className="text-xs text-slate-500 line-clamp-2">{t.description}</p>
-                      {t.tags && t.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          {t.tags.map((tag) => (
-                            <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-600 border">
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="pt-2 flex items-center justify-between border-t border-[#ece8ff]">
-                      <span className="text-[10px] text-slate-400">{dateStr}</span>
-                      <button
-                        onClick={() => handleClaimTicket(t._id)}
-                        disabled={isClaiming || !isOnline}
-                        className={`px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
-                          isOnline
-                            ? 'bg-[#5948d3] hover:bg-[#4d39c7] text-white'
-                            : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                        }`}
-                        title={!isOnline ? 'Please mark yourself as Available to claim tickets' : 'Claim this ticket'}
-                      >
-                        <span>Claim Ticket</span>
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Pagination Controls for Global Doubt Queue */}
-            {sortedPendingPool.length > POOL_PER_PAGE && (
-              <div className="pt-3 border-t flex items-center justify-between text-xs text-slate-500">
-                <span>
-                  Showing{' '}
-                  <strong className="text-slate-800">
-                    {(currentPoolPage - 1) * POOL_PER_PAGE + 1}-
-                    {Math.min(currentPoolPage * POOL_PER_PAGE, sortedPendingPool.length)}
-                  </strong>{' '}
-                  of <strong className="text-slate-800">{sortedPendingPool.length}</strong> pool tickets
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setPoolPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPoolPage === 1}
-                    className="p-1.5 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
-                    aria-label="Previous pool page"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="px-2 text-xs font-semibold text-slate-700">
-                    Page {currentPoolPage} of {poolTotalPages}
-                  </span>
-                  <button
-                    onClick={() => setPoolPage((p) => Math.min(poolTotalPages, p + 1))}
-                    disabled={currentPoolPage === poolTotalPages}
-                    className="p-1.5 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
-                    aria-label="Next pool page"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+          <small>Mentor command center</small>
+          <h1>
+            {mentorName ? (
+              <>
+                {mentorName.split(' ')[0]}'s<br />
+                <span>triage queue.</span>
+              </>
+            ) : (
+              <>
+                Mentor<br />
+                <span>triage queue.</span>
+              </>
             )}
-          </div>
-        )}
-      </div>
-
-      {/* 2. Your Assigned & Active Focus Sessions (Oldest First) */}
-      <div className="bg-white rounded-2xl border p-5 space-y-4">
-        <div className="flex items-center justify-between border-b pb-3">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#5948d3]" />
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Your Assigned & Active Focus Sessions</h2>
-              <p className="text-[10px] text-slate-400">Chronological queue (Oldest first) • Focus mode live collaboration.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => refetchTickets()} className="text-xs text-[#5948d3] hover:underline font-bold cursor-pointer">
-              Refresh
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14 }}>
+            <button
+              type="button"
+              onClick={toggleAvailability}
+              disabled={isUpdatingProfile}
+              className="cursor-pointer transition-all"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 16px',
+                borderRadius: 24,
+                fontSize: 13,
+                fontWeight: 700,
+                fontFamily: 'var(--mqds-font-mono)',
+                border: '1px solid var(--mqds-border-subtle)',
+                background: isOnline
+                  ? 'var(--mqds-success-surface, #e8f5e9)'
+                  : 'var(--mqds-surface)',
+                color: isOnline
+                  ? 'var(--mqds-success-text, #1b5e20)'
+                  : 'var(--mqds-muted)',
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: isOnline ? '#2e855e' : 'var(--mqds-muted)',
+                  boxShadow: isOnline ? '0 0 8px #2e855e88' : 'none',
+                }}
+              />
+              <span>{isOnline ? 'Online · Available for triage' : 'Offline · Unavailable'}</span>
             </button>
           </div>
+        </div>
+
+        {/* Orbit — right side of hero */}
+        <MentorOrbit />
+      </section>
+
+      {/* ── Active Focus Session Banner ──────────────────────────── */}
+      {activeFocusTicket && activeFocusId && (
+        <article
+          className="ticket live-ready-ticket"
+          data-mqds="light"
+          tabIndex={0}
+          role="region"
+          aria-label="Active focus room ticket"
+          style={{ marginBottom: 24, cursor: 'pointer' }}
+          onClick={() => handleStartFocusSession(activeFocusId)}
+        >
+          <div className="body">
+            <div className="stamp" aria-hidden="true">&lt;/&gt;</div>
+            <div>
+              <small>Live room / {activeFocusTicket.requested_minutes || 15} min session</small>
+              <h2>{activeFocusTicket.topic}</h2>
+              <button
+                className="cta join-live"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleStartFocusSession(activeFocusId)
+                }}
+              >
+                Enter room <b aria-hidden="true">→</b>
+              </button>
+            </div>
+          </div>
+          <div className="stub">
+            <strong>Ready</strong>
+            <span>Active session</span>
+          </div>
+        </article>
+      )}
+
+      {/* ── Incoming Doubt Queue (Triage Workspace) ──────────────── */}
+      <div className="sectionTitle" style={{ marginTop: 28 }}>
+        <h2>Incoming triage pool</h2>
+        <div className="flex items-center gap-2">
+          <span
+            style={{
+              fontSize: 13,
+              fontFamily: 'var(--mqds-font-mono)',
+              color: 'var(--mqds-muted)',
+            }}
+          >
+            {sortedPendingPool.length}{' '}
+            {sortedPendingPool.length === 1 ? 'ticket waiting' : 'tickets waiting'}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              refetchPool()
+              refetchTickets()
+            }}
+            className="cursor-pointer"
+            style={{
+              padding: '4px 11px',
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: 'var(--mqds-font-mono)',
+              border: '1px solid var(--mqds-border-subtle)',
+              background: 'transparent',
+              color: 'var(--mqds-accent)',
+            }}
+          >
+            ↻ Refresh
+          </button>
+        </div>
+      </div>
+
+      {isLoadingPool ? (
+        <Skeleton variant="ticket" label="Loading incoming triage pool…" />
+      ) : (
+        <MentorTriageWorkspace
+          tickets={sortedPendingPool}
+          onClaim={handleClaimTicket}
+          onDecline={async (id) => {
+            await updateTicketStatus({ id, status: 'CANCELLED' })
+            refetchPool()
+          }}
+          isClaiming={isClaiming}
+        />
+      )}
+
+      {/* ── Assigned Tickets ─────────────────────────────────────── */}
+      {sortedActiveTickets.length > 0 && (
+        <section style={{ marginTop: 36 }}>
+          <div className="sectionTitle">
+            <h2>Assigned tickets</h2>
+            <span>
+              {sortedActiveTickets.length}{' '}
+              {sortedActiveTickets.length === 1 ? 'active' : 'active'}
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {sortedActiveTickets.map((t) => {
+              const rawId = t._id || (t as { id?: string }).id
+              const ticketId =
+                typeof rawId === 'string' ? rawId : rawId ? String(rawId) : ''
+              const duration =
+                t.requested_minutes ||
+                (t as { requestedMinutes?: number }).requestedMinutes ||
+                15
+
+              return (
+                <div key={ticketId}>
+                  <RequestTicketCard
+                    id={ticketId}
+                    topic={t.topic}
+                    description={t.description}
+                    status={
+                      t.status as
+                        | 'PENDING'
+                        | 'APPROVED'
+                        | 'ACTIVE'
+                        | 'COMPLETED'
+                        | 'CANCELLED'
+                    }
+                    tags={t.tags}
+                    requestedMinutes={duration}
+                    createdAt={
+                      t.createdAt || (t as { created_at?: string }).created_at
+                    }
+                    actionLabel="Enter Room"
+                    onActionClick={() => handleStartFocusSession(ticketId)}
+                  />
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: 8,
+                    }}
+                  >
+                    <Button
+                      variant="secondary"
+                      style={{ fontSize: 12, minHeight: 0, padding: '6px 12px' }}
+                      onClick={() => setGuidanceModalData({ ticketId })}
+                    >
+                      Resolve with guidance
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── Completed Sessions Table ─────────────────────────────── */}
+      <section style={{ marginTop: 36 }}>
+        <div className="sectionTitle">
+          <h2>Completed sessions</h2>
+          <span>
+            {sortedHistoryTickets.length}{' '}
+            {sortedHistoryTickets.length === 1 ? 'session' : 'sessions'}
+          </span>
         </div>
 
         {isLoadingTickets ? (
-          <div className="py-6 text-center text-xs text-slate-400">Loading...</div>
-        ) : sortedActiveTickets.length === 0 ? (
-          <p className="py-6 text-center text-xs text-slate-400">No active tickets assigned right now.</p>
+          <Skeleton variant="table" label="Loading completed sessions…" rows={4} />
+        ) : sortedHistoryTickets.length === 0 ? (
+          <EmptyState
+            title="No completed sessions yet"
+            description="Sessions you mentor will be permanently recorded in your history archive."
+          />
         ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {paginatedActive.map((t) => {
-                const dateStr = t.createdAt || (t as any).created_at
-                  ? new Date(t.createdAt || (t as any).created_at).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : ''
-                return (
-                  <div key={t._id} className="p-4 rounded-xl border bg-slate-50 space-y-2 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <span className="px-2 py-0.5 rounded text-[8px] font-bold uppercase bg-[#5948d3]/10 text-[#5948d3]">
-                          {t.status}
-                        </span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {t.requested_minutes}m
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-xs text-slate-900">{t.topic}</h3>
-                      <p className="text-xs text-slate-500 line-clamp-2">{t.description}</p>
-                    </div>
-                    <div className="pt-2 flex items-center justify-between border-t border-slate-200">
-                      <span className="text-[10px] text-slate-400">{dateStr}</span>
-                      <div className="flex items-center gap-2">
+          <>
+            <Table
+              caption="Mentor completed session history"
+              hideHeaders
+              className="dashboard-history-table"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">Topic</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedHistory.map((t) => {
+                  const rawId = t._id || (t as { id?: string }).id
+                  const ticketId =
+                    typeof rawId === 'string'
+                      ? rawId
+                      : rawId
+                      ? String(rawId)
+                      : ''
+                  const dateRaw =
+                    t.updatedAt ||
+                    (t as { updated_at?: string }).updated_at ||
+                    t.createdAt ||
+                    (t as { created_at?: string }).created_at
+                  const dateIso = (() => {
+                    if (!dateRaw) return new Date().toISOString()
+                    const d = new Date(dateRaw)
+                    return isNaN(d.getTime())
+                      ? new Date().toISOString()
+                      : d.toISOString()
+                  })()
+
+                  return (
+                    <tr key={ticketId}>
+                      <th scope="row">
                         <button
-                          onClick={() => setGuidanceModalData({ ticketId: t._id })}
-                          className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold text-[10px] flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                          className="mqds-table-row-action"
+                          type="button"
+                          aria-label={'View session details for ' + t.topic}
+                          onClick={() =>
+                            setSelectedHistorySession(mapTicketToSession(t))
+                          }
                         >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>Resolve (Guidance)</span>
+                          <span
+                            className="mqds-table-row-stamp"
+                            aria-hidden="true"
+                          >
+                            &rarr;
+                          </span>
+                          {t.topic}
                         </button>
-                        <button
-                          onClick={() => handleStartFocusSession(t._id)}
-                          className="px-3.5 py-1.5 rounded-lg bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold text-[10px] flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      </th>
+                      <td data-align="end">
+                        <time dateTime={dateIso}>{formatHistoryDate(dateRaw)}</time>
+                      </td>
+                      <td data-align="end">
+                        <Badge
+                          tone={
+                            t.status === 'COMPLETED' ? 'success' : 'danger'
+                          }
                         >
-                          <Video className="w-3.5 h-3.5" />
-                          <span>Focus Mode</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                          {t.status === 'COMPLETED' ? 'Completed' : 'Cancelled'}
+                        </Badge>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </Table>
 
-            {/* Pagination Controls for Active Sessions */}
-            {sortedActiveTickets.length > ACTIVE_PER_PAGE && (
-              <div className="pt-3 border-t flex items-center justify-between text-xs text-slate-500">
-                <span>
-                  Showing{' '}
-                  <strong className="text-slate-800">
-                    {(currentActivePage - 1) * ACTIVE_PER_PAGE + 1}-
-                    {Math.min(currentActivePage * ACTIVE_PER_PAGE, sortedActiveTickets.length)}
-                  </strong>{' '}
-                  of <strong className="text-slate-800">{sortedActiveTickets.length}</strong> active tickets
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setActivePage((p) => Math.max(1, p - 1))}
-                    disabled={currentActivePage === 1}
-                    className="p-1.5 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
-                    aria-label="Previous active page"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="px-2 text-xs font-semibold text-slate-700">
-                    Page {currentActivePage} of {activeTotalPages}
-                  </span>
-                  <button
-                    onClick={() => setActivePage((p) => Math.min(activeTotalPages, p + 1))}
-                    disabled={currentActivePage === activeTotalPages}
-                    className="p-1.5 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
-                    aria-label="Next active page"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* 3. Recent Completed Sessions (Newest First) */}
-      <div className="bg-white rounded-2xl border p-5 space-y-3">
-        <div className="flex items-center justify-between border-b pb-2">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Recent Completed Sessions</h2>
-              <p className="text-[10px] text-slate-400">Order by newest resolution first.</p>
-            </div>
-          </div>
-          <span className="text-xs text-slate-400 font-bold">{sortedHistoryTickets.length} Resolved</span>
-        </div>
-
-        {sortedHistoryTickets.length === 0 ? (
-          <p className="text-xs text-slate-400 py-4 text-center">No completed sessions yet.</p>
-        ) : (
-          <div className="space-y-3">
-            <div className="space-y-2">
-              {paginatedHistory.map((t) => {
-                const dateStr = t.createdAt || (t as any).created_at || (t as any).updatedAt
-                  ? new Date(t.createdAt || (t as any).created_at || (t as any).updatedAt).toLocaleDateString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : ''
-                return (
-                  <div
-                    key={t._id}
-                    className="p-3 rounded-lg border bg-slate-50 flex items-center justify-between text-xs text-slate-700 hover:border-slate-300 transition-colors"
-                  >
-                    <div>
-                      <span className="font-semibold text-slate-900">{t.topic}</span>
-                      {dateStr && <span className="text-[10px] text-slate-400 ml-2">Resolved on {dateStr}</span>}
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
-                      {t.status}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Pagination Controls for Completed Sessions */}
+            {/* Pagination */}
             {sortedHistoryTickets.length > HISTORY_PER_PAGE && (
-              <div className="pt-2 border-t flex items-center justify-between text-xs text-slate-500">
+              <div
+                className="flex items-center justify-between"
+                style={{
+                  marginTop: 16,
+                  paddingTop: 14,
+                  borderTop: '1px solid var(--mqds-border-subtle)',
+                  fontSize: 12,
+                  color: 'var(--mqds-muted)',
+                  fontFamily: 'var(--mqds-font-mono)',
+                }}
+              >
                 <span>
-                  Showing{' '}
-                  <strong className="text-slate-800">
-                    {(currentHistoryPage - 1) * HISTORY_PER_PAGE + 1}-
-                    {Math.min(currentHistoryPage * HISTORY_PER_PAGE, sortedHistoryTickets.length)}
+                  Page{' '}
+                  <strong style={{ color: 'var(--mqds-text)' }}>
+                    {currentHistoryPage}
                   </strong>{' '}
-                  of <strong className="text-slate-800">{sortedHistoryTickets.length}</strong> resolved sessions
+                  of{' '}
+                  <strong style={{ color: 'var(--mqds-text)' }}>
+                    {historyTotalPages}
+                  </strong>
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <button
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
                     onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                     disabled={currentHistoryPage === 1}
-                    className="p-1.5 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
-                    aria-label="Previous history page"
+                    className="!p-1.5 !min-h-0"
+                    aria-label="Previous page"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="px-2 text-xs font-semibold text-slate-700">
-                    Page {currentHistoryPage} of {historyTotalPages}
-                  </span>
-                  <button
-                    onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      setHistoryPage((p) => Math.min(historyTotalPages, p + 1))
+                    }
                     disabled={currentHistoryPage === historyTotalPages}
-                    className="p-1.5 rounded-lg border bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 cursor-pointer"
-                    aria-label="Next history page"
+                    className="!p-1.5 !min-h-0"
+                    aria-label="Next page"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
-      </div>
+      </section>
 
+      {/* ── Guidance Modal ───────────────────────────────────────── */}
       {guidanceModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 relative">
-            <h2 className="text-xl font-bold text-slate-900">Provide Guidance & Resolve</h2>
-            <p className="text-xs text-slate-500">
-              Provide resources, links, or advice to resolve this student's doubt directly without launching Focus Mode.
-            </p>
-            <div className="space-y-1">
-              <textarea
-                value={guidanceMessage}
-                onChange={(e) => {
-                  setGuidanceMessage(e.target.value)
-                  if (guidanceError) setGuidanceError('')
-                }}
-                rows={4}
-                placeholder="e.g., Check out this documentation link..."
-                className={`w-full border outline-none rounded-xl p-3 text-sm resize-none ${
-                  guidanceError 
-                    ? 'bg-red-50 border-red-500 focus:border-red-600 text-red-900' 
-                    : 'bg-[#f4f4f1] border-[#e5e4de] focus:border-[#5948d3]'
-                }`}
-              />
-              {guidanceError && (
-                <p className="text-xs font-semibold text-red-500 pl-1">{guidanceError}</p>
-              )}
-            </div>
-            <div className="flex gap-3 justify-end pt-2">
-              <button
-                onClick={() => {
-                  setGuidanceModalData(null)
-                  setGuidanceMessage('')
-                }}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
+        <Modal
+          open={Boolean(guidanceModalData)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setGuidanceModalData(null)
+              setGuidanceError('')
+            }
+          }}
+          variant="ticket"
+          ticketHeader={{
+            leading: '✎',
+            label: 'MENTOR GUIDANCE NOTES',
+          }}
+          title="Provide Guidance & Resolve"
+          description="Provide written guidance, key takeaways, and next steps to resolve this ticket."
+          actions={
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <Button
+                variant="secondary"
+                onClick={() => setGuidanceModalData(null)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                disabled={isResolvingGuidance}
                 onClick={submitGuidance}
-                disabled={isResolvingGuidance || !guidanceMessage.trim()}
-                className="px-5 py-2 rounded-xl bg-[#5948d3] hover:bg-[#4d39c7] text-white text-xs font-bold flex items-center gap-2 disabled:opacity-50"
               >
-                <MessageSquare className="w-4 h-4" />
-                {isResolvingGuidance ? 'Resolving...' : 'Submit & Resolve'}
-              </button>
+                {isResolvingGuidance ? 'Submitting…' : 'Resolve Ticket'}
+              </Button>
             </div>
+          }
+        >
+          <div style={{ display: 'grid', gap: 12 }}>
+            <Textarea
+              label="Guidance Message"
+              value={guidanceMessage}
+              onChange={(e) => {
+                setGuidanceMessage(e.target.value)
+                setGuidanceError('')
+              }}
+              rows={4}
+              maxLength={1000}
+              placeholder="Explain the solution, concept references, or next steps..."
+              error={guidanceError}
+            />
           </div>
-        </div>
+        </Modal>
       )}
-    </div>
+
+      {/* ── Session Detail Modal (History details) ────────────────── */}
+      <SessionDetailModal
+        isOpen={Boolean(selectedHistorySession)}
+        session={selectedHistorySession}
+        onClose={() => setSelectedHistorySession(null)}
+      />
+    </main>
   )
 }

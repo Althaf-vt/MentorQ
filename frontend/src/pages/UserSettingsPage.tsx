@@ -1,5 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { User as UserIcon, Settings, Sliders, CheckCircle, Camera, Trash2, Loader2, AlertCircle } from 'lucide-react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
+import {
+  User as UserIcon,
+  Settings,
+  Sliders,
+  CheckCircle,
+  Camera,
+  Trash2,
+  Loader2,
+  Sun,
+  Moon,
+} from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -10,8 +20,20 @@ import {
   useUploadAvatarMutation,
   useDeleteAvatarMutation,
 } from '@/store/api/authApi'
+import { useGetStudentTicketsQuery, useGetMentorTicketsQuery } from '@/store/api/ticketApi'
 import { updateUser } from '@/store/slices/authSlice'
 import { Link } from 'react-router-dom'
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Input,
+  SocialLinks,
+  Textarea,
+  lightTheme,
+} from '@/design-system'
+import { useThemeStore } from '@/store/themeStore'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string)?.replace('/api/v1', '') || 'http://localhost:3133'
 
@@ -40,12 +62,33 @@ export const UserSettingsPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const { theme, setTheme } = useThemeStore()
+
+  // Query completed sessions for student-profile-summary statistics
+  const { data: studentTickets = [] } = useGetStudentTicketsQuery(undefined, {
+    skip: user?.role === 'MENTOR',
+  })
+  const { data: mentorTickets = [] } = useGetMentorTicketsQuery(undefined, {
+    skip: user?.role !== 'MENTOR',
+  })
+
+  const tickets = user?.role === 'MENTOR' ? mentorTickets : studentTickets
+  const { completedCount, totalMinutes } = useMemo(() => {
+    const completed = tickets.filter((t) => t.status === 'COMPLETED')
+    const mins = completed.reduce(
+      (acc, t) => acc + (t.actual_time_spent_minutes || t.requested_minutes || 0),
+      0
+    )
+    return { completedCount: completed.length, totalMinutes: mins }
+  }, [tickets])
+
   const currentUser = sUser?.data || user
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isDirty },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -70,7 +113,13 @@ export const UserSettingsPage: React.FC = () => {
         },
       })
     }
-  }, [sUser, user, reset])
+  }, [
+    currentUser?.fullName,
+    currentUser?.bio,
+    currentUser?.socialLinks?.linkedin,
+    currentUser?.socialLinks?.github,
+    reset,
+  ])
 
   const showSuccess = (msg: string) => {
     setSuccess(msg)
@@ -79,13 +128,13 @@ export const UserSettingsPage: React.FC = () => {
 
   const handleSave = async (data: SettingsFormValues) => {
     try {
-      const res = await updateMe({ 
-        fullName: data.fullName, 
+      const res = await updateMe({
+        fullName: data.fullName,
         bio: data.bio,
         socialLinks: {
           linkedin: data.socialLinks?.linkedin || undefined,
           github: data.socialLinks?.github || undefined,
-        }
+        },
       }).unwrap()
       if (res.data) {
         dispatch(updateUser(res.data))
@@ -93,7 +142,7 @@ export const UserSettingsPage: React.FC = () => {
         showSuccess('Profile updated successfully!')
       }
     } catch {
-      setSuccess('Failed to update.')
+      setSuccess('Failed to update profile.')
     }
   }
 
@@ -111,7 +160,6 @@ export const UserSettingsPage: React.FC = () => {
       setSuccess('Failed to upload photo.')
     }
 
-    // Reset the file input so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -127,7 +175,6 @@ export const UserSettingsPage: React.FC = () => {
     }
   }
 
-  /** Resolve an avatarUrl (which may be a relative path) to a full URL. */
   const resolveAvatarUrl = (url?: string) => {
     if (!url) return null
     if (url.startsWith('http')) return url
@@ -135,29 +182,32 @@ export const UserSettingsPage: React.FC = () => {
   }
 
   const avatarSrc = resolveAvatarUrl(currentUser?.avatarUrl)
+  const watchedSocials = watch('socialLinks')
 
   return (
-    <main className="min-h-screen bg-[#F5F4F0] text-[#303331] font-body p-6 text-left">
+    <main className="preview-main font-body pt-8 md:pt-18 pb-20">
       <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-8">
-        <aside className="w-full md:w-56 shrink-0 space-y-4">
+        {/* Navigation Sidebar */}
+        <aside className="w-full md:w-56 shrink-0 space-y-6">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white">
+            <div className="w-9 h-9 rounded-xl bg-[var(--mqds-primary)] flex items-center justify-center text-white shadow-xs">
               <Settings className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-headline text-sm font-bold">Settings</p>
-              <p className="text-[10px] text-[#5d605e]">Manage account details</p>
+              <p className="font-headline text-sm font-bold text-[var(--mqds-text)]">Settings</p>
+              <p className="text-[10px] font-mono text-[var(--mqds-muted)]">Account &amp; preferences</p>
             </div>
           </div>
-          <nav className="flex flex-row md:flex-col gap-1">
-            <span className="px-3 py-2 bg-primary/10 text-primary rounded-xl font-semibold flex items-center gap-2 text-sm">
+
+          <nav className="flex flex-row md:flex-col gap-1.5">
+            <span className="px-3.5 py-2 bg-[var(--mqds-hover)] text-[var(--mqds-accent)] rounded-xl font-semibold flex items-center gap-2 text-xs">
               <UserIcon className="w-4 h-4" />
               <span>Personal Info</span>
             </span>
             {user?.role === 'MENTOR' && (
               <Link
                 to="/mentor/configuration"
-                className="text-[#5d605e] hover:text-[#303331] rounded-xl px-3 py-2 flex items-center justify-between text-sm"
+                className="text-[var(--mqds-muted)] hover:text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)] rounded-xl px-3.5 py-2 flex items-center justify-between text-xs transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <Sliders className="w-4 h-4" />
@@ -166,43 +216,122 @@ export const UserSettingsPage: React.FC = () => {
               </Link>
             )}
           </nav>
+
+          {/* Quick Profile Summary in sidebar for desktop */}
+          <div className="hidden md:block pt-2">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--mqds-muted)] mb-2 font-semibold">
+              Session Activity
+            </p>
+            <dl className="student-profile-summary">
+              <div>
+                <dt>{user?.role === 'MENTOR' ? 'Guided' : 'Sessions'}</dt>
+                <dd>{completedCount}</dd>
+              </div>
+              <div>
+                <dt>{user?.role === 'MENTOR' ? 'Mentored' : 'Learned'}</dt>
+                <dd>{totalMinutes}m</dd>
+              </div>
+            </dl>
+          </div>
         </aside>
 
+        {/* Settings Forms & Appearance */}
         <section className="flex-1 space-y-6">
           {success && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-              <span>{success}</span>
+            <div className="bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-accent)] rounded-xl p-4 flex items-center gap-3 shadow-xs">
+              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span className="text-xs font-semibold">{success}</span>
             </div>
           )}
 
-          {/* ── Profile Photo Section ───────────────────────────── */}
-          <div className="bg-[#FAFAF8] border border-[#E8E6E1] rounded-2xl p-6">
-            <h2 className="font-headline text-base font-semibold border-b pb-2 mb-4">Profile Photo</h2>
-            <div className="flex items-center gap-6">
-              {/* Avatar Preview */}
-              <div className="relative group">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center ring-4 ring-[#E8E6E1] shadow-sm">
-                  {avatarSrc ? (
-                    <img
-                      src={avatarSrc}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl font-bold text-primary">
-                      {currentUser?.fullName?.charAt(0)?.toUpperCase() || <UserIcon className="w-8 h-8" />}
-                    </span>
-                  )}
+          {/* Appearance & Theme Switcher Card */}
+          <Card
+            variant="paper"
+            data-mqds={lightTheme}
+            className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-[var(--mqds-border-subtle)] pb-3">
+              <div>
+                <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)]">
+                  Appearance &amp; Theme
+                </h2>
+                <p className="text-[11px] font-mono text-[var(--mqds-muted-ink)]">
+                  Choose your interface theme. Light mode is the default canvas.
+                </p>
+              </div>
+              <Badge tone="info" className="text-[10px] font-mono">
+                {theme.toUpperCase()} ACTIVE
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                aria-pressed={theme === 'light'}
+                onClick={() => setTheme('light')}
+                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-[#fffdfa] border-[#59388e] ring-2 ring-[#59388e]/20 text-[var(--mqds-ink)]'
+                    : 'bg-[#f8f2fc] border-[#dacbe7] text-[var(--mqds-muted-ink)] hover:border-[#827aa6]'
+                }`}
+              >
+                <Sun className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block text-xs font-semibold text-[var(--mqds-ink)]">
+                    Light Theme
+                  </strong>
+                  <span className="text-[11px] text-[var(--mqds-muted-ink)]">
+                    Ivory ticket surfaces on warm parchment canvas
+                  </span>
                 </div>
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={theme === 'dark'}
+                onClick={() => setTheme('dark')}
+                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-[#fffdfa] border-[#59388e] ring-2 ring-[#59388e]/20 text-[var(--mqds-ink)]'
+                    : 'bg-[#f8f2fc] border-[#dacbe7] text-[var(--mqds-muted-ink)] hover:border-[#827aa6]'
+                }`}
+              >
+                <Moon className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block text-xs font-semibold text-[var(--mqds-ink)]">
+                    Dark Theme
+                  </strong>
+                  <span className="text-[11px] text-[var(--mqds-muted-ink)]">
+                    Midnight velvet backdrop with glowing lavender accents
+                  </span>
+                </div>
+              </button>
+            </div>
+          </Card>
+
+          {/* Profile Photo Section */}
+          <Card
+            variant="paper"
+            data-mqds={lightTheme}
+            className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-4"
+          >
+            <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+              Profile Photo
+            </h2>
+            <div className="flex items-center gap-6">
+              <div className="relative group">
+                <Avatar
+                  name={currentUser?.fullName || 'User'}
+                  src={avatarSrc || undefined}
+                  size="lg"
+                />
                 {(isUploading || isDeleting) && (
-                  <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
                     <Loader2 className="w-6 h-6 text-white animate-spin" />
                   </div>
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-2">
                 <input
                   ref={fileInputRef}
@@ -211,97 +340,153 @@ export const UserSettingsPage: React.FC = () => {
                   className="hidden"
                   onChange={handleAvatarUpload}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading || isDeleting}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dim text-white rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-70 transition-colors"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  {currentUser?.avatarUrl ? 'Change Photo' : 'Upload Photo'}
-                </button>
-                {currentUser?.avatarUrl && (
-                  <button
+                <div className="flex items-center gap-2">
+                  <Button
                     type="button"
-                    onClick={handleAvatarDelete}
+                    variant="primary"
+                    onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading || isDeleting}
-                    className="flex items-center gap-2 px-4 py-2 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-70 transition-colors"
+                    className="flex items-center gap-2 !px-3.5 !py-2 !min-h-0 text-xs"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Remove Photo
-                  </button>
-                )}
-                <p className="text-[10px] text-[#5d605e]">JPG, PNG or GIF. Max 5 MB.</p>
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>{currentUser?.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                  </Button>
+                  {currentUser?.avatarUrl && (
+                    <Button
+                      type="button"
+                      variant="danger-subtle"
+                      onClick={handleAvatarDelete}
+                      disabled={isUploading || isDeleting}
+                      className="flex items-center gap-2 !px-3.5 !py-2 !min-h-0 text-xs"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove</span>
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[11px] font-mono text-[var(--mqds-muted-ink)]">
+                  JPG, PNG or WEBP. Maximum file size 5 MB.
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* ── Basic Details Form ──────────────────────────────── */}
-          <form onSubmit={handleSubmit(handleSave)} className="bg-[#FAFAF8] border border-[#E8E6E1] rounded-2xl p-6 space-y-4">
-            <h2 className="font-headline text-base font-semibold border-b pb-2">Basic Details</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-[#5d605e] mb-1">Full Name</label>
-                <input
-                  className={`bg-[#F5F4F0] border focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none ${errors.fullName ? 'border-red-500' : 'border-[#DDD9D2]'}`}
-                  type="text"
-                  {...register('fullName')}
-                />
-                {errors.fullName && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.fullName.message}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#5d605e] mb-1">Email Address</label>
-                <input
-                  className="bg-[#F5F4F0] border border-[#DDD9D2] w-full px-3 py-2 rounded-xl text-sm outline-none opacity-70 cursor-not-allowed"
-                  type="email"
-                  disabled
-                  value={user?.email || ''}
-                  title="Email managed via Google login"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#5d605e] mb-1">Bio</label>
-                <textarea
-                  className={`bg-[#F5F4F0] border focus:border-primary w-full p-3 rounded-xl text-sm outline-none ${errors.bio ? 'border-red-500' : 'border-[#DDD9D2]'}`}
-                  rows={3}
-                  {...register('bio')}
-                />
-                {errors.bio && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.bio.message}</p>}
-              </div>
+            {/* Mobile / Tablet Activity Tiles */}
+            <div className="md:hidden pt-4 border-t border-[var(--mqds-border-subtle)]">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--mqds-muted-ink)] mb-2 font-semibold">
+                Session Activity
+              </p>
+              <dl className="student-profile-summary">
+                <div>
+                  <dt>{user?.role === 'MENTOR' ? 'Guided' : 'Sessions'}</dt>
+                  <dd>{completedCount}</dd>
+                </div>
+                <div>
+                  <dt>{user?.role === 'MENTOR' ? 'Mentored' : 'Learned'}</dt>
+                  <dd>{totalMinutes}m</dd>
+                </div>
+              </dl>
             </div>
-            
-            <h2 className="font-headline text-base font-semibold border-b pb-2 pt-4">Social Links (Optional)</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-[#5d605e] mb-1">LinkedIn Profile URL</label>
-                <input
-                  className={`bg-[#F5F4F0] border focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none ${errors.socialLinks?.linkedin ? 'border-red-500' : 'border-[#DDD9D2]'}`}
+          </Card>
+
+          {/* Basic Details Form */}
+          <form
+            onSubmit={handleSubmit(handleSave)}
+            className="space-y-6"
+          >
+            <Card
+              variant="paper"
+              data-mqds={lightTheme}
+              className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-5"
+            >
+              <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+                Basic Details
+              </h2>
+              <div className="space-y-4">
+                <Input
+                  label="Full Name"
+                  {...register('fullName')}
+                  error={errors.fullName?.message}
+                />
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--mqds-muted-ink)] mb-1 font-mono uppercase tracking-wider">
+                    Email Address
+                  </label>
+                  <input
+                    className="mqds-control text-xs opacity-70 cursor-not-allowed bg-[var(--mqds-surface)]"
+                    type="email"
+                    disabled
+                    value={user?.email || ''}
+                    title="Email managed via Google login"
+                  />
+                </div>
+
+                <Textarea
+                  label="Bio"
+                  rows={3}
+                  placeholder="Share a short bio about your technical interests, stacks, and goals..."
+                  {...register('bio')}
+                  error={errors.bio?.message}
+                />
+              </div>
+            </Card>
+
+            {/* Social Profiles & Directional Link Tiles */}
+            <Card
+              variant="paper"
+              data-mqds={lightTheme}
+              className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-5"
+            >
+              <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+                Social Profiles (Optional)
+              </h2>
+              <div className="space-y-4">
+                <Input
+                  label="LinkedIn Profile URL"
                   type="url"
                   placeholder="https://linkedin.com/in/username"
                   {...register('socialLinks.linkedin')}
+                  error={errors.socialLinks?.linkedin?.message}
                 />
-                {errors.socialLinks?.linkedin && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.socialLinks.linkedin.message}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#5d605e] mb-1">GitHub Profile URL</label>
-                <input
-                  className={`bg-[#F5F4F0] border focus:border-primary w-full px-3 py-2 rounded-xl text-sm outline-none ${errors.socialLinks?.github ? 'border-red-500' : 'border-[#DDD9D2]'}`}
+
+                <Input
+                  label="GitHub Profile URL"
                   type="url"
                   placeholder="https://github.com/username"
                   {...register('socialLinks.github')}
+                  error={errors.socialLinks?.github?.message}
                 />
-                {errors.socialLinks?.github && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.socialLinks.github.message}</p>}
+
+                {/* Directional interactive cursor-tracking tile preview */}
+                {(watchedSocials?.linkedin || watchedSocials?.github) && (
+                  <div className="pt-3 border-t border-[var(--mqds-border-subtle)]">
+                    <p className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted-ink)] mb-2">
+                      Profile Tiles Preview
+                    </p>
+                    <SocialLinks
+                      links={{
+                        linkedin: watchedSocials?.linkedin,
+                        github: watchedSocials?.github,
+                      }}
+                      variant="grid"
+                    />
+                  </div>
+                )}
               </div>
-            </div>
+            </Card>
 
             {isDirty && (
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="bg-primary hover:bg-primary-dim text-white rounded-xl px-5 py-2 text-sm font-semibold flex items-center gap-2 cursor-pointer disabled:opacity-70 animate-in fade-in"
-              >
-                {isLoading ? 'Saving...' : 'Save'}
-              </button>
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={isLoading}
+                  className="flex items-center gap-2"
+                >
+                  <span>{isLoading ? 'Saving...' : 'Save Profile Changes'}</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </Button>
+              </div>
             )}
           </form>
         </section>
@@ -309,4 +494,3 @@ export const UserSettingsPage: React.FC = () => {
     </main>
   )
 }
-

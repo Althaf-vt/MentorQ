@@ -1,7 +1,12 @@
 import React, { useState } from 'react'
-import { Star, X } from 'lucide-react'
+import {
+  Button,
+  Modal,
+  Textarea,
+  lightTheme,
+} from '@/design-system'
 
-interface PostSessionReviewModalProps {
+export interface PostSessionReviewModalProps {
   onSubmit: (rating: number, feedbackText: string) => void
   onCancel?: () => void
   isSubmitting: boolean
@@ -21,88 +26,130 @@ export const PostSessionReviewModal: React.FC<PostSessionReviewModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(rating, feedback)
+    if (!rating) return
+    onSubmit(rating, feedback.trim())
   }
 
-  const roleDisplay = endedByRole === 'MENTOR' ? 'Mentor' : endedByRole === 'STUDENT' ? 'Student' : endedByRole
+  const roleDisplay =
+    endedByRole === 'MENTOR'
+      ? 'Mentor'
+      : endedByRole === 'STUDENT'
+      ? 'Student'
+      : endedByRole
+
+  const handleModalClose = (open: boolean) => {
+    if (!open && !isForcedEnd && onCancel) {
+      onCancel()
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="w-full max-w-sm bg-white rounded-2xl p-5 shadow-2xl space-y-4 relative animate-in fade-in zoom-in-95 duration-150">
-        {!isForcedEnd && onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100"
-            aria-label="Close dialog"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+    <div data-mqds={lightTheme}>
+      <Modal
+        open={true}
+        onOpenChange={handleModalClose}
+        variant="ticket"
+        ticketHeader={{
+          leading: '★',
+          label: 'SESSION REVIEW & RATING',
+        }}
+        title={
+          isForcedEnd
+            ? `Session Concluded${roleDisplay ? ` by ${roleDisplay}` : ''}`
+            : 'Rate Your Session'
+        }
+        description={
+          isForcedEnd
+            ? 'The session has concluded. Please rate your experience and share feedback before returning to your dashboard.'
+            : 'Please rate your mentorship session and share feedback before exiting.'
+        }
+        className="max-w-md"
+      >
+        <form className="session-feedback-form" onSubmit={handleSubmit} style={{ marginTop: 8 }}>
+          {/* 1–5 Tactile Rating Square Tickets */}
+          <fieldset style={{ margin: 0, padding: 0, border: 0 }}>
+            <legend
+              style={{
+                fontSize: '0.88rem',
+                fontWeight: 650,
+                color: 'var(--mqds-ink)',
+                marginBottom: 4,
+              }}
+            >
+              How helpful was this session?
+            </legend>
+            <div className="session-rating" role="radiogroup" aria-label="Session rating from 1 to 5">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <label key={value} style={{ position: 'relative', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="session-rating"
+                    checked={rating === value}
+                    required
+                    autoFocus={rating === value}
+                    onChange={() => setRating(value)}
+                    aria-label={`${value} out of 5 stars`}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', margin: 0 }}
+                  />
+                  <span aria-hidden="true">{value}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
-        <div className="text-center pr-6 pl-6">
-          <h3 className="text-base font-bold text-slate-900 font-headline">
-            {isForcedEnd ? `Session Concluded${roleDisplay ? ` by ${roleDisplay}` : ''}` : 'Rate Your Experience'}
-          </h3>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            {isForcedEnd
-              ? 'The session has been completed. Please rate your experience and provide feedback before returning to your dashboard.'
-              : 'Please rate the session and leave your feedback before exiting'}
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-          <div className="flex justify-center gap-1.5">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setRating(s)}
-                className="p-1 transition-transform active:scale-90 cursor-pointer"
-              >
-                <Star
-                  className={`w-6 h-6 ${s <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`}
-                />
-              </button>
-            ))}
-          </div>
-
-          <div>
-            <textarea
+          {/* Feedback Textarea with Character Counter */}
+          <div style={{ marginTop: 12 }}>
+            <Textarea
+              id="session-review-comment"
+              label="Feedback comments (optional)"
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Add any feedback comments..."
-              className="w-full p-2.5 border rounded-xl bg-white resize-none text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#5948d3]"
+              placeholder="Share what went well, concepts covered, or next steps to explore…"
+              maxLength={500}
               rows={3}
+              hint={`${feedback.length} / 500 characters`}
             />
           </div>
 
-          <div className="flex flex-col gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-2.5 bg-[#5948d3] hover:bg-[#4d39c7] text-white font-bold rounded-full disabled:opacity-50 transition-colors cursor-pointer shadow-sm"
-            >
-              {isSubmitting
-                ? 'Submitting...'
-                : isForcedEnd
-                ? 'Submit & Go to Dashboard'
-                : 'Submit & Exit'}
-            </button>
+          {/* Actions */}
+          <div
+            className="session-feedback-actions"
+            style={{
+              display: 'flex',
+              gap: 8,
+              justifyContent: 'flex-end',
+              marginTop: 16,
+              paddingTop: 12,
+              borderTop: '1px solid #dacbe7',
+            }}
+          >
             {!isForcedEnd && onCancel && (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-full disabled:opacity-50 transition-colors cursor-pointer text-[11px]"
               >
-                Continue Session
-              </button>
+                Continue session
+              </Button>
             )}
+            <Button
+              type="submit"
+              disabled={isSubmitting || !rating}
+              className="flex items-center justify-center gap-1.5"
+            >
+              <span>
+                {isSubmitting
+                  ? 'Submitting…'
+                  : isForcedEnd
+                  ? 'Submit & return to dashboard'
+                  : 'Submit & exit'}
+              </span>
+              <span aria-hidden="true">&rarr;</span>
+            </Button>
           </div>
         </form>
-      </div>
+      </Modal>
     </div>
   )
 }

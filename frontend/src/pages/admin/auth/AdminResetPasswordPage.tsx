@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAdminResetPasswordMutation } from '@/store/api/adminAuthApi'
-import { Loader2 } from 'lucide-react'
+import { Button, Input } from '@/design-system'
 
 const adminResetPasswordSchema = z
   .object({
@@ -57,54 +57,46 @@ export function AdminResetPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-white">Create new password</h2>
-        <p className="mt-2 text-sm text-zinc-400">
-          Your new password must be different from previous used passwords.
+        <h2 className="text-xl font-headline font-bold text-[var(--mqds-text,#f4f7f2)]">
+          Create New Password
+        </h2>
+        <p className="mt-1 text-xs font-mono text-[var(--mqds-muted,#cbc6df)]">
+          Set a secure administrative password with letters and numbers
         </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         {error && (
-          <div className="p-3 rounded-xl bg-red-900/50 text-red-200 text-sm border border-red-800">
-            {'data' in error ? (error.data as any).message : 'Failed to reset password.'}
+          <div className="p-3 rounded-xl bg-[var(--mqds-danger,#9b253b)]/30 text-[var(--mqds-error,#ffb4bd)] text-xs border border-[var(--mqds-danger-border,#b45965)]">
+            {'data' in error ? ((error.data as { message?: string }).message || 'Failed to reset password.') : 'Failed to reset password.'}
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-300">New Password</label>
-          <div className="mt-1">
-            <input
-              type="password"
-              {...register('newPassword')}
-              className="block w-full rounded-xl bg-zinc-800 border-zinc-700 text-white focus:border-zinc-500 focus:ring-zinc-500 sm:text-sm transition-colors py-2 px-3"
-            />
-            {errors.newPassword && (
-              <p className="mt-1 text-sm text-red-400">{errors.newPassword.message}</p>
-            )}
-          </div>
-        </div>
+        <Input
+          label="New Password"
+          type="password"
+          placeholder="••••••••"
+          {...register('newPassword')}
+          error={errors.newPassword?.message}
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-zinc-300">Confirm Password</label>
-          <div className="mt-1">
-            <input
-              type="password"
-              {...register('confirmPassword')}
-              className="block w-full rounded-xl bg-zinc-800 border-zinc-700 text-white focus:border-zinc-500 focus:ring-zinc-500 sm:text-sm transition-colors py-2 px-3"
-            />
-            {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-400">{errors.confirmPassword.message}</p>
-            )}
-          </div>
-        </div>
+        <Input
+          label="Confirm Password"
+          type="password"
+          placeholder="••••••••"
+          {...register('confirmPassword')}
+          error={errors.confirmPassword?.message}
+        />
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
           disabled={isLoading}
-          className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-zinc-900 bg-white hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full justify-center !min-h-[44px] mt-2"
         >
-          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Reset Password'}
-        </button>
+          <span>{isLoading ? 'Resetting Password...' : 'Reset Password'}</span>
+          <span aria-hidden="true">&rarr;</span>
+        </Button>
       </form>
     </div>
   )

@@ -1,11 +1,14 @@
-import React, { useState } from 'react'
-import { createPortal } from 'react-dom'
-import { X, Bell, Check } from 'lucide-react'
+import React from 'react'
+import {
+  NotificationsDrawer,
+  type NotificationItem,
+} from '@/design-system'
 import {
   useGetUserNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useMarkAllNotificationsAsReadMutation,
 } from '@/store/api/notificationApi'
+import { useThemeStore } from '@/store/themeStore'
 import type { Notification } from '@/types/operational.types'
 
 interface NotificationDrawerProps {
@@ -13,104 +16,27 @@ interface NotificationDrawerProps {
 }
 
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose }) => {
+  const theme = useThemeStore((state) => state.theme)
   const { data: notifications = [] } = useGetUserNotificationsQuery()
   const [markRead] = useMarkNotificationAsReadMutation()
   const [markAllRead] = useMarkAllNotificationsAsReadMutation()
-  
-  const [activeTab, setActiveTab] = useState<'NEW' | 'ALL'>('NEW')
 
-  const handleMarkAll = async () => {
-    try {
-      await markAllRead().unwrap()
-    } catch (e) {
-      console.error(e)
-    }
-  }
+  const items: NotificationItem[] = notifications.map((n: Notification) => ({
+    id: n._id || (n as unknown as { id?: string }).id || '',
+    title: n.title,
+    description: n.message,
+    at: new Date(n.createdAt).getTime(),
+    read: n.isRead,
+  }))
 
-  const handleMarkOne = async (id: string) => {
-    try {
-      await markRead(id).unwrap()
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  const displayedNotifications = activeTab === 'NEW' 
-    ? notifications.filter((n: Notification) => !n.isRead)
-    : notifications
-
-  return createPortal(
-    <div className="fixed inset-y-0 right-0 z-[9999] w-full sm:w-80 bg-white border-l shadow-2xl flex flex-col font-body">
-      <div className="p-4 border-b flex items-center justify-between bg-[#faf9f7]">
-        <div className="flex items-center gap-2">
-          <Bell className="w-4 h-4 text-[#5948d3]" />
-          <span className="font-bold text-xs uppercase tracking-wider text-slate-700">Notifications</span>
-        </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="flex border-b">
-        <button 
-          onClick={() => setActiveTab('NEW')}
-          className={`flex-1 py-2 text-xs font-bold text-center border-b-2 transition-colors ${activeTab === 'NEW' ? 'border-[#5948d3] text-[#5948d3]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          New
-        </button>
-        <button 
-          onClick={() => setActiveTab('ALL')}
-          className={`flex-1 py-2 text-xs font-bold text-center border-b-2 transition-colors ${activeTab === 'ALL' ? 'border-[#5948d3] text-[#5948d3]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          All
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {displayedNotifications.length === 0 ? (
-          <div className="text-center py-12 text-xs text-slate-400">
-            {activeTab === 'NEW' ? 'No new notifications.' : 'No notifications yet.'}
-          </div>
-        ) : (
-          displayedNotifications.map((n: Notification) => (
-            <div
-              key={n._id}
-              className={`p-3 rounded-xl border text-xs relative ${
-                n.isRead ? 'bg-slate-50 border-slate-200' : 'bg-[#5948d3]/5 border-[#5948d3]/20 font-medium'
-              }`}
-            >
-              <div className="font-bold text-slate-900 mb-0.5">{n.title}</div>
-              <div className="pr-4 text-slate-700">{n.message}</div>
-              <div className="text-[10px] text-slate-400 mt-1">
-                {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
-              {!n.isRead && (
-                <button
-                  onClick={() => handleMarkOne(n._id)}
-                  className="absolute top-2.5 right-2.5 p-0.5 rounded-full bg-white border text-slate-400 hover:text-[#5948d3]"
-                  title="Mark read"
-                >
-                  <Check className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      {notifications.length > 0 && (
-        <div className="p-3 border-t bg-[#faf9f7]">
-          <button
-            onClick={handleMarkAll}
-            className="w-full py-1.5 rounded-full bg-[#5948d3] hover:bg-[#4d39c7] text-white text-xs font-bold text-center"
-          >
-            Mark All Read
-          </button>
-        </div>
-      )}
-    </div>,
-    document.body
+  return (
+    <div data-mqds={theme}>
+      <NotificationsDrawer
+        items={items}
+        onClose={onClose}
+        onRead={(id) => markRead(id)}
+        onReadAll={() => markAllRead()}
+      />
+    </div>
   )
 }
-
-
