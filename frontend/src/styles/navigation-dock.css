@@ -31,6 +31,28 @@
 
 .navigation-dock { display: contents; }
 .navigation-dock :is(.dock-icon, .dock-tooltip) { display: none; }
+.preview-header .dock-theme-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid #c8aff75c;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.preview-header .dock-theme-btn svg { width: 17px; height: 17px; }
+
+@media (max-width: 899px) {
+  .preview-header {
+    --mqds-text: #f4f7f2;
+    --mqds-border: #89839b;
+    --mqds-hover: #3b355a;
+    --mqds-focus: #c5baff;
+  }
+}
 
 @media (min-width: 900px) {
   .preview-header {
