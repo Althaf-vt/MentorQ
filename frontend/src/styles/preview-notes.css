@@ -1,0 +1,181 @@
+.notes-dialog {
+  --mqds-text: #f4f7f2;
+  --mqds-muted: #d5d0e8;
+  --mqds-border: #89839b;
+  --mqds-field: #302c4c;
+  --mqds-field-border: #827aa6;
+  --mqds-focus: #c5baff;
+  --mqds-hover: #3b355a;
+  width: min(790px, 94vw);
+  max-height: 90dvh;
+  margin: auto;
+  border: 1px solid #c8aff74d;
+  border-radius: 20px;
+  background: var(--mqds-navy);
+  color: #f4f7f2;
+}
+.notes-dialog[open]::backdrop { background: #0d0b1dba; backdrop-filter: blur(6px); }
+.notes-content { padding: clamp(16px, 4vw, 36px); }
+.notes-trigger { margin-top: 8px; }
+.notes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 24px; }
+.notes-grid[hidden] { display: none; }
+.note-tilt-area, .note-tilt-surface { display: grid; min-width: 0; }
+
+.mentor-note {
+  --note-speed: .8s;
+  --note-ease: cubic-bezier(.68,-.38,.28,1.35);
+  --note-paper: #c8aff7;
+  --note-ink: #251644;
+  --note-art: #6544aa;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-height: 340px;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: clamp(15px, 3vw, 24px);
+  background: var(--note-paper);
+  color: var(--note-ink);
+  transition: transform var(--note-speed) var(--note-ease), box-shadow .3s ease;
+}
+.mentor-note[data-paid="true"] { --note-paper: #ffb58f; --note-ink: #411e24; --note-art: #a04650; }
+.note-copy { position: relative; flex: 1; }
+.note-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.note-meta span { padding: 4px 9px; border: 1px solid currentColor; border-radius: 20px; }
+.note-meta strong { font-weight: 750; }
+.note-copy h3 {
+  max-width: 10ch;
+  margin: 24px 0 10px;
+  font-size: clamp(29px, 5vw, 50px);
+  line-height: .98;
+  letter-spacing: -.065em;
+  transform: scale(.93);
+  transform-origin: left top;
+  transition: transform var(--note-speed) var(--note-ease);
+}
+.note-copy p { max-width: 27ch; margin: 0 0 12px; line-height: 1.45; }
+.note-copy small { font-weight: 650; }
+.note-action {
+  --note-action-tint: #513789;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--note-ink);
+  border-radius: 7px;
+  background: var(--note-ink);
+  color: #fff;
+  text-align: start;
+  font-weight: 650;
+  transition: box-shadow .24s ease;
+}
+.mentor-note[data-paid="true"] .note-action { --note-action-tint: #783b47; }
+.note-action::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(120deg, transparent 0 6px, #ffffff18 6px 7px) right / 52px 100% no-repeat,
+    linear-gradient(105deg, var(--note-action-tint), var(--note-ink));
+  clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  transition: clip-path .3s cubic-bezier(.22,.75,.25,1);
+}
+.note-action span {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 22px;
+  border-radius: 4px;
+  transition: transform .26s cubic-bezier(.22,.75,.25,1), background-color .2s ease, color .2s ease;
+}
+.note-action:is(:hover, :focus-visible) { box-shadow: 0 4px 10px #120f2740; }
+.note-action:is(:hover, :focus-visible)::before { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+.note-action:is(:hover, :focus-visible) span {
+  background: var(--note-paper);
+  color: var(--note-ink);
+  transform: translateX(3px);
+}
+.note-action:focus-visible { outline: 2px solid var(--note-ink); outline-offset: 3px; }
+.note-art {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: .22;
+  pointer-events: none;
+  transition: transform var(--note-speed) var(--note-ease);
+}
+.note-art-circle, .note-art-ellipse {
+  position: absolute;
+  right: -7%;
+  width: 71%;
+  border-radius: 50%;
+  background: var(--note-art);
+  transition: transform var(--note-speed) var(--note-ease) .1s;
+}
+.note-art-circle { top: 12%; aspect-ratio: 1; }
+.note-art-ellipse { top: 69%; height: 19%; }
+
+.mentor-note:focus-within { transform: scale(1.035); box-shadow: 0 14px 22px #120f2775; }
+.mentor-note:focus-within .note-copy h3 { transform: scale(1); }
+.mentor-note:focus-within .note-art { transform: scale(1.31); }
+.mentor-note:focus-within .note-art-circle { transform: translateY(-9%) scaleY(.5); }
+.mentor-note:focus-within .note-art-ellipse { transform: translateY(-13%) scaleY(2.2); }
+
+@media (hover: hover) {
+  .mentor-note:hover { transform: scale(1.035); box-shadow: 0 14px 22px #120f2775; }
+  .mentor-note:hover .note-copy h3 { transform: scale(1); }
+  .mentor-note:hover .note-art { transform: scale(1.31); }
+  .mentor-note:hover .note-art-circle { transform: translateY(-9%) scaleY(.5); }
+  .mentor-note:hover .note-art-ellipse { transform: translateY(-13%) scaleY(2.2); }
+}
+.note-detail { margin-top: 24px; }
+.note-detail h3 { margin: 20px 0 8px; font-size: clamp(26px, 5vw, 42px); }
+.note-detail h3:focus { outline: none; }
+.note-detail-meta { color: var(--mqds-muted); }
+.note-detail p { line-height: 1.6; }
+
+@media (max-width: 540px) {
+  .notes-grid { grid-template-columns: 1fr; }
+  .mentor-note { min-height: 285px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mentor-note:hover, .mentor-note:focus-within { transform: none; }
+  .mentor-note:hover .note-art, .mentor-note:focus-within .note-art,
+  .mentor-note:hover .note-art span, .mentor-note:focus-within .note-art span,
+  .mentor-note .note-copy h3, .note-action:is(:hover, :focus-visible) span { transform: none; }
+  .note-action, .note-action::before, .note-action span { transition: none; }
+}
+
+/* --- Note Folders & File Reader (ui-preview/note-folders.css) --- */
+.note-folders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 196px), 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+.note-folders[data-expanded="true"] { grid-template-columns: minmax(0, 1fr); }
+.note-folders[hidden], .note-folders [hidden] { display: none; }
+
+.note-file-reader {
+  --mqds-text: #f4f7f2;
+  --mqds-muted: #d5d0e8;
+  margin-top: 18px;
+  max-width: 65ch;
+  padding: 18px;
+  border: 1px solid #c8aff752;
+  border-radius: 12px;
+  background: #302644;
+  color: #f4f7f2;
+}
+.note-file-reader h4 { margin: 5px 0 10px; font-size: 1.35rem; }
+.note-file-reader p { margin: 0; }

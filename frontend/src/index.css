@@ -6,6 +6,7 @@
 @import "./styles/preview-auth-requests.css";
 @import "./styles/preview-workspace-live.css";
 @import "./styles/preview-favorites.css";
+@import "./styles/preview-notes.css";
 @import "tailwindcss";
 
 @theme {
