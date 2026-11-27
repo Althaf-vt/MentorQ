@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { AlertCircle, Clock, Tag, Check, Send } from 'lucide-react'
+import { AlertCircle, Check } from 'lucide-react'
 import { useCreateTicketMutation } from '@/store/api/ticketApi'
 import { useToastStore } from '@/store/toastStore'
 import { useForm } from 'react-hook-form'
@@ -7,9 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import {
   Modal,
-  Input,
-  Textarea,
   Button,
+  Select,
 } from '@/design-system'
 
 interface Props {
@@ -19,6 +18,7 @@ interface Props {
 }
 
 const CATS = ['React', 'System Design', 'Database', 'API Design', 'DevOps', 'Frontend', 'Backend']
+const DURATIONS = [5, 10, 15, 20, 30, 45, 60]
 
 const ticketSchema = z.object({
   topic: z.string()
@@ -92,58 +92,106 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
       open={isOpen}
       onOpenChange={handleModalClose}
       variant="ticket"
+      className="session-request-dialog"
       ticketHeader={{
-        leading: 'MQ',
-        label: 'MENTORQ TICKET',
+        leading: '→',
+        label: 'SESSION REQUEST',
       }}
-      title="Request Mentorship"
-      description="Submit your problem to enter the live queue"
-      className="max-w-xl"
+      title="Request a session"
+      description="Describe your problem and enter the live mentorship queue."
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-1">
-        {globalError && (
-          <div className="p-3 bg-[var(--mqds-warning-surface,#fff5f5)] border border-[var(--mqds-danger-border,#f5c6cb)] rounded-xl text-[var(--mqds-danger,#a8364b)] text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{globalError}</span>
-          </div>
-        )}
+      {/* Global error banner uses valid design-system tokens */}
+      {globalError && (
+        <div
+          className="flex items-center gap-2 p-3 mb-4 rounded-lg text-sm"
+          style={{
+            background: 'var(--mqds-warning-surface)',
+            color: 'var(--mqds-danger)',
+            border: '1px solid var(--mqds-danger-border)',
+          }}
+        >
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{globalError}</span>
+        </div>
+      )}
 
-        <Input
-          label="Topic"
-          placeholder="e.g. Debugging React useEffect infinite loop"
-          {...register('topic')}
-          error={errors.topic?.message}
-        />
+      {/* .mqds-session-request-form 2-col grid (session-request-form.css) */}
+      <form className="mqds-session-request-form" onSubmit={handleSubmit(onSubmit)}>
 
-        <Textarea
-          label="Problem Description"
-          placeholder="Describe your issue, what you've tried so far, and code snippets if relevant..."
-          rows={3}
-          {...register('description')}
-          error={errors.description?.message}
-        />
+        {/* Topic — full-width via CSS: label:has(input[name="topic"]) { grid-column: 1 / -1 } */}
+        <label>
+          Topic
+          <input
+            {...register('topic')}
+            placeholder="What are you working on?"
+            autoFocus
+          />
+          {errors.topic && (
+            <span
+              className="flex items-center gap-1 text-xs font-mono"
+              style={{ color: 'var(--mqds-danger)' }}
+            >
+              <AlertCircle className="w-3 h-3" /> {errors.topic.message}
+            </span>
+          )}
+        </label>
 
-        <div>
-          <Input
-            label={
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[var(--mqds-primary)]" />
-                <span>Duration (Minutes)</span>
-              </span>
-            }
-            type="number"
-            min={5}
-            step={1}
+        {/* Description — explicit full-width since no matching label selector */}
+        <label style={{ gridColumn: '1 / -1' }}>
+          Describe your problem
+          <textarea
+            {...register('description')}
+            rows={3}
+            placeholder="Describe your issue, what you've tried, and any relevant code snippets…"
+            style={{
+              width: '100%',
+              minHeight: 80,
+              padding: '9px 11px',
+              borderRadius: 7,
+              border: '1px solid #aa95ad',
+              background: '#f1e8f6',
+              color: '#251644',
+              fontSize: 16,
+              fontFamily: 'var(--mqds-font, Inter)',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+              transition: 'border-color .18s ease',
+            }}
+          />
+          {errors.description && (
+            <span
+              className="flex items-center gap-1 text-xs font-mono"
+              style={{ color: 'var(--mqds-danger)' }}
+            >
+              <AlertCircle className="w-3 h-3" /> {errors.description.message}
+            </span>
+          )}
+        </label>
+
+        {/* Duration — full-width to avoid blank right column */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <Select
+            label="Duration"
             {...register('requested_minutes', { valueAsNumber: true })}
             error={errors.requested_minutes?.message}
-          />
+          >
+            {DURATIONS.map(m => (
+              <option key={m} value={m}>{m} minutes</option>
+            ))}
+          </Select>
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--mqds-text)] mb-2 flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-[var(--mqds-primary)]" />
-            <span>Tags (Select 1-5)</span>
-          </label>
+        {/* Tags */}
+        <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span
+            className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: '#463450' }}
+          >
+            Tags{' '}
+            <span className="font-normal normal-case" style={{ color: '#7c6680' }}>
+              (select 1–5)
+            </span>
+          </span>
           <div className="flex flex-wrap gap-2">
             {CATS.map((c) => {
               const isSelected = selectedTags?.includes(c)
@@ -152,11 +200,16 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
                   key={c}
                   type="button"
                   onClick={() => toggleTag(c)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    isSelected
-                      ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
-                      : 'bg-[var(--mqds-border-subtle)] text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)]'
-                  }`}
+                  className="flex items-center gap-1.5 cursor-pointer transition-colors"
+                  style={{
+                    padding: '5px 11px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: isSelected ? 'none' : '1px solid #aa95ad',
+                    background: isSelected ? '#302153' : '#f1e8f6',
+                    color: isSelected ? '#fff9ef' : '#463450',
+                  }}
                 >
                   <span>{c}</span>
                   {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -165,27 +218,25 @@ export const TicketCreationModal: React.FC<Props> = ({ isOpen, onClose, onSucces
             })}
           </div>
           {errors.tags && (
-            <p className="text-[var(--mqds-danger)] text-xs mt-1.5 flex items-center gap-1 font-mono">
-              <AlertCircle className="w-3 h-3" />
-              <span>{errors.tags.message}</span>
-            </p>
+            <span
+              className="flex items-center gap-1 text-xs font-mono"
+              style={{ color: 'var(--mqds-danger)' }}
+            >
+              <AlertCircle className="w-3 h-3" /> {errors.tags.message}
+            </span>
           )}
         </div>
 
-        <div className="pt-4 border-t border-[var(--mqds-border-subtle)] flex justify-end items-center gap-3">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <span>{isLoading ? 'Submitting...' : 'Submit Ticket'}</span>
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
+        {/* Submit — .submit-request + .cta hooks into session-request-form.css: grid-column: 1 / -1 */}
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isLoading}
+          className="submit-request cta"
+        >
+          <span>{isLoading ? 'Submitting…' : 'Send request'}</span>
+          <span aria-hidden="true">{isLoading ? '…' : '→'}</span>
+        </Button>
       </form>
     </Modal>
   )
