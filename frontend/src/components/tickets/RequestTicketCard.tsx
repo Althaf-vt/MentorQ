@@ -72,6 +72,7 @@ export const RequestTicketCard: React.FC<RequestTicketCardProps> = ({
       variant="ticket"
       interactive
       data-mqds={lightTheme}
+      actions={<TicketAction onClick={handleAction}>{effectiveActionLabel}</TicketAction>}
       stub={
         <>
           <strong className="lean-stub-number">
@@ -107,9 +108,6 @@ export const RequestTicketCard: React.FC<RequestTicketCardProps> = ({
           </div>
           <h3 className="lean-ticket-topic" title={topic}>{topic}</h3>
           {description && <p className="lean-ticket-description" title={description}>{description}</p>}
-        </div>
-        <div className="lean-ticket-action">
-          <TicketAction onClick={handleAction}>{effectiveActionLabel}</TicketAction>
         </div>
       </div>
     </Card>

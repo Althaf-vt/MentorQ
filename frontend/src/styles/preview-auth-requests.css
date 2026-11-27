@@ -133,22 +133,20 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
 
 /* Queue and history tickets share the design system's paper and perforated stub. */
 .mqds-card.lean-ticket-card[data-stub="true"] {
-  grid-template-columns: minmax(0, 1fr) 116px;
+  grid-template-columns: minmax(0, 1fr) 104px;
   min-height: 88px;
   margin-bottom: 0;
   border-radius: 8px;
   transition: --mqds-ticket-paper .2s ease;
 }
 .lean-ticket-card > .mqds-card-body {
-  display: flex;
-  align-items: center;
   min-width: 0;
-  padding: 12px 18px;
+  padding: 10px 14px;
 }
 .lean-ticket-body {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   width: 100%;
   min-width: 0;
 }
@@ -156,27 +154,27 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   display: grid;
   place-items: center;
   flex: none;
-  width: 38px;
-  height: 36px;
+  width: 32px;
+  height: 30px;
   background: var(--mqds-primary);
   color: #fff;
-  font: 700 14px/1 var(--mqds-font-mono);
+  font: 700 12px/1 var(--mqds-font-mono);
   transform: skew(-8deg);
 }
 .lean-ticket-details { flex: 1; min-width: 0; }
 .lean-ticket-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 8px;
+  gap: 2px 6px;
   color: var(--mqds-muted-ink);
-  font: 600 .69rem/1.3 var(--mqds-font-mono);
+  font: 600 .67rem/1.3 var(--mqds-font-mono);
 }
 .lean-ticket-topic {
   overflow: hidden;
   margin: 3px 0 0;
   color: var(--mqds-ink);
   font-family: var(--mqds-font);
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -.03em;
@@ -201,8 +199,8 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   font: 600 .68rem/1.2 var(--mqds-font-mono);
   white-space: nowrap;
 }
-.lean-ticket-action { flex: none; margin-inline-start: auto; }
-.lean-ticket-action .mqds-ticket-action { font-size: .84rem; }
+.lean-ticket-card .mqds-card-actions { margin: 7px 0 0 42px; }
+.lean-ticket-card .mqds-ticket-action { min-height: 34px; padding: 5px 9px; font-size: .8rem; }
 .mqds-card.lean-ticket-card[data-variant="ticket"][data-interactive="true"]:is(:hover, :focus-within) {
   transform: none;
   --mqds-ticket-paper: var(--mqds-paper-hover);
@@ -221,7 +219,7 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   align-content: center;
   justify-items: center;
   gap: 2px;
-  padding: 10px 12px;
+  padding: 10px;
   text-align: center;
 }
 .lean-ticket-card .lean-stub-number {
@@ -235,9 +233,8 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   .mqds-card.lean-ticket-card[data-stub="true"] { grid-template-columns: minmax(0, 1fr) 92px; }
   .lean-ticket-card > .mqds-card-body { padding: 10px 14px; }
   .lean-ticket-stamp { display: none; }
-  .lean-ticket-body { display: block; }
-  .lean-ticket-action { margin-top: 7px; }
-  .lean-ticket-action .mqds-ticket-action { padding: 6px 10px; }
+  .lean-ticket-card .mqds-card-actions { margin-left: 0; }
+  .lean-ticket-card .mqds-ticket-action { min-height: 44px; }
   .lean-ticket-card .lean-stub-number { font-size: 1.2rem; }
   .lean-ticket-card .lean-stub-label { font-size: .68rem; }
   .lean-ticket-card .lean-stub-meta { font-size: .6rem; }
