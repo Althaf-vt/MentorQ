@@ -174,7 +174,10 @@ export const Navbar: React.FC = () => {
   }
 
   const initials = getInitials(user.fullName)
-  const isLiveSession = location.pathname.startsWith('/session/')
+  const isLiveSession =
+    location.pathname.startsWith('/focus/') ||
+    location.pathname.startsWith('/mentor/focus/') ||
+    location.pathname.startsWith('/session/')
 
   return (
     <>

@@ -10,6 +10,9 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
   const { isAuthenticated, user } = useRoleAuth()
 
   if (isAuthenticated && user) {
+    if (user.role === 'ADMIN') {
+      return <Navigate to="/admin/dashboard" replace />
+    }
     if (user.role === 'MENTOR') {
       return <Navigate to="/mentor/dashboard" replace />
     }
