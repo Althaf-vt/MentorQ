@@ -71,13 +71,13 @@ export const RequestTicketCard: React.FC<RequestTicketCardProps> = ({
 
   return (
     <Card
-      className={['dashboard-request-ticket', className].filter(Boolean).join(' ')}
+      className={['lean-ticket-card', className].filter(Boolean).join(' ')}
       variant="ticket"
       interactive
       data-mqds={lightTheme}
       stub={
-        <div className="stub">
-          <strong>
+        <>
+          <strong className="lean-stub-number">
             {isActive
               ? 'Ready'
               : queuePosition != null
@@ -86,7 +86,7 @@ export const RequestTicketCard: React.FC<RequestTicketCardProps> = ({
               ? `#${shortId.slice(-2)}`
               : status}
           </strong>
-          <span>
+          <span className="lean-stub-label">
             {isActive
               ? 'Mentor is ready'
               : isQueued
@@ -95,14 +95,14 @@ export const RequestTicketCard: React.FC<RequestTicketCardProps> = ({
               ? 'Mentor assigned'
               : status.toLowerCase()}
           </span>
-          <small>
+          <small className="lean-stub-meta">
             {isActive
               ? 'Enter room now'
               : isQueued
               ? (queuePosition != null ? `Position #${queuePosition}` : `${requestedMinutes} min session`)
               : dateStr || `${requestedMinutes} min session`}
           </small>
-        </div>
+        </>
       }
     >
       <div className="body">
