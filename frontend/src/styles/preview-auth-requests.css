@@ -140,6 +140,14 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
 @media (min-width: 1100px) {
   .dashboard-ticket-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.mentor-ticket-grid-item { display: flex; flex-direction: column; min-width: 0; }
+.mentor-ticket-grid-item .lean-ticket-card { flex: 1; }
+.mentor-ticket-secondary-action {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
 
 /* Queue and history tickets share the design system's paper and perforated stub. */
 .mqds-card.lean-ticket-card[data-stub="true"] {

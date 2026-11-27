@@ -442,7 +442,7 @@ export const MentorDashboardPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="dashboard-ticket-grid">
             {sortedActiveTickets.map((t) => {
               const rawId = t._id || (t as { id?: string }).id
               const ticketId =
@@ -453,7 +453,7 @@ export const MentorDashboardPage: React.FC = () => {
                 15
 
               return (
-                <div key={ticketId}>
+                <div key={ticketId} className="mentor-ticket-grid-item">
                   <RequestTicketCard
                     id={ticketId}
                     topic={t.topic}
@@ -474,14 +474,7 @@ export const MentorDashboardPage: React.FC = () => {
                     actionLabel="Enter Room"
                     onActionClick={() => handleStartFocusSession(ticketId)}
                   />
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      gap: 8,
-                    }}
-                  >
+                  <div className="mentor-ticket-secondary-action">
                     <Button
                       variant="secondary"
                       style={{ fontSize: 12, minHeight: 0, padding: '6px 12px' }}
