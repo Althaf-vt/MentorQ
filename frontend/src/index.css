@@ -1,6 +1,7 @@
 @import "./design-system/styles/globals.css";
 @import "./styles/preview-intro.css";
 @import "./styles/preview-foundation.css";
+@import "./styles/preview-tickets-gallery.css";
 @import "tailwindcss";
 
 @theme {
