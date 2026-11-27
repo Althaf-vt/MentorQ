@@ -1,10 +1,3 @@
-/* Batch 6: Exact preview.html styles for OTP, Request Details, Session History,
- * Student Profile, Notification Header Actions, and Dock-Aware Toast Clearance.
- * Ticket modals & index cards preserve the "print-on-canvas" paper palette with
- * explicit --mqds-ink text contrast across both Light and Dark themes.
- */
-
-/* --- OTP Verification Modal (ui-preview/otp-verification.css) --- */
 dialog.mqds-modal.otp-dialog { width: min(450px, 94vw); }
 
 .otp-form {
