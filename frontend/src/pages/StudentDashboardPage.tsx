@@ -342,7 +342,8 @@ export const StudentDashboardPage: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {paginatedTickets.map((t) => {
-              const ticketId = t._id || (t as { id?: string }).id || ''
+              const rawId = t._id || (t as { id?: string }).id
+              const ticketId = typeof rawId === 'string' ? rawId : (rawId ? String(rawId) : '')
               const rawDate = t.createdAt || (t as { created_at?: string }).created_at
               const dateStr = rawDate
                 ? new Date(rawDate).toLocaleDateString([], {
