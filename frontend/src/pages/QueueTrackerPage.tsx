@@ -72,7 +72,7 @@ export const QueueTrackerPage: React.FC = () => {
     )
   }
 
-  const currentTicketId = ticket._id || ticket.id || ticketId || ''
+  const currentTicketId = ticket._id || (ticket as { id?: string }).id || ticketId || ''
   const pos = posData?.position ?? 1
   const waitMinutes = pos * 10
 

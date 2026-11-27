@@ -21,23 +21,10 @@ export const Toaster: React.FC = () => {
           <Toast
             notification={{
               id: t.id,
-              tone: t.type as ToastTone,
-              title:
-                t.title ||
-                (t.type === 'error'
-                  ? 'Error'
-                  : t.type === 'success'
-                    ? 'Success'
-                    : t.type === 'warning'
-                      ? 'Warning'
-                      : 'Notice'),
+              tone: (t.type === 'error' ? 'error' : t.type === 'success' ? 'success' : 'info') as ToastTone,
+              title: t.type === 'error' ? 'Error' : t.type === 'success' ? 'Success' : 'Notice',
               message: t.message,
-              duration:
-                t.duration !== undefined
-                  ? t.duration
-                  : t.type === 'warning'
-                    ? null
-                    : 4500,
+              duration: 4500,
             }}
             onDismiss={(id) => removeToast(String(id))}
           />

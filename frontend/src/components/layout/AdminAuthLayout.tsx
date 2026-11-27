@@ -26,8 +26,8 @@ export function AdminAuthLayout() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <Card
-          variant="paper"
-          className="bg-[var(--mqds-surface,#272440)] py-8 px-6 shadow-2xl border border-[var(--mqds-border,#89839b)]/30 rounded-2xl sm:px-10"
+          className="py-8 px-6 shadow-2xl border border-[var(--mqds-border-subtle)] rounded-2xl sm:px-10 !bg-[var(--mqds-surface)] !text-[var(--mqds-text)]"
+          style={{ background: 'var(--mqds-surface)', color: 'var(--mqds-text)' }}
         >
           <Outlet />
         </Card>
