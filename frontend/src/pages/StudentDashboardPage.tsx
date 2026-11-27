@@ -1,23 +1,30 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, ChevronLeft, ChevronRight, Filter, Sparkles, Clock, CheckCircle2, BookOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGetStudentTicketsQuery } from '@/store/api/ticketApi'
 import { useAppSelector } from '@/store/hooks'
 import { TicketCreationModal } from '@/components/tickets/TicketCreationModal'
+import { RequestTicketCard } from '@/components/tickets/RequestTicketCard'
+import { MentorOrbit } from '@/components/preview/MentorOrbit'
 import { socketService } from '@/services/socket.service'
 import { playNotificationSound } from '@/utils/audioUtils'
 import {
-  Badge,
   Button,
-  Card,
   EmptyState,
-  Loader,
   Modal,
-  TicketAction,
-  cardTiltHandlers,
+  Skeleton,
 } from '@/design-system'
 
 type FilterStatus = 'PENDING' | 'ALL' | 'COMPLETED' | 'CANCELLED'
+
+const FILTER_LABELS: { key: FilterStatus; label: string }[] = [
+  { key: 'PENDING', label: 'Active' },
+  { key: 'ALL', label: 'All' },
+  { key: 'COMPLETED', label: 'Completed' },
+  { key: 'CANCELLED', label: 'Cancelled' },
+]
+
+const ITEMS_PER_PAGE = 6
 
 export const StudentDashboardPage: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user)
@@ -38,7 +45,7 @@ export const StudentDashboardPage: React.FC = () => {
   const completedTicketsCount = tickets.filter((t) => t.status === 'COMPLETED').length
   const cancelledTicketsCount = tickets.filter((t) => t.status === 'CANCELLED').length
 
-  // Smart Filtering: If 'PENDING' filter is active and pending tickets count is 0, auto switch to 'ALL'
+  // Smart Filtering: auto-switch from PENDING → ALL when queue empties
   useEffect(() => {
     if (!isLoading && tickets.length > 0 && statusFilter === 'PENDING' && pendingTicketsCount === 0) {
       setStatusFilter('ALL')
@@ -99,7 +106,7 @@ export const StudentDashboardPage: React.FC = () => {
     }
   }
 
-  // Filter student tickets according to active filter
+  // Filter + sort
   const filteredTickets = useMemo(() => {
     if (statusFilter === 'ALL') return tickets
     if (statusFilter === 'PENDING') {
@@ -108,7 +115,6 @@ export const StudentDashboardPage: React.FC = () => {
     return tickets.filter((t) => t.status === statusFilter)
   }, [tickets, statusFilter])
 
-  // Sort student tickets Newest First
   const sortedTickets = useMemo(() => {
     const getTimestamp = (t: typeof tickets[0]): number => {
       const raw = t.createdAt || (t as { created_at?: string }).created_at || (t as { updatedAt?: string }).updatedAt
@@ -117,11 +123,10 @@ export const StudentDashboardPage: React.FC = () => {
     return [...filteredTickets].sort((a, b) => getTimestamp(b) - getTimestamp(a))
   }, [filteredTickets])
 
-  const ITEMS_PER_PAGE = 5
+  // Pagination
   const totalPages = Math.max(1, Math.ceil(sortedTickets.length / ITEMS_PER_PAGE))
   const currentPage = Math.min(page, totalPages)
   const paginatedTickets = sortedTickets.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-
   const startIdx = (currentPage - 1) * ITEMS_PER_PAGE + 1
   const endIdx = Math.min(currentPage * ITEMS_PER_PAGE, sortedTickets.length)
 
@@ -130,331 +135,257 @@ export const StudentDashboardPage: React.FC = () => {
     setPage(1)
   }
 
+  // Per-filter counts for filter pills
+  const filterCount: Record<FilterStatus, number> = {
+    PENDING: pendingTicketsCount,
+    ALL: tickets.length,
+    COMPLETED: completedTicketsCount,
+    CANCELLED: cancelledTicketsCount,
+  }
+
+  // Active ACTIVE/APPROVED ticket for the live-ready banner
+  const liveReadyTicket = tickets.find((t) => t.status === 'ACTIVE' || t.status === 'APPROVED')
+  const liveReadyId = liveReadyTicket
+    ? (() => { const r = liveReadyTicket._id || (liveReadyTicket as { id?: string }).id; return typeof r === 'string' ? r : r ? String(r) : '' })()
+    : ''
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 font-body">
-      {/* Hero Welcome Banner */}
-      <Card
-        variant="paper"
-        className="p-8 sm:p-10 relative overflow-hidden border border-[var(--mqds-paper-border)] shadow-md"
-      >
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-xs font-mono font-semibold text-[var(--mqds-primary)]">
-              <span className="w-2 h-2 rounded-full bg-[var(--mqds-primary)] animate-pulse" />
-              <span>Live Mentorship Queue Active</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--mqds-text)] font-headline tracking-tight">
-              Welcome back, {user?.fullName || 'Scholar'}
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--mqds-muted)] leading-relaxed">
-              Get immediate 1-on-1 assistance with code issues, architecture, and debugging from expert mentors.
+    <main className="preview-main">
+
+      {/* ── Hero ─────────────────────────────────────────────────── */}
+      <section className="hero">
+        <div>
+          <small>Student dashboard</small>
+          <h1>
+            {user?.fullName
+              ? <>{user.fullName.split(' ')[0]}'s<br /><span>requests.</span></>
+              : <>Your<br /><span>requests.</span></>
+            }
+          </h1>
+          <button
+            type="button"
+            className="cta hero-request"
+            onClick={() => setModalOpen(true)}
+            style={{
+              fontWeight: 700,
+              fontSize: '1rem',
+              fontFamily: 'var(--mqds-font)',
+              cursor: 'pointer',
+            }}
+          >
+            New request <b aria-hidden="true">→</b>
+          </button>
+        </div>
+
+        {/* Orbit — right side of hero */}
+        <MentorOrbit />
+      </section>
+
+      {/* ── Live-ready session banner (ACTIVE ticket) ─────────────── */}
+      {liveReadyTicket && liveReadyId && (
+        <div
+          className="live-ready-ticket"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '14px 20px',
+            marginBottom: 20,
+            borderRadius: 10,
+            background: 'var(--mqds-primary)',
+            color: '#fff9ef',
+          }}
+        >
+          <div>
+            <p
+              className="font-mono font-semibold text-xs uppercase tracking-wider"
+              style={{ opacity: 0.7, marginBottom: 2 }}
+            >
+              Session ready
+            </p>
+            <p className="font-headline font-bold text-base">
+              Your mentor is ready — join your focus session now.
             </p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Button
-              variant="primary"
-              onClick={() => setModalOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Request Mentorship</span>
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Quick Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card variant="paper" className="p-5 border border-[var(--mqds-paper-border)] shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
-              Active Requests
-            </span>
-            <Clock className="w-4 h-4 text-[var(--mqds-primary)]" />
-          </div>
-          <div className="text-2xl font-black text-[var(--mqds-text)] font-headline mt-2">
-            {pendingTicketsCount}
-          </div>
-          <p className="text-[11px] text-[var(--mqds-muted)] mt-1 font-mono">
-            {pendingTicketsCount > 0 ? 'In live queue' : 'No pending tickets'}
-          </p>
-        </Card>
-
-        <Card variant="paper" className="p-5 border border-[var(--mqds-paper-border)] shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
-              Completed Sessions
-            </span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-black text-[var(--mqds-text)] font-headline mt-2">
-            {completedTicketsCount}
-          </div>
-          <p className="text-[11px] text-[var(--mqds-muted)] mt-1 font-mono">
-            Resolved mentorships
-          </p>
-        </Card>
-
-        <Card variant="paper" className="p-5 border border-[var(--mqds-paper-border)] shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-[var(--mqds-muted)]">
-                Session History
-              </span>
-              <BookOpen className="w-4 h-4 text-[var(--mqds-primary)]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--mqds-text)] font-headline mt-2">
-              {tickets.length}
-            </div>
-          </div>
-          <Link
-            to="/history"
-            className="text-xs text-[var(--mqds-primary)] hover:underline font-semibold flex items-center gap-1 mt-2 pt-2 border-t border-[var(--mqds-border-subtle)]"
+          <button
+            type="button"
+            className="cta"
+            onClick={() => navigate(`/queue/${liveReadyId}`)}
+            style={{
+              background: '#fff9ef',
+              color: 'var(--mqds-primary)',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              fontFamily: 'var(--mqds-font)',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
           >
-            <span>View archive</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </Card>
+            Track →
+          </button>
+        </div>
+      )}
+
+      {/* ── Section title + filter pills ─────────────────────────── */}
+      <div className="sectionTitle">
+        <h2>
+          {sortedTickets.length > 0
+            ? `${sortedTickets.length} ${statusFilter === 'PENDING' ? 'active' : statusFilter.toLowerCase()} request${sortedTickets.length !== 1 ? 's' : ''}`
+            : 'Your requests'
+          }
+        </h2>
+        <div className="flex items-center gap-2 flex-wrap">
+            {FILTER_LABELS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleFilterChange(key)}
+                className="cursor-pointer transition-colors"
+                style={{
+                  padding: '4px 11px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'var(--mqds-font-mono)',
+                  border: statusFilter === key ? 'none' : '1px solid var(--mqds-border-subtle)',
+                  background: statusFilter === key ? 'var(--mqds-primary)' : 'var(--mqds-hover)',
+                  color: statusFilter === key ? '#fff' : 'var(--mqds-muted)',
+                }}
+              >
+                {label} <span style={{ opacity: 0.7 }}>{filterCount[key]}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="cursor-pointer"
+              style={{
+                padding: '4px 11px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: 'var(--mqds-font-mono)',
+                border: '1px solid var(--mqds-border-subtle)',
+                background: 'transparent',
+                color: 'var(--mqds-accent)',
+              }}
+            >
+              ↻ Refresh
+            </button>
+          </div>
       </div>
 
-      {/* Recent Requests Section */}
-      <Card variant="paper" className="p-6 sm:p-8 border border-[var(--mqds-paper-border)] shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--mqds-border-subtle)] pb-4">
-          <div>
-            <h2 className="text-lg font-bold text-[var(--mqds-text)] font-headline">
-              Recent Requests &amp; Queue Status
-            </h2>
-            <p className="text-xs text-[var(--mqds-muted)] mt-0.5">
-              Chronological ticket activity ordered with newest requests first.
-            </p>
-          </div>
-          <Button
-            variant="text"
-            onClick={() => refetch()}
-            className="!p-0 !min-h-0 text-xs text-[var(--mqds-primary)] font-semibold self-start sm:self-auto"
-          >
-            Refresh queue
-          </Button>
+      {/* ── Requests list ────────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="ticket" label="Loading requests…" />
+          ))}
         </div>
-
-        {/* Filter Controls Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-          <div className="flex items-center gap-1.5 text-[var(--mqds-muted)] mr-2 font-mono text-xs">
-            <Filter className="w-3.5 h-3.5" />
-            <span>Filter:</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleFilterChange('PENDING')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+      ) : sortedTickets.length === 0 ? (
+        <div style={{ marginTop: 32 }}>
+          <EmptyState
+            title={`No ${statusFilter === 'PENDING' ? 'active' : statusFilter.toLowerCase()} requests`}
+            description={
               statusFilter === 'PENDING'
-                ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
-                : 'bg-[var(--mqds-surface)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-muted)] hover:bg-[var(--mqds-hover)] hover:text-[var(--mqds-text)]'
-            }`}
-          >
-            <span>Pending</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                statusFilter === 'PENDING' ? 'bg-white/20 text-white' : 'bg-[var(--mqds-border-subtle)] text-[var(--mqds-text)]'
-              }`}
-            >
-              {pendingTicketsCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleFilterChange('ALL')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-              statusFilter === 'ALL'
-                ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
-                : 'bg-[var(--mqds-surface)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-muted)] hover:bg-[var(--mqds-hover)] hover:text-[var(--mqds-text)]'
-            }`}
-          >
-            <span>All</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                statusFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-[var(--mqds-border-subtle)] text-[var(--mqds-text)]'
-              }`}
-            >
-              {tickets.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleFilterChange('COMPLETED')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-              statusFilter === 'COMPLETED'
-                ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
-                : 'bg-[var(--mqds-surface)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-muted)] hover:bg-[var(--mqds-hover)] hover:text-[var(--mqds-text)]'
-            }`}
-          >
-            <span>Completed</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                statusFilter === 'COMPLETED' ? 'bg-white/20 text-white' : 'bg-[var(--mqds-border-subtle)] text-[var(--mqds-text)]'
-              }`}
-            >
-              {completedTicketsCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleFilterChange('CANCELLED')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-              statusFilter === 'CANCELLED'
-                ? 'bg-[var(--mqds-primary)] text-white shadow-xs'
-                : 'bg-[var(--mqds-surface)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-muted)] hover:bg-[var(--mqds-hover)] hover:text-[var(--mqds-text)]'
-            }`}
-          >
-            <span>Cancelled</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                statusFilter === 'CANCELLED' ? 'bg-white/20 text-white' : 'bg-[var(--mqds-border-subtle)] text-[var(--mqds-text)]'
-              }`}
-            >
-              {cancelledTicketsCount}
-            </span>
-          </button>
-        </div>
-
-        {/* Requests List */}
-        {isLoading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-3">
-            <Loader />
-            <p className="text-xs font-mono text-[var(--mqds-muted)]">Loading requests...</p>
-          </div>
-        ) : sortedTickets.length === 0 ? (
-          <div className="py-8">
-            <EmptyState
-              title={`No ${statusFilter.toLowerCase()} requests found`}
-              description="Submit a question to enter the live queue and connect with a mentor."
-              action={
+                ? 'Submit a question to enter the live queue and connect with a mentor.'
+                : `You have no ${statusFilter.toLowerCase()} requests yet.`
+            }
+            action={
+              statusFilter === 'PENDING' ? (
                 <Button variant="primary" onClick={() => setModalOpen(true)}>
-                  Request Mentorship
+                  New request →
                 </Button>
-              }
-            />
-          </div>
-        ) : (
+              ) : (
+                <Button variant="secondary" onClick={() => handleFilterChange('ALL')}>
+                  View all requests
+                </Button>
+              )
+            }
+          />
+        </div>
+      ) : (
+        <>
           <div className="space-y-4">
             {paginatedTickets.map((t) => {
               const rawId = t._id || (t as { id?: string }).id
               const ticketId = typeof rawId === 'string' ? rawId : (rawId ? String(rawId) : '')
-              const rawDate = t.createdAt || (t as { created_at?: string }).created_at
-              const dateStr = rawDate
-                ? new Date(rawDate).toLocaleDateString([], {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : ''
               const duration = t.requested_minutes || (t as { requestedMinutes?: number }).requestedMinutes || 15
-
               return (
-                <Card
+                <RequestTicketCard
                   key={ticketId}
-                  variant="ticket"
-                  interactive
-                  {...cardTiltHandlers}
-                  className="shadow-xs"
-                  stub={
-                    <div className="flex flex-col items-center justify-between h-full text-center py-2 px-1">
-                      <Badge
-                        tone={
-                          t.status === 'COMPLETED'
-                            ? 'success'
-                            : t.status === 'ACTIVE'
-                            ? 'info'
-                            : t.status === 'CANCELLED'
-                            ? 'danger'
-                            : 'warning'
-                        }
-                        className="font-mono uppercase text-[10px]"
-                      >
-                        {t.status}
-                      </Badge>
-                      <div className="font-mono text-xs text-[var(--mqds-muted)] my-2">
-                        {duration}m
-                      </div>
-                      <TicketAction onClick={() => navigate(`/queue/${ticketId}`)}>
-                        Track
-                      </TicketAction>
-                    </div>
-                  }
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-[var(--mqds-primary)]">
-                        #{ticketId ? ticketId.slice(-6).toUpperCase() : '------'}
-                      </span>
-                      {dateStr && (
-                        <span className="text-[11px] font-mono text-[var(--mqds-muted)]">
-                          • {dateStr}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-headline font-bold text-base text-[var(--mqds-text)] leading-snug">
-                      {t.topic}
-                    </h3>
-                    <p className="font-body text-xs text-[var(--mqds-muted)] line-clamp-2">
-                      {t.description}
-                    </p>
-                    {t.tags && t.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {t.tags.map((tag) => (
-                          <Badge key={tag} tone="neutral" className="text-[10px] font-mono">
-                            #{tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Card>
+                  id={ticketId}
+                  topic={t.topic}
+                  description={t.description}
+                  status={t.status as 'PENDING' | 'APPROVED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'}
+                  tags={t.tags}
+                  requestedMinutes={duration}
+                  createdAt={t.createdAt || (t as { created_at?: string }).created_at}
+                />
               )
             })}
-
-            {/* Pagination Controls */}
-            {sortedTickets.length > ITEMS_PER_PAGE && (
-              <div className="pt-4 border-t border-[var(--mqds-border-subtle)] flex items-center justify-between text-xs text-[var(--mqds-muted)]">
-                <span>
-                  Showing <strong className="text-[var(--mqds-text)]">{startIdx}-{endIdx}</strong> of{' '}
-                  <strong className="text-[var(--mqds-text)]">{sortedTickets.length}</strong> requests
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-                  <span className="px-2 text-xs font-mono font-semibold text-[var(--mqds-text)]">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="!p-1.5 !min-h-0 text-xs"
-                    aria-label="Next page"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
-        )}
-      </Card>
 
-      {/* Ticket Creation Modal */}
+          {/* Pagination */}
+          {sortedTickets.length > ITEMS_PER_PAGE && (
+            <div
+              className="flex items-center justify-between"
+              style={{
+                marginTop: 20,
+                paddingTop: 16,
+                borderTop: '1px solid var(--mqds-border-subtle)',
+                fontSize: 12,
+                color: 'var(--mqds-muted)',
+                fontFamily: 'var(--mqds-font-mono)',
+              }}
+            >
+              <span>
+                Showing <strong style={{ color: 'var(--mqds-text)' }}>{startIdx}–{endIdx}</strong> of{' '}
+                <strong style={{ color: 'var(--mqds-text)' }}>{sortedTickets.length}</strong>
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="!p-1.5 !min-h-0"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+                <span style={{ padding: '0 8px', fontWeight: 700 }}>
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="secondary"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="!p-1.5 !min-h-0"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── History link ─────────────────────────────────────────── */}
+      {tickets.length > 0 && (
+        <div style={{ marginTop: 32, textAlign: 'center' }}>
+          <Link
+            to="/history"
+            className="font-mono text-xs font-semibold"
+            style={{ color: 'var(--mqds-accent)', textDecoration: 'underline' }}
+          >
+            View full session archive →
+          </Link>
+        </div>
+      )}
+
+      {/* ── Ticket Creation Modal ─────────────────────────────────── */}
       {modalOpen && (
         <TicketCreationModal
           isOpen={modalOpen}
@@ -466,7 +397,7 @@ export const StudentDashboardPage: React.FC = () => {
         />
       )}
 
-      {/* Mentor Session Live Invitation Dialog */}
+      {/* ── Live Mentor Invite Modal ──────────────────────────────── */}
       <Modal
         open={Boolean(inviteModalData)}
         onOpenChange={(open) => {
@@ -491,6 +422,6 @@ export const StudentDashboardPage: React.FC = () => {
           </div>
         }
       />
-    </div>
+    </main>
   )
 }
