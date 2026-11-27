@@ -8,6 +8,7 @@ import {
   useMarkNotificationAsReadMutation,
   useMarkAllNotificationsAsReadMutation,
 } from '@/store/api/notificationApi'
+import { useThemeStore } from '@/store/themeStore'
 import type { Notification } from '@/types/operational.types'
 
 interface NotificationDrawerProps {
@@ -15,6 +16,7 @@ interface NotificationDrawerProps {
 }
 
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose }) => {
+  const theme = useThemeStore((state) => state.theme)
   const { data: notifications = [] } = useGetUserNotificationsQuery()
   const [markRead] = useMarkNotificationAsReadMutation()
   const [markAllRead] = useMarkAllNotificationsAsReadMutation()
@@ -28,13 +30,13 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ onClose 
   }))
 
   return (
-    <NotificationsDrawer
-      items={items}
-      onClose={onClose}
-      onRead={(id) => markRead(id)}
-      onReadAll={() => markAllRead()}
-    />
+    <div data-mqds={theme}>
+      <NotificationsDrawer
+        items={items}
+        onClose={onClose}
+        onRead={(id) => markRead(id)}
+        onReadAll={() => markAllRead()}
+      />
+    </div>
   )
 }
-
-
