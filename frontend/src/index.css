@@ -71,8 +71,7 @@
 body {
   margin: 0;
   min-width: 320px;
-  background-color: var(--mqds-canvas, #faf9f7);
-  color: var(--mqds-text, #303331);
+  background-color: var(--mqds-canvas);
+  color: var(--mqds-text);
   font-family: var(--font-body);
 }
-

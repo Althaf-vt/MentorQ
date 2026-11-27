@@ -1,10 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mqds="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4efe8" />
     <title>MentorQ — On-Demand Mentorship Platform</title>
+    <script>
+      try {
+        var t = localStorage.getItem('mentorq-theme');
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.setAttribute('data-mqds', t);
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute('content', t === 'dark' ? '#201d35' : '#f4efe8');
+        }
+      } catch (e) {}
+    </script>
     <!-- Google Fonts: Sora, Inter, Space Grotesk -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,9 +24,8 @@
       rel="stylesheet"
     />
   </head>
-  <body class="min-h-screen bg-[#faf9f7] text-[#303331] font-body antialiased">
+  <body class="min-h-screen font-body antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
