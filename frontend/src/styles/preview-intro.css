@@ -119,7 +119,7 @@
   font-size: clamp(2.4rem, 9vw, 5.3rem);
   line-height: 1.12;
   font-weight: 750;
-  letter-spacing: -.055em;
+  letter-spacing: var(--mqds-letter-spacing);
 }
 #intro-title span {
   display: inline-block;

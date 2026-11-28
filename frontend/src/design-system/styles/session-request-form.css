@@ -46,7 +46,7 @@ dialog.request-dialog[data-variant="ivory"] .sheet h2 {
   color: #301c33;
   font-size: clamp(26px, 6vw, 39px);
   line-height: 1.06;
-  letter-spacing: -.055em;
+  letter-spacing: var(--mqds-letter-spacing);
 }
 .request-dialog .sheet h2::after {
   content: "";

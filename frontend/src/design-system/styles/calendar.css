@@ -33,7 +33,7 @@
 .mqds-calendar-views button[aria-pressed="true"] { color: var(--mqds-calendar-selected-text); background: var(--mqds-calendar-selected); }
 .mqds-calendar-today { color: var(--mqds-notification-action); }
 .mqds-calendar-heading { margin: 14px 0; }
-.mqds-calendar-heading h3 { margin: 0; font-size: clamp(19px, 4vw, 27px); letter-spacing: -.04em; animation: mqds-calendar-month-in .23s ease-out both; }
+.mqds-calendar-heading h3 { margin: 0; font-size: clamp(19px, 4vw, 27px); letter-spacing: var(--mqds-letter-spacing); animation: mqds-calendar-month-in .23s ease-out both; }
 .mqds-calendar-arrows button { min-width: 27px; padding: 2px 5px; font-size: 20px; line-height: 1.2; }
 .mqds-calendar button:focus-visible { outline: 2px solid var(--mqds-focus); outline-offset: 1px; }
 .mqds-calendar-today:hover, .mqds-calendar-arrows button:hover, .mqds-calendar-views button[aria-pressed="false"]:hover,

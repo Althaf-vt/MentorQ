@@ -45,7 +45,6 @@ export const RequestTicketCard: React.FC<RequestTicketCardProps> = ({
   const shortId = id ? id.slice(-6).toUpperCase() : '------'
   const isQueued = status === 'PENDING'
   const isActive = status === 'ACTIVE'
-  const isApproved = status === 'APPROVED'
 
   const effectiveActionLabel =
     actionLabel || (isActive ? 'Join session' : isQueued ? 'View queue' : 'View request')
@@ -64,77 +63,51 @@ export const RequestTicketCard: React.FC<RequestTicketCardProps> = ({
     ? new Date(createdAt).toLocaleDateString([], {
         month: 'short',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
       })
     : ''
 
   return (
     <Card
-      className={['dashboard-request-ticket', className].filter(Boolean).join(' ')}
+      className={['lean-ticket-card', className].filter(Boolean).join(' ')}
       variant="ticket"
       interactive
       data-mqds={lightTheme}
+      actions={<TicketAction onClick={handleAction}>{effectiveActionLabel}</TicketAction>}
       stub={
-        <div className="stub">
-          <strong>
-            {isActive
-              ? 'Ready'
-              : queuePosition != null
-              ? `#${queuePosition}`
-              : isQueued
-              ? `#${shortId.slice(-2)}`
-              : status}
+        <>
+          <strong className="lean-stub-number">
+            {isActive ? 'Ready' : queuePosition != null ? `#${queuePosition}` : `#${shortId.slice(-2)}`}
           </strong>
-          <span>
-            {isActive
-              ? 'Mentor is ready'
-              : isQueued
-              ? 'In queue'
-              : isApproved
-              ? 'Mentor assigned'
-              : status.toLowerCase()}
+          <span className="lean-stub-label">
+            {isActive ? 'Mentor ready' : isQueued ? 'In queue' : status.charAt(0) + status.slice(1).toLowerCase()}
           </span>
-          <small>
+          <small className="lean-stub-meta">
             {isActive
               ? 'Enter room now'
               : isQueued
               ? (queuePosition != null ? `Position #${queuePosition}` : `${requestedMinutes} min session`)
               : dateStr || `${requestedMinutes} min session`}
           </small>
-        </div>
+        </>
       }
     >
-      <div className="body">
-        <div className="stamp" aria-hidden="true">&lt;/&gt;</div>
-        <div>
-          <small>
-            {mentorName ? `${mentorName} / ` : ''}{requestedMinutes} min session
-            {dateStr && ` • ${dateStr}`}
-          </small>
-          <h2>{topic}</h2>
-          {description && (
-            <p
-              className="font-body text-xs line-clamp-1 mb-2 opacity-80"
-              style={{ color: 'var(--mqds-muted-ink)' }}
-            >
-              {description}
-            </p>
-          )}
-          {tags && tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {tags.map((tag) => (
-                <Badge key={tag} tone="neutral" className="text-[10px] font-mono">
-                  #{tag}
-                </Badge>
-              ))}
-            </div>
-          )}
-          <div className="dashboard-ticket-action">
-            <TicketAction onClick={handleAction}>
-              {effectiveActionLabel}
-            </TicketAction>
+      <div className="lean-ticket-body">
+        <div className="lean-ticket-stamp" aria-hidden="true">&lt;/&gt;</div>
+        <div className="lean-ticket-details">
+          <div className="lean-ticket-meta">
+            <span>#{shortId}</span>
+            <span>{requestedMinutes} min session</span>
+            {dateStr && <span>{dateStr}</span>}
+            {mentorName && <span>{mentorName}</span>}
+            {tags && tags.length > 0 && (
+              <span className="lean-ticket-tags" role="group" aria-label={`Topics: ${tags.join(', ')}`}>
+                {tags.slice(0, 2).map((tag) => <Badge key={tag} tone="neutral">#{tag}</Badge>)}
+                {tags.length > 2 && <span title={tags.slice(2).join(', ')}>+{tags.length - 2} more</span>}
+              </span>
+            )}
           </div>
+          <h3 className="lean-ticket-topic" title={topic}>{topic}</h3>
+          {description && <p className="lean-ticket-description" title={description}>{description}</p>}
         </div>
       </div>
     </Card>

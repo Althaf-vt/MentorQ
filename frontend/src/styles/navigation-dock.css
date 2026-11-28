@@ -10,7 +10,7 @@
 .preview-header .wordmark {
   font-size: 30px;
   font-weight: 750;
-  letter-spacing: -1.8px;
+  letter-spacing: var(--mqds-letter-spacing);
   display: flex;
   align-items: center;
   gap: 10px;

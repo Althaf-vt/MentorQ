@@ -89,7 +89,7 @@ dialog.mqds-notifications-drawer[aria-labelledby][open] { animation: mqds-notifi
   background: var(--mqds-drawer-edge);
   pointer-events: none;
 }
-.mqds-notifications-heading h2 { margin: 0; font-size: clamp(26px, 6vw, 37px); line-height: 1.06; letter-spacing: -.055em; }
+.mqds-notifications-heading h2 { margin: 0; font-size: clamp(26px, 6vw, 37px); line-height: 1.06; letter-spacing: var(--mqds-letter-spacing); }
 .mqds-notifications-heading p { margin: 7px 0 0; color: var(--mqds-drawer-heading-muted); font: 600 .8rem/1.4 var(--mqds-font-mono); }
 .mqds-notification-tools { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
 .mqds-notification-filters { display: flex; gap: 4px; padding: 4px; border-radius: 8px; background: var(--mqds-field); }

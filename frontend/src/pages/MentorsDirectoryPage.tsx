@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Heart, Search, Star, Clock, Sparkles } from 'lucide-react'
+import { Heart, Search, Star, Clock } from 'lucide-react'
 import {
   useGetMentorsDirectoryQuery,
   useGetFavoriteMentorsQuery,
@@ -132,46 +132,27 @@ export const MentorsDirectoryPage: React.FC = () => {
   const isLoading = activeTab === 'FAVORITES' ? isLoadingFavorites : isLoadingDirectory
 
   return (
-    <main className="preview-main font-body space-y-10 pt-8 md:pt-18 pb-20">
-      {/* Header Banner */}
-      <Card
-        variant="paper"
-        data-mqds={lightTheme}
-        className="p-8 sm:p-10 relative overflow-hidden border border-[var(--mqds-paper-border)] shadow-md"
-      >
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-xs font-mono font-semibold text-[var(--mqds-accent)]">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Mentor Community</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-headline text-[var(--mqds-ink)] tracking-tight">
-              Mentors Directory
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--mqds-muted-ink)] leading-relaxed">
-              Explore domain specializations, review mentor availability, test interactive prints, and save your trusted guides.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 bg-[var(--mqds-surface)] p-1.5 rounded-full border border-[var(--mqds-border-subtle)] shadow-xs">
-            <Button
-              variant={activeTab === 'ALL' ? 'primary' : 'secondary'}
-              onClick={() => setActiveTab('ALL')}
-              className="!px-4 !py-1.5 !min-h-0 text-xs font-semibold"
-            >
-              All Mentors
-            </Button>
-            <Button
-              variant={activeTab === 'FAVORITES' ? 'primary' : 'secondary'}
-              onClick={() => setActiveTab('FAVORITES')}
-              className="!px-4 !py-1.5 !min-h-0 text-xs font-semibold flex items-center gap-1.5"
-            >
-              <Heart className={`w-3.5 h-3.5 ${activeTab === 'FAVORITES' ? 'fill-current' : ''}`} />
-              <span>Favorites ({favoriteMentors.length})</span>
-            </Button>
-          </div>
+    <main className="preview-main mentor-directory-page font-body space-y-8">
+      <header className="mentor-directory-header">
+        <h1>Mentors Directory</h1>
+        <div className="mentor-directory-views" role="group" aria-label="Mentor directory view">
+          <Button
+            variant={activeTab === 'ALL' ? 'primary' : 'secondary'}
+            aria-pressed={activeTab === 'ALL'}
+            onClick={() => setActiveTab('ALL')}
+          >
+            All Mentors
+          </Button>
+          <Button
+            variant={activeTab === 'FAVORITES' ? 'primary' : 'secondary'}
+            aria-pressed={activeTab === 'FAVORITES'}
+            onClick={() => setActiveTab('FAVORITES')}
+          >
+            <Heart aria-hidden="true" className={activeTab === 'FAVORITES' ? 'fill-current' : undefined} />
+            Favorites ({favoriteMentors.length})
+          </Button>
         </div>
-      </Card>
+      </header>
 
       {/* Favorites Tab: Fanned 3D Tilt Stack */}
       {activeTab === 'FAVORITES' ? (
@@ -269,74 +250,50 @@ export const MentorsDirectoryPage: React.FC = () => {
                         variant="paper"
                         data-mqds={lightTheme}
                         interactive
-                        className="p-6 border border-[var(--mqds-paper-border)] shadow-xs flex flex-col justify-between relative group h-full"
+                        className="mentor-directory-card"
                       >
-                        {/* Favorite Heart Toggle Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleFavorite(mId, isFav)}
-                          disabled={isAdding || isRemoving}
-                          className={`absolute top-4 right-4 p-2 rounded-full transition-all cursor-pointer ${
-                            isFav
-                              ? 'bg-[var(--mqds-warning-surface)] text-[var(--mqds-danger)] shadow-xs'
-                              : 'bg-[var(--mqds-surface)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-muted)] hover:text-[var(--mqds-danger)]'
-                          }`}
-                          title={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                          aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
-                        </button>
-
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <Avatar
-                                name={mName}
-                                src={mAvatar}
-                                size="lg"
-                              />
-                              {/* Online Status Dot with theme-safe border */}
-                              <span
-                                className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-[var(--mqds-surface)] rounded-full ${
-                                  mIsOnline ? 'bg-emerald-500 animate-pulse' : 'bg-[var(--mqds-border-subtle)]'
-                                }`}
-                                title={mIsOnline ? 'Online' : 'Offline'}
-                              />
-                            </div>
-                            <div>
-                              <h3 className="font-headline font-bold text-base text-[var(--mqds-ink)]">
-                                {mName}
-                              </h3>
-                              <Badge tone={mIsOnline ? 'success' : 'neutral'} className="font-mono text-[10px] mt-1">
-                                {mIsOnline ? 'Available Now' : 'Offline'}
-                              </Badge>
-                            </div>
+                        <div className="mentor-directory-card-identity">
+                          <Avatar name={mName} src={mAvatar} size="lg" />
+                          <div className="mentor-directory-card-name">
+                            <h3>{mName}</h3>
+                            <Badge tone={mIsOnline ? 'success' : 'neutral'}>
+                              {mIsOnline ? 'Available Now' : 'Offline'}
+                            </Badge>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFavorite(mId, isFav)}
+                            disabled={isAdding || isRemoving}
+                            className="mentor-directory-favorite"
+                            title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                            aria-label={`Favorite ${mName}`}
+                            aria-pressed={isFav}
+                          >
+                            <Heart aria-hidden="true" className={isFav ? 'fill-current' : undefined} />
+                          </button>
+                        </div>
 
-                          {/* Expertise Tags */}
+                        <div className="mentor-directory-card-rail">
                           {profile?.expertise_tags && profile.expertise_tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1">
+                            <div className="mentor-directory-card-tags">
                               {profile.expertise_tags.map((tag) => (
-                                <Badge key={tag} tone="neutral" className="text-[10px] font-mono">
-                                  #{tag}
-                                </Badge>
+                                <Badge key={tag} tone="neutral">#{tag}</Badge>
                               ))}
                             </div>
                           )}
-                        </div>
 
-                        {/* Footer Metadata */}
-                        <div className="pt-4 mt-4 border-t border-[var(--mqds-border-subtle)] flex items-center justify-between text-xs font-mono text-[var(--mqds-muted-ink)]">
-                          <div className="flex items-center gap-1 text-[var(--mqds-ink)] font-semibold">
-                            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                            <span>{profile?.rating_avg ? profile.rating_avg.toFixed(1) : 'New'}</span>
-                          </div>
-                          {profile?.operating_hours?.start && profile?.operating_hours?.end && (
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-[var(--mqds-accent)]" />
-                              <span>{profile.operating_hours.start} - {profile.operating_hours.end}</span>
+                          <div className="mentor-directory-card-meta">
+                            <div className="flex items-center gap-1 text-[var(--mqds-ink)] font-semibold">
+                              <Star aria-hidden="true" className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                              <span>{profile?.rating_avg ? profile.rating_avg.toFixed(1) : 'New'}</span>
                             </div>
-                          )}
+                            {profile?.operating_hours?.start && profile?.operating_hours?.end && (
+                              <div className="flex items-center gap-1.5">
+                                <Clock aria-hidden="true" className="w-3.5 h-3.5 text-[var(--mqds-accent)]" />
+                                <span>{profile.operating_hours.start} - {profile.operating_hours.end}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </Card>
                     </div>

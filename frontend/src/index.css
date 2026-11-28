@@ -7,14 +7,20 @@
 @import "./styles/preview-workspace-live.css";
 @import "./styles/preview-favorites.css";
 @import "./styles/preview-notes.css";
+@import "./styles/settings-directory.css";
 @import "tailwindcss";
 
-@theme {
-  --font-headline: "Sora", sans-serif;
-  --font-display: "Sora", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-label: "Space Grotesk", sans-serif;
+@theme inline {
+  --font-sans: var(--mqds-font);
+  --font-headline: var(--mqds-font);
+  --font-display: var(--mqds-font);
+  --font-body: var(--mqds-font);
+  --font-label: var(--mqds-font);
+  --tracking-tight: var(--mqds-letter-spacing);
+  --tracking-tighter: var(--mqds-letter-spacing);
+}
 
+@theme {
   --color-primary: #5948d3;
   --color-primary-dim: #4d39c7;
   --color-primary-fixed: #8172fe;
@@ -62,8 +68,8 @@
 }
 
 :root {
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: var(--mqds-font);
+  --heading: var(--mqds-font);
   --mono: ui-monospace, Consolas, monospace;
 
   font-synthesis: none;
@@ -81,5 +87,7 @@ body {
   min-width: 320px;
   background-color: var(--mqds-canvas);
   color: var(--mqds-text);
-  font-family: var(--font-body);
+  font-family: var(--mqds-font);
+  font-weight: var(--mqds-weight-regular);
+  letter-spacing: var(--mqds-letter-spacing);
 }

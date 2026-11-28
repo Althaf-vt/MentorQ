@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import {
-  User as UserIcon,
-  Settings,
   Sliders,
   CheckCircle,
   Camera,
@@ -25,7 +23,6 @@ import { updateUser } from '@/store/slices/authSlice'
 import { Link } from 'react-router-dom'
 import {
   Avatar,
-  Badge,
   Button,
   Card,
   Input,
@@ -185,140 +182,27 @@ export const UserSettingsPage: React.FC = () => {
   const watchedSocials = watch('socialLinks')
 
   return (
-    <main className="preview-main font-body pt-8 md:pt-18 pb-20">
-      <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-8">
-        {/* Navigation Sidebar */}
-        <aside className="w-full md:w-56 shrink-0 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[var(--mqds-primary)] flex items-center justify-center text-white shadow-xs">
-              <Settings className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-headline text-sm font-bold text-[var(--mqds-text)]">Settings</p>
-              <p className="text-[10px] font-mono text-[var(--mqds-muted)]">Account &amp; preferences</p>
-            </div>
-          </div>
-
-          <nav className="flex flex-row md:flex-col gap-1.5">
-            <span className="px-3.5 py-2 bg-[var(--mqds-hover)] text-[var(--mqds-accent)] rounded-xl font-semibold flex items-center gap-2 text-xs">
-              <UserIcon className="w-4 h-4" />
-              <span>Personal Info</span>
-            </span>
-            {user?.role === 'MENTOR' && (
-              <Link
-                to="/mentor/configuration"
-                className="text-[var(--mqds-muted)] hover:text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)] rounded-xl px-3.5 py-2 flex items-center justify-between text-xs transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4" />
-                  <span>Mentor Config</span>
-                </div>
-              </Link>
-            )}
-          </nav>
-
-          {/* Quick Profile Summary in sidebar for desktop */}
-          <div className="hidden md:block pt-2">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--mqds-muted)] mb-2 font-semibold">
-              Session Activity
-            </p>
-            <dl className="student-profile-summary">
-              <div>
-                <dt>{user?.role === 'MENTOR' ? 'Guided' : 'Sessions'}</dt>
-                <dd>{completedCount}</dd>
-              </div>
-              <div>
-                <dt>{user?.role === 'MENTOR' ? 'Mentored' : 'Learned'}</dt>
-                <dd>{totalMinutes}m</dd>
-              </div>
-            </dl>
-          </div>
-        </aside>
-
-        {/* Settings Forms & Appearance */}
-        <section className="flex-1 space-y-6">
-          {success && (
-            <div className="bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-accent)] rounded-xl p-4 flex items-center gap-3 shadow-xs">
-              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span className="text-xs font-semibold">{success}</span>
-            </div>
-          )}
-
-          {/* Appearance & Theme Switcher Card */}
-          <Card
-            variant="paper"
-            data-mqds={lightTheme}
-            className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-4"
-          >
-            <div className="flex items-center justify-between border-b border-[var(--mqds-border-subtle)] pb-3">
-              <div>
-                <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)]">
-                  Appearance &amp; Theme
-                </h2>
-                <p className="text-[11px] font-mono text-[var(--mqds-muted-ink)]">
-                  Choose your interface theme. Light mode is the default canvas.
-                </p>
-              </div>
-              <Badge tone="info" className="text-[10px] font-mono">
-                {theme.toUpperCase()} ACTIVE
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                aria-pressed={theme === 'light'}
-                onClick={() => setTheme('light')}
-                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                  theme === 'light'
-                    ? 'bg-[#fffdfa] border-[#59388e] ring-2 ring-[#59388e]/20 text-[var(--mqds-ink)]'
-                    : 'bg-[#f8f2fc] border-[#dacbe7] text-[var(--mqds-muted-ink)] hover:border-[#827aa6]'
-                }`}
-              >
-                <Sun className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block text-xs font-semibold text-[var(--mqds-ink)]">
-                    Light Theme
-                  </strong>
-                  <span className="text-[11px] text-[var(--mqds-muted-ink)]">
-                    Ivory ticket surfaces on warm parchment canvas
-                  </span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                aria-pressed={theme === 'dark'}
-                onClick={() => setTheme('dark')}
-                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                  theme === 'dark'
-                    ? 'bg-[#fffdfa] border-[#59388e] ring-2 ring-[#59388e]/20 text-[var(--mqds-ink)]'
-                    : 'bg-[#f8f2fc] border-[#dacbe7] text-[var(--mqds-muted-ink)] hover:border-[#827aa6]'
-                }`}
-              >
-                <Moon className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block text-xs font-semibold text-[var(--mqds-ink)]">
-                    Dark Theme
-                  </strong>
-                  <span className="text-[11px] text-[var(--mqds-muted-ink)]">
-                    Midnight velvet backdrop with glowing lavender accents
-                  </span>
-                </div>
-              </button>
-            </div>
-          </Card>
-
+    <main className="preview-main user-settings-page font-body">
+      <header className="user-settings-header">
+        <h1>Settings</h1>
+        {user?.role === 'MENTOR' && (
+          <Link to="/mentor/configuration" className="settings-mentor-link">
+            <Sliders aria-hidden="true" />
+            Mentor configuration
+          </Link>
+        )}
+      </header>
+      <div className="user-settings-layout">
+        <div className="settings-identity">
           {/* Profile Photo Section */}
           <Card
             variant="paper"
             data-mqds={lightTheme}
-            className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-4"
           >
-            <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+            <h2 className="settings-section-title">
               Profile Photo
             </h2>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-start gap-3">
               <div className="relative group">
                 <Avatar
                   name={currentUser?.fullName || 'User'}
@@ -340,7 +224,7 @@ export const UserSettingsPage: React.FC = () => {
                   className="hidden"
                   onChange={handleAvatarUpload}
                 />
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     type="button"
                     variant="primary"
@@ -369,36 +253,63 @@ export const UserSettingsPage: React.FC = () => {
                 </p>
               </div>
             </div>
+          </Card>
+          <section aria-labelledby="settings-activity-title">
+            <h2 id="settings-activity-title" className="mb-2 font-bold">Session Activity</h2>
+            <dl className="student-profile-summary">
+              <div>
+                <dt>{user?.role === 'MENTOR' ? 'Guided' : 'Sessions'}</dt>
+                <dd>{completedCount}</dd>
+              </div>
+              <div>
+                <dt>{user?.role === 'MENTOR' ? 'Mentored' : 'Learned'}</dt>
+                <dd>{totalMinutes}m</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
 
-            {/* Mobile / Tablet Activity Tiles */}
-            <div className="md:hidden pt-4 border-t border-[var(--mqds-border-subtle)]">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--mqds-muted-ink)] mb-2 font-semibold">
-                Session Activity
-              </p>
-              <dl className="student-profile-summary">
-                <div>
-                  <dt>{user?.role === 'MENTOR' ? 'Guided' : 'Sessions'}</dt>
-                  <dd>{completedCount}</dd>
-                </div>
-                <div>
-                  <dt>{user?.role === 'MENTOR' ? 'Mentored' : 'Learned'}</dt>
-                  <dd>{totalMinutes}m</dd>
-                </div>
-              </dl>
+        <div className="settings-editing">
+          <div
+            role="status"
+            className={success ? 'settings-save-status' : 'sr-only'}
+          >
+            {success && (
+              <>
+                <CheckCircle aria-hidden="true" />
+                <span>{success}</span>
+              </>
+            )}
+          </div>
+
+          <Card data-mqds={lightTheme}>
+            <h2 className="settings-section-title" id="settings-theme-title">Appearance &amp; Theme</h2>
+            <div className="settings-theme-options" role="group" aria-labelledby="settings-theme-title">
+              <button
+                type="button"
+                className="settings-theme-option"
+                aria-pressed={theme === 'light'}
+                onClick={() => setTheme('light')}
+              >
+                <Sun aria-hidden="true" />
+                <span>Light Theme</span>
+              </button>
+              <button
+                type="button"
+                className="settings-theme-option"
+                aria-pressed={theme === 'dark'}
+                onClick={() => setTheme('dark')}
+              >
+                <Moon aria-hidden="true" />
+                <span>Dark Theme</span>
+              </button>
             </div>
           </Card>
 
           {/* Basic Details Form */}
-          <form
-            onSubmit={handleSubmit(handleSave)}
-            className="space-y-6"
-          >
-            <Card
-              variant="paper"
-              data-mqds={lightTheme}
-              className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-5"
-            >
-              <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+          <form onSubmit={handleSubmit(handleSave)}>
+            <Card data-mqds={lightTheme} className="settings-profile-form">
+              <h2 className="settings-section-title">
                 Basic Details
               </h2>
               <div className="space-y-4">
@@ -409,11 +320,12 @@ export const UserSettingsPage: React.FC = () => {
                 />
 
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--mqds-muted-ink)] mb-1 font-mono uppercase tracking-wider">
+                  <label htmlFor="settings-email" className="block text-xs font-semibold text-[var(--mqds-muted-ink)] mb-1 font-mono uppercase tracking-wider">
                     Email Address
                   </label>
                   <input
                     className="mqds-control text-xs opacity-70 cursor-not-allowed bg-[var(--mqds-surface)]"
+                    id="settings-email"
                     type="email"
                     disabled
                     value={user?.email || ''}
@@ -429,15 +341,8 @@ export const UserSettingsPage: React.FC = () => {
                   error={errors.bio?.message}
                 />
               </div>
-            </Card>
 
-            {/* Social Profiles & Directional Link Tiles */}
-            <Card
-              variant="paper"
-              data-mqds={lightTheme}
-              className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-5"
-            >
-              <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+              <h2 className="settings-section-title">
                 Social Profiles (Optional)
               </h2>
               <div className="space-y-4">
@@ -473,23 +378,23 @@ export const UserSettingsPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </Card>
 
-            {isDirty && (
-              <div className="flex justify-end pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isLoading}
-                  className="flex items-center gap-2"
-                >
-                  <span>{isLoading ? 'Saving...' : 'Save Profile Changes'}</span>
-                  <span aria-hidden="true">&rarr;</span>
-                </Button>
-              </div>
-            )}
+              {isDirty && (
+                <div className="settings-profile-save">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <span>{isLoading ? 'Saving...' : 'Save Profile Changes'}</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Button>
+                </div>
+              )}
+            </Card>
           </form>
-        </section>
+        </div>
       </div>
     </main>
   )

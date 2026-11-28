@@ -153,14 +153,13 @@ export const StudentDashboardPage: React.FC = () => {
     <main className="preview-main">
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="hero">
+      <section className="hero student-dashboard-hero">
         <div>
-          <small>Student dashboard</small>
           <h1>
             {user?.fullName
-              ? <>{user.fullName.split(' ')[0]}'s<br /><span>requests.</span></>
-              : <>Your<br /><span>requests.</span></>
-            }
+              ? `${user.fullName.split(' ')[0]}'s `
+              : 'Your '}
+            <span>requests.</span>
           </h1>
           <button
             type="button"
@@ -270,7 +269,7 @@ export const StudentDashboardPage: React.FC = () => {
 
       {/* ── Requests list ────────────────────────────────────────── */}
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="dashboard-ticket-grid">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} variant="ticket" label="Loading requests…" />
           ))}
@@ -299,7 +298,7 @@ export const StudentDashboardPage: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="space-y-4">
+          <div className="dashboard-ticket-grid">
             {paginatedTickets.map((t) => {
               const rawId = t._id || (t as { id?: string }).id
               const ticketId = typeof rawId === 'string' ? rawId : (rawId ? String(rawId) : '')
