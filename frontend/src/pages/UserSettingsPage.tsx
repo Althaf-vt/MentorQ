@@ -23,7 +23,6 @@ import { updateUser } from '@/store/slices/authSlice'
 import { Link } from 'react-router-dom'
 import {
   Avatar,
-  Badge,
   Button,
   Card,
   Input,
@@ -271,89 +270,46 @@ export const UserSettingsPage: React.FC = () => {
         </div>
 
         <div className="settings-editing">
-          {success && (
-            <div className="bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-accent)] rounded-xl p-4 flex items-center gap-3 shadow-xs">
-              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span className="text-xs font-semibold">{success}</span>
-            </div>
-          )}
-
-          {/* Appearance & Theme Switcher Card */}
-          <Card
-            variant="paper"
-            data-mqds={lightTheme}
-            className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-4"
+          <div
+            role="status"
+            className={success ? 'settings-save-status' : 'sr-only'}
           >
-            <div className="flex items-center justify-between border-b border-[var(--mqds-border-subtle)] pb-3">
-              <div>
-                <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)]">
-                  Appearance &amp; Theme
-                </h2>
-                <p className="text-[11px] font-mono text-[var(--mqds-muted-ink)]">
-                  Choose your interface theme. Light mode is the default canvas.
-                </p>
-              </div>
-              <Badge tone="info" className="text-[10px] font-mono">
-                {theme.toUpperCase()} ACTIVE
-              </Badge>
-            </div>
+            {success && (
+              <>
+                <CheckCircle aria-hidden="true" />
+                <span>{success}</span>
+              </>
+            )}
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <Card data-mqds={lightTheme}>
+            <h2 className="settings-section-title" id="settings-theme-title">Appearance &amp; Theme</h2>
+            <div className="settings-theme-options" role="group" aria-labelledby="settings-theme-title">
               <button
                 type="button"
+                className="settings-theme-option"
                 aria-pressed={theme === 'light'}
                 onClick={() => setTheme('light')}
-                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                  theme === 'light'
-                    ? 'bg-[#fffdfa] border-[#59388e] ring-2 ring-[#59388e]/20 text-[var(--mqds-ink)]'
-                    : 'bg-[#f8f2fc] border-[#dacbe7] text-[var(--mqds-muted-ink)] hover:border-[#827aa6]'
-                }`}
               >
-                <Sun className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block text-xs font-semibold text-[var(--mqds-ink)]">
-                    Light Theme
-                  </strong>
-                  <span className="text-[11px] text-[var(--mqds-muted-ink)]">
-                    Ivory ticket surfaces on warm parchment canvas
-                  </span>
-                </div>
+                <Sun aria-hidden="true" />
+                <span>Light Theme</span>
               </button>
-
               <button
                 type="button"
+                className="settings-theme-option"
                 aria-pressed={theme === 'dark'}
                 onClick={() => setTheme('dark')}
-                className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
-                  theme === 'dark'
-                    ? 'bg-[#fffdfa] border-[#59388e] ring-2 ring-[#59388e]/20 text-[var(--mqds-ink)]'
-                    : 'bg-[#f8f2fc] border-[#dacbe7] text-[var(--mqds-muted-ink)] hover:border-[#827aa6]'
-                }`}
               >
-                <Moon className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block text-xs font-semibold text-[var(--mqds-ink)]">
-                    Dark Theme
-                  </strong>
-                  <span className="text-[11px] text-[var(--mqds-muted-ink)]">
-                    Midnight velvet backdrop with glowing lavender accents
-                  </span>
-                </div>
+                <Moon aria-hidden="true" />
+                <span>Dark Theme</span>
               </button>
             </div>
           </Card>
 
           {/* Basic Details Form */}
-          <form
-            onSubmit={handleSubmit(handleSave)}
-            className="space-y-6"
-          >
-            <Card
-              variant="paper"
-              data-mqds={lightTheme}
-              className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-5"
-            >
-              <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+          <form onSubmit={handleSubmit(handleSave)}>
+            <Card data-mqds={lightTheme} className="settings-profile-form">
+              <h2 className="settings-section-title">
                 Basic Details
               </h2>
               <div className="space-y-4">
@@ -364,11 +320,12 @@ export const UserSettingsPage: React.FC = () => {
                 />
 
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--mqds-muted-ink)] mb-1 font-mono uppercase tracking-wider">
+                  <label htmlFor="settings-email" className="block text-xs font-semibold text-[var(--mqds-muted-ink)] mb-1 font-mono uppercase tracking-wider">
                     Email Address
                   </label>
                   <input
                     className="mqds-control text-xs opacity-70 cursor-not-allowed bg-[var(--mqds-surface)]"
+                    id="settings-email"
                     type="email"
                     disabled
                     value={user?.email || ''}
@@ -384,15 +341,8 @@ export const UserSettingsPage: React.FC = () => {
                   error={errors.bio?.message}
                 />
               </div>
-            </Card>
 
-            {/* Social Profiles & Directional Link Tiles */}
-            <Card
-              variant="paper"
-              data-mqds={lightTheme}
-              className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-5"
-            >
-              <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
+              <h2 className="settings-section-title">
                 Social Profiles (Optional)
               </h2>
               <div className="space-y-4">
@@ -428,21 +378,21 @@ export const UserSettingsPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </Card>
 
-            {isDirty && (
-              <div className="flex justify-end pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isLoading}
-                  className="flex items-center gap-2"
-                >
-                  <span>{isLoading ? 'Saving...' : 'Save Profile Changes'}</span>
-                  <span aria-hidden="true">&rarr;</span>
-                </Button>
-              </div>
-            )}
+              {isDirty && (
+                <div className="settings-profile-save">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <span>{isLoading ? 'Saving...' : 'Save Profile Changes'}</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </Button>
+                </div>
+              )}
+            </Card>
           </form>
         </div>
       </div>

@@ -148,3 +148,53 @@
   color: var(--mqds-muted-ink);
   font: var(--mqds-font-small)/1.3 var(--mqds-font-mono);
 }
+
+.settings-theme-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: var(--mqds-space-sm);
+}
+.settings-theme-option {
+  display: flex;
+  align-items: center;
+  gap: var(--mqds-space-sm);
+  min-block-size: 44px;
+  padding: var(--mqds-space-sm) var(--mqds-space-md);
+  border: 1px solid var(--mqds-border-subtle);
+  border-inline-start: 3px solid var(--mqds-border-subtle);
+  border-radius: var(--mqds-radius-control);
+  background: var(--mqds-surface);
+  color: var(--mqds-ink);
+  text-align: start;
+  cursor: pointer;
+}
+.settings-theme-option[aria-pressed="true"] {
+  border-color: var(--mqds-primary);
+  background: var(--mqds-paper-hover);
+  font-weight: var(--mqds-weight-bold);
+}
+.settings-theme-option svg { width: 1.125rem; height: 1.125rem; flex: none; }
+.settings-profile-form .settings-section-title:not(:first-child) {
+  margin-block-start: var(--mqds-space-xl);
+}
+.settings-profile-save {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: var(--mqds-space-lg);
+}
+.settings-save-status {
+  display: flex;
+  align-items: center;
+  gap: var(--mqds-space-md);
+  padding: var(--mqds-space-md);
+  border: 1px solid var(--mqds-border-subtle);
+  border-radius: var(--mqds-radius-control);
+  background: var(--mqds-hover);
+  color: var(--mqds-accent);
+}
+.settings-save-status svg { width: 1.125rem; height: 1.125rem; flex: none; }
+@media (min-width: 900px) {
+  .preview-main.user-settings-page {
+    padding-block-end: max(112px, calc(env(safe-area-inset-bottom) + 96px));
+  }
+}
