@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Heart, Search, Star, Clock, Sparkles } from 'lucide-react'
+import { Heart, Search, Star, Clock } from 'lucide-react'
 import {
   useGetMentorsDirectoryQuery,
   useGetFavoriteMentorsQuery,
@@ -132,46 +132,27 @@ export const MentorsDirectoryPage: React.FC = () => {
   const isLoading = activeTab === 'FAVORITES' ? isLoadingFavorites : isLoadingDirectory
 
   return (
-    <main className="preview-main font-body space-y-10 pt-8 md:pt-18 pb-20">
-      {/* Header Banner */}
-      <Card
-        variant="paper"
-        data-mqds={lightTheme}
-        className="p-8 sm:p-10 relative overflow-hidden border border-[var(--mqds-paper-border)] shadow-md"
-      >
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-xs font-mono font-semibold text-[var(--mqds-accent)]">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Mentor Community</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-headline text-[var(--mqds-ink)] tracking-tight">
-              Mentors Directory
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--mqds-muted-ink)] leading-relaxed">
-              Explore domain specializations, review mentor availability, test interactive prints, and save your trusted guides.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 bg-[var(--mqds-surface)] p-1.5 rounded-full border border-[var(--mqds-border-subtle)] shadow-xs">
-            <Button
-              variant={activeTab === 'ALL' ? 'primary' : 'secondary'}
-              onClick={() => setActiveTab('ALL')}
-              className="!px-4 !py-1.5 !min-h-0 text-xs font-semibold"
-            >
-              All Mentors
-            </Button>
-            <Button
-              variant={activeTab === 'FAVORITES' ? 'primary' : 'secondary'}
-              onClick={() => setActiveTab('FAVORITES')}
-              className="!px-4 !py-1.5 !min-h-0 text-xs font-semibold flex items-center gap-1.5"
-            >
-              <Heart className={`w-3.5 h-3.5 ${activeTab === 'FAVORITES' ? 'fill-current' : ''}`} />
-              <span>Favorites ({favoriteMentors.length})</span>
-            </Button>
-          </div>
+    <main className="preview-main mentor-directory-page font-body space-y-8">
+      <header className="mentor-directory-header">
+        <h1>Mentors Directory</h1>
+        <div className="mentor-directory-views" role="group" aria-label="Mentor directory view">
+          <Button
+            variant={activeTab === 'ALL' ? 'primary' : 'secondary'}
+            aria-pressed={activeTab === 'ALL'}
+            onClick={() => setActiveTab('ALL')}
+          >
+            All Mentors
+          </Button>
+          <Button
+            variant={activeTab === 'FAVORITES' ? 'primary' : 'secondary'}
+            aria-pressed={activeTab === 'FAVORITES'}
+            onClick={() => setActiveTab('FAVORITES')}
+          >
+            <Heart aria-hidden="true" className={activeTab === 'FAVORITES' ? 'fill-current' : undefined} />
+            Favorites ({favoriteMentors.length})
+          </Button>
         </div>
-      </Card>
+      </header>
 
       {/* Favorites Tab: Fanned 3D Tilt Stack */}
       {activeTab === 'FAVORITES' ? (
