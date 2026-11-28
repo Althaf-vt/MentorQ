@@ -250,74 +250,50 @@ export const MentorsDirectoryPage: React.FC = () => {
                         variant="paper"
                         data-mqds={lightTheme}
                         interactive
-                        className="p-6 border border-[var(--mqds-paper-border)] shadow-xs flex flex-col justify-between relative group h-full"
+                        className="mentor-directory-card"
                       >
-                        {/* Favorite Heart Toggle Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleFavorite(mId, isFav)}
-                          disabled={isAdding || isRemoving}
-                          className={`absolute top-4 right-4 p-2 rounded-full transition-all cursor-pointer ${
-                            isFav
-                              ? 'bg-[var(--mqds-warning-surface)] text-[var(--mqds-danger)] shadow-xs'
-                              : 'bg-[var(--mqds-surface)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-muted)] hover:text-[var(--mqds-danger)]'
-                          }`}
-                          title={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                          aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
-                        </button>
-
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-4">
-                            <div className="relative">
-                              <Avatar
-                                name={mName}
-                                src={mAvatar}
-                                size="lg"
-                              />
-                              {/* Online Status Dot with theme-safe border */}
-                              <span
-                                className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-[var(--mqds-surface)] rounded-full ${
-                                  mIsOnline ? 'bg-emerald-500 animate-pulse' : 'bg-[var(--mqds-border-subtle)]'
-                                }`}
-                                title={mIsOnline ? 'Online' : 'Offline'}
-                              />
-                            </div>
-                            <div>
-                              <h3 className="font-headline font-bold text-base text-[var(--mqds-ink)]">
-                                {mName}
-                              </h3>
-                              <Badge tone={mIsOnline ? 'success' : 'neutral'} className="font-mono text-[10px] mt-1">
-                                {mIsOnline ? 'Available Now' : 'Offline'}
-                              </Badge>
-                            </div>
+                        <div className="mentor-directory-card-identity">
+                          <Avatar name={mName} src={mAvatar} size="lg" />
+                          <div className="mentor-directory-card-name">
+                            <h3>{mName}</h3>
+                            <Badge tone={mIsOnline ? 'success' : 'neutral'}>
+                              {mIsOnline ? 'Available Now' : 'Offline'}
+                            </Badge>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFavorite(mId, isFav)}
+                            disabled={isAdding || isRemoving}
+                            className="mentor-directory-favorite"
+                            title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                            aria-label={`Favorite ${mName}`}
+                            aria-pressed={isFav}
+                          >
+                            <Heart aria-hidden="true" className={isFav ? 'fill-current' : undefined} />
+                          </button>
+                        </div>
 
-                          {/* Expertise Tags */}
+                        <div className="mentor-directory-card-rail">
                           {profile?.expertise_tags && profile.expertise_tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-1">
+                            <div className="mentor-directory-card-tags">
                               {profile.expertise_tags.map((tag) => (
-                                <Badge key={tag} tone="neutral" className="text-[10px] font-mono">
-                                  #{tag}
-                                </Badge>
+                                <Badge key={tag} tone="neutral">#{tag}</Badge>
                               ))}
                             </div>
                           )}
-                        </div>
 
-                        {/* Footer Metadata */}
-                        <div className="pt-4 mt-4 border-t border-[var(--mqds-border-subtle)] flex items-center justify-between text-xs font-mono text-[var(--mqds-muted-ink)]">
-                          <div className="flex items-center gap-1 text-[var(--mqds-ink)] font-semibold">
-                            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                            <span>{profile?.rating_avg ? profile.rating_avg.toFixed(1) : 'New'}</span>
-                          </div>
-                          {profile?.operating_hours?.start && profile?.operating_hours?.end && (
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-[var(--mqds-accent)]" />
-                              <span>{profile.operating_hours.start} - {profile.operating_hours.end}</span>
+                          <div className="mentor-directory-card-meta">
+                            <div className="flex items-center gap-1 text-[var(--mqds-ink)] font-semibold">
+                              <Star aria-hidden="true" className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                              <span>{profile?.rating_avg ? profile.rating_avg.toFixed(1) : 'New'}</span>
                             </div>
-                          )}
+                            {profile?.operating_hours?.start && profile?.operating_hours?.end && (
+                              <div className="flex items-center gap-1.5">
+                                <Clock aria-hidden="true" className="w-3.5 h-3.5 text-[var(--mqds-accent)]" />
+                                <span>{profile.operating_hours.start} - {profile.operating_hours.end}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </Card>
                     </div>
