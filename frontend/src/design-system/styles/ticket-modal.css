@@ -33,7 +33,7 @@ dialog.mqds-modal[data-variant="ticket"]::before { content: none; }
   pointer-events: none;
 }
 
-.mqds-modal .mqds-modal-ticket-heading h2 { font-size: clamp(1.55rem, 6vw, 2.45rem); letter-spacing: -.055em; }
+.mqds-modal .mqds-modal-ticket-heading h2 { font-size: clamp(1.55rem, 6vw, 2.45rem); letter-spacing: var(--mqds-letter-spacing); }
 .mqds-modal-ticket-label { margin-block-end: 5px; color: #42293c; font: 650 .75rem/1.4 var(--mqds-font-mono); }
 .mqds-modal-ticket-heading .mqds-modal-description { margin: 6px 0 0; color: #42293c; font-size: .92rem; }
 

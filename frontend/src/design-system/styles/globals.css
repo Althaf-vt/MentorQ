@@ -32,7 +32,7 @@
   background: var(--mqds-primary);
   color: #fff;
   font-size: var(--mqds-font-small);
-  font-weight: 700;
+  font-weight: var(--mqds-weight-medium);
   line-height: 1.3;
   cursor: pointer;
   transition: background-color var(--mqds-motion-fast), color var(--mqds-motion-fast), transform var(--mqds-motion-fast) var(--mqds-ease-out);
@@ -67,7 +67,7 @@
 }
 .mqds-button:is([data-variant="primary"], [data-variant="danger"]):focus-visible { outline-color: #fff; outline-offset: -4px; }
 
-.mqds-field { display: grid; gap: var(--mqds-space-xs); color: var(--mqds-text); font: 650 var(--mqds-font-small)/1.45 var(--mqds-font); }
+.mqds-field { display: grid; gap: var(--mqds-space-xs); color: var(--mqds-text); font: var(--mqds-weight-medium) var(--mqds-font-small)/1.45 var(--mqds-font); }
 .mqds-control {
   width: 100%;
   min-width: 0;
@@ -194,7 +194,7 @@ dialog.mqds-modal[data-variant][data-closing]::backdrop { animation: mqds-shade-
   --mqds-hover: #e9d5ff24;
 }
 .mqds-modal-header { display: flex; justify-content: space-between; align-items: start; gap: var(--mqds-space-lg); }
-.mqds-modal-header h2 { margin: 0; font-size: var(--mqds-font-title); line-height: 1.05; letter-spacing: -.045em; overflow-wrap: anywhere; }
+.mqds-modal-header h2 { margin: 0; font-size: var(--mqds-font-title); line-height: var(--mqds-heading-line-height); letter-spacing: var(--mqds-letter-spacing); overflow-wrap: anywhere; }
 .mqds-modal-close { flex: none; width: 36px; height: 36px; border: 1px solid var(--mqds-modal-border, var(--mqds-paper-border)); border-radius: 50%; background: transparent; color: inherit; font: 1.35rem/1 var(--mqds-font); cursor: pointer; }
 .mqds-modal-close:hover { background: var(--mqds-hover); }
 .mqds-modal-description { margin: var(--mqds-space-sm) 0 var(--mqds-space-lg); line-height: 1.5; }

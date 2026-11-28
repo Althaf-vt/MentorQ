@@ -45,7 +45,7 @@
   font-size: clamp(12px, 3vw, 15px);
   font-weight: 650;
 }
-.mqds-social-mark { grid-column: 1 / -1; font-size: clamp(24px, 5vw, 34px); line-height: 1; letter-spacing: -.065em; }
+.mqds-social-mark { grid-column: 1 / -1; font-size: clamp(24px, 5vw, 34px); line-height: 1; letter-spacing: var(--mqds-letter-spacing); }
 .mqds-social-arrow { font-size: 17px; }
 .mqds-social-wipe {
   position: absolute;
@@ -137,7 +137,7 @@
   color: var(--letter-ink);
   font-size: clamp(1.7rem, 4vw, 2.2rem);
   line-height: 1;
-  letter-spacing: -.06em;
+  letter-spacing: var(--mqds-letter-spacing);
 }
 .mqds-social-mq-arrow { color: var(--letter-ink); transition: transform .18s ease; }
 .mqds-social-mq-card-empty { color: var(--mqds-muted); }
