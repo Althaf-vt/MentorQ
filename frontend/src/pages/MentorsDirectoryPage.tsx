@@ -134,7 +134,7 @@ export const MentorsDirectoryPage: React.FC = () => {
   return (
     <main className="preview-main mentor-directory-page font-body space-y-8">
       <header className="mentor-directory-header">
-        <h1>Mentors Directory</h1>
+        <h1 className="preview-page-title">Mentors <span>Directory</span></h1>
         <div className="mentor-directory-views" role="group" aria-label="Mentor directory view">
           <Button
             variant={activeTab === 'ALL' ? 'primary' : 'secondary'}
@@ -252,14 +252,15 @@ export const MentorsDirectoryPage: React.FC = () => {
                         interactive
                         className="mentor-directory-card"
                       >
-                        <div className="mentor-directory-card-identity">
-                          <Avatar name={mName} src={mAvatar} size="lg" />
-                          <div className="mentor-directory-card-name">
-                            <h3>{mName}</h3>
-                            <Badge tone={mIsOnline ? 'success' : 'neutral'}>
-                              {mIsOnline ? 'Available Now' : 'Offline'}
-                            </Badge>
-                          </div>
+                        <div className="mentor-directory-card-name">
+                          <h3>{mName}</h3>
+                          <p className="mentor-directory-availability" data-online={mIsOnline}>
+                            {mIsOnline ? 'Available now' : 'Offline'}
+                          </p>
+                        </div>
+
+                        <div className="mentor-directory-card-tools">
+                          <span aria-hidden="true"><Avatar name={mName} src={mAvatar} /></span>
                           <button
                             type="button"
                             onClick={() => handleToggleFavorite(mId, isFav)}
@@ -273,7 +274,7 @@ export const MentorsDirectoryPage: React.FC = () => {
                           </button>
                         </div>
 
-                        <div className="mentor-directory-card-rail">
+                        <div className="mentor-directory-card-details">
                           {profile?.expertise_tags && profile.expertise_tags.length > 0 && (
                             <div className="mentor-directory-card-tags">
                               {profile.expertise_tags.map((tag) => (
@@ -283,7 +284,7 @@ export const MentorsDirectoryPage: React.FC = () => {
                           )}
 
                           <div className="mentor-directory-card-meta">
-                            <div className="flex items-center gap-1 text-[var(--mqds-ink)] font-semibold">
+                            <div className="flex items-center gap-1">
                               <Star aria-hidden="true" className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                               <span>{profile?.rating_avg ? profile.rating_avg.toFixed(1) : 'New'}</span>
                             </div>
