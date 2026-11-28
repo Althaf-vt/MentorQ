@@ -163,19 +163,7 @@ export const TicketHistoryArchivePage: React.FC = () => {
           marginBottom: 8,
         }}
       >
-        <div>
-          <h1
-            style={{
-              margin: '4px 0 0',
-              fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-              fontWeight: 800,
-              fontFamily: 'var(--mqds-font-display, var(--mqds-font))',
-              color: 'var(--mqds-text)',
-            }}
-          >
-            Session history
-          </h1>
-        </div>
+        <h1 className="preview-page-title">Session <span>history</span></h1>
         <Link
           to="/dashboard"
           className="font-mono text-xs font-semibold"

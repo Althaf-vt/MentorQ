@@ -184,7 +184,7 @@ export const UserSettingsPage: React.FC = () => {
   return (
     <main className="preview-main user-settings-page font-body">
       <header className="user-settings-header">
-        <h1>Settings</h1>
+        <h1 className="preview-page-title">Settings</h1>
         {user?.role === 'MENTOR' && (
           <Link to="/mentor/configuration" className="settings-mentor-link">
             <Sliders aria-hidden="true" />

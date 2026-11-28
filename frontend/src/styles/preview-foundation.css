@@ -54,11 +54,20 @@ html {
 }
 .hero h1 span { color: var(--mqds-accent); }
 
-.student-dashboard-hero > div:first-child { min-width: 0; }
-.hero.student-dashboard-hero h1 {
+.preview-page-title,
+.hero .preview-page-title {
+  color: var(--mqds-text);
+  font-family: var(--mqds-font);
   font-size: clamp(1.65rem, 4.8vw, 4.25rem);
+  font-weight: var(--mqds-weight-bold);
+  letter-spacing: var(--mqds-letter-spacing);
+  line-height: 1.05;
   overflow-wrap: anywhere;
 }
+.preview-page-title { margin: 0; }
+.preview-page-title > span { color: var(--mqds-accent); }
+
+.student-dashboard-hero > div:first-child { min-width: 0; }
 @media (max-width: 48rem) {
   .hero.student-dashboard-hero {
     flex-direction: column;

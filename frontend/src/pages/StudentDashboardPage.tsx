@@ -155,7 +155,7 @@ export const StudentDashboardPage: React.FC = () => {
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <section className="hero student-dashboard-hero">
         <div>
-          <h1>
+          <h1 className="preview-page-title">
             {user?.fullName
               ? `${user.fullName.split(' ')[0]}'s `
               : 'Your '}
@@ -218,15 +218,9 @@ export const StudentDashboardPage: React.FC = () => {
         </article>
       )}
 
-      {/* ── Section title + filter pills ─────────────────────────── */}
+      {/* ── Request filters ──────────────────────────────────────── */}
       <div className="sectionTitle">
-        <h2>
-          {sortedTickets.length > 0
-            ? `${sortedTickets.length} ${statusFilter === 'PENDING' ? 'active' : statusFilter.toLowerCase()} request${sortedTickets.length !== 1 ? 's' : ''}`
-            : 'Your requests'
-          }
-        </h2>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="ms-auto flex flex-wrap items-center justify-end gap-2" role="group" aria-label="Request filters">
             {FILTER_LABELS.map(({ key, label }) => (
               <button
                 key={key}
