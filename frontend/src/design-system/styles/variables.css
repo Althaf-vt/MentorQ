@@ -1,3 +1,21 @@
+@font-face {
+  font-family: 'Clash Grotesk';
+  src: url('../assets/clash-grotesk/ClashGrotesk-Variable.woff2?inline') format('woff2');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --mqds-font: 'Clash Grotesk', 'Segoe UI', sans-serif;
+  --mqds-letter-spacing: normal;
+  --mqds-weight-regular: 400;
+  --mqds-weight-medium: 500;
+  --mqds-weight-semibold: 600;
+  --mqds-weight-bold: 700;
+  --mqds-heading-line-height: 1.15;
+}
+
 [data-mqds] {
   --mqds-ivory: #fffaf0;
   --mqds-lilac: #c8aff7;
@@ -23,7 +41,6 @@
   --mqds-field-paper-border: #9e8972;
   --mqds-muted-ink: #5e526c;
   --mqds-border-subtle: color-mix(in srgb, var(--mqds-muted) 22%, transparent);
-  --mqds-font: Inter, "Segoe UI", sans-serif;
   --mqds-font-mono: ui-monospace, Consolas, monospace;
   --mqds-font-small: .875rem;
   --mqds-font-title: clamp(1.65rem, 5vw, 2.5rem);
