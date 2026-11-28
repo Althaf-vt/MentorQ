@@ -6,8 +6,6 @@ import type { Ticket } from '@/types/operational.types'
 import {
   Badge,
   Button,
-  DocumentFolder,
-  type DocumentFolderItem,
   EmptyState,
   Skeleton,
   Table,
@@ -41,7 +39,6 @@ export const TicketHistoryArchivePage: React.FC = () => {
   const [q, setQ] = useState('')
   const [status, setStatus] = useState<FilterStatus>('ALL')
   const [page, setPage] = useState(1)
-  const [openFolder, setOpenFolder] = useState<string | null>(null)
   const [selectedSession, setSelectedSession] = useState<SessionDetailData | null>(null)
 
   // Filter tickets
@@ -132,46 +129,6 @@ export const TicketHistoryArchivePage: React.FC = () => {
     }
   }
 
-  const handleOpenById = (id: string) => {
-    const target = tickets.find(
-      (t) => (t._id || (t as { id?: string }).id) === id
-    )
-    if (target) {
-      setSelectedSession(mapTicketToSession(target))
-    }
-  }
-
-  // Multi-tone DocumentFolder items
-  const guidanceNotes: DocumentFolderItem[] = useMemo(() => {
-    return tickets
-      .filter((t) => Boolean(t.guidance_message))
-      .slice(0, 8)
-      .map((t) => ({
-        id: t._id || (t as { id?: string }).id || '',
-        title: t.topic,
-      }))
-  }, [tickets])
-
-  const completedSessions: DocumentFolderItem[] = useMemo(() => {
-    return tickets
-      .filter((t) => t.status === 'COMPLETED')
-      .slice(0, 8)
-      .map((t) => ({
-        id: t._id || (t as { id?: string }).id || '',
-        title: t.topic,
-      }))
-  }, [tickets])
-
-  const technicalTopics: DocumentFolderItem[] = useMemo(() => {
-    return tickets
-      .filter((t) => (t.tags && t.tags.length > 0) || t.status === 'COMPLETED')
-      .slice(0, 8)
-      .map((t) => ({
-        id: t._id || (t as { id?: string }).id || '',
-        title: t.tags?.[0] ? `${t.tags[0]}: ${t.topic}` : t.topic,
-      }))
-  }, [tickets])
-
   const formatSessionDate = (raw?: string | Date): string => {
     if (!raw) return '—'
     const d = new Date(raw)
@@ -194,7 +151,7 @@ export const TicketHistoryArchivePage: React.FC = () => {
   }
 
   return (
-    <main className="preview-main" style={{ paddingTop: 32 }}>
+    <main className="preview-main session-history-page">
       {/* ── Editorial Header ────────────────────────────────────── */}
       <div
         style={{
@@ -207,17 +164,6 @@ export const TicketHistoryArchivePage: React.FC = () => {
         }}
       >
         <div>
-          <small
-            style={{
-              fontFamily: 'var(--mqds-font-mono)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              fontSize: '0.78rem',
-              color: 'var(--mqds-muted)',
-            }}
-          >
-            Archive & records
-          </small>
           <h1
             style={{
               margin: '4px 0 0',
@@ -238,56 +184,6 @@ export const TicketHistoryArchivePage: React.FC = () => {
           &larr; Back to dashboard
         </Link>
       </div>
-
-      {/* ── Multi-tone Document Folders (mint / lilac / peach) ──── */}
-      {(guidanceNotes.length > 0 || completedSessions.length > 0) && (
-        <section aria-label="Archived Document Folders" style={{ marginBottom: 32 }}>
-          <div className="note-folders" data-expanded={Boolean(openFolder)}>
-            {guidanceNotes.length > 0 && (
-              <div hidden={Boolean(openFolder && openFolder !== 'guidance')}>
-                <DocumentFolder
-                  label="Mentor Guidance"
-                  tone="lilac"
-                  items={guidanceNotes}
-                  open={openFolder === 'guidance'}
-                  onToggle={() =>
-                    setOpenFolder(openFolder === 'guidance' ? null : 'guidance')
-                  }
-                  onItemClick={(item) => handleOpenById(item.id)}
-                />
-              </div>
-            )}
-            {completedSessions.length > 0 && (
-              <div hidden={Boolean(openFolder && openFolder !== 'completed')}>
-                <DocumentFolder
-                  label="Completed Sessions"
-                  tone="mint"
-                  items={completedSessions}
-                  open={openFolder === 'completed'}
-                  onToggle={() =>
-                    setOpenFolder(openFolder === 'completed' ? null : 'completed')
-                  }
-                  onItemClick={(item) => handleOpenById(item.id)}
-                />
-              </div>
-            )}
-            {technicalTopics.length > 0 && (
-              <div hidden={Boolean(openFolder && openFolder !== 'topics')}>
-                <DocumentFolder
-                  label="Topics & Tags"
-                  tone="peach"
-                  items={technicalTopics}
-                  open={openFolder === 'topics'}
-                  onToggle={() =>
-                    setOpenFolder(openFolder === 'topics' ? null : 'topics')
-                  }
-                  onItemClick={(item) => handleOpenById(item.id)}
-                />
-              </div>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* ── Search Bar & Filter Pills ───────────────────────────── */}
       <div

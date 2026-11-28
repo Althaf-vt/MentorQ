@@ -15,10 +15,12 @@ html {
   margin: auto;
   padding-bottom: 72px;
 }
+.preview-main.session-history-page { padding-block-start: var(--mqds-space-xl); }
 
 @media (min-width: 900px) {
   html { scroll-padding-block-end: 106px; }
   .preview-main { padding-block-end: 112px; }
+  .preview-main.session-history-page { padding-block-start: max(72px, calc(env(safe-area-inset-top) + 54px)); }
 }
 
 .preview-main :is(button, a):focus-visible,
