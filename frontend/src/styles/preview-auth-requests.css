@@ -78,7 +78,7 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   color: var(--mqds-ink);
 }
 .request-queue-facts dt { font-size: .8rem; font-weight: 650; }
-.request-queue-facts dd { margin: 4px 0 0; font-size: clamp(18px, 5vw, 29px); font-weight: 800; letter-spacing: -.045em; }
+.request-queue-facts dd { margin: 4px 0 0; font-size: clamp(18px, 5vw, 29px); font-weight: 800; letter-spacing: var(--mqds-letter-spacing); }
 
 .request-progress {
   overflow: hidden;
@@ -198,7 +198,7 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.25;
-  letter-spacing: -.03em;
+  letter-spacing: var(--mqds-letter-spacing);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -232,7 +232,7 @@ dialog.mqds-modal.request-detail { width: min(550px, 94vw); }
 }
 .lean-ticket-card .lean-stub-number {
   font: 800 1.45rem/1 var(--mqds-font-mono);
-  letter-spacing: -.05em;
+  letter-spacing: var(--mqds-letter-spacing);
   font-variant-numeric: tabular-nums;
 }
 .lean-ticket-card .lean-stub-label { font: 700 .75rem/1.2 var(--mqds-font); }

@@ -41,9 +41,10 @@
   flex: none;
 }
 .body h2 {
-  letter-spacing: -.055em;
-  line-height: 1.06;
+  letter-spacing: var(--mqds-letter-spacing);
+  line-height: var(--mqds-heading-line-height);
   font-size: clamp(26px, 3.4vw, 50px);
+  font-weight: var(--mqds-weight-semibold);
   margin: 9px 0 16px;
   overflow-wrap: anywhere;
 }
@@ -55,6 +56,7 @@
   font-weight: 650;
 }
 .stub {
+  container-type: inline-size;
   position: relative;
   background: #ffae8a;
   color: #201d35;
@@ -69,8 +71,14 @@
   width: 10px;
   background: radial-gradient(circle at center, var(--ticket-paper) 4px, transparent 5px) 0 0 / 10px 16px;
 }
-.stub strong { font-size: clamp(32px, 5vw, 75px); line-height: 1; letter-spacing: -.075em; overflow-wrap: anywhere; }
-.stub span { font-size: 19px; font-weight: 600; }
+.stub strong {
+  font-size: clamp(1rem, 19cqi, 4.25rem);
+  font-weight: var(--mqds-weight-semibold);
+  line-height: var(--mqds-heading-line-height);
+  letter-spacing: var(--mqds-letter-spacing);
+  overflow-wrap: anywhere;
+}
+.stub span { font-size: 19px; font-weight: var(--mqds-weight-medium); }
 .stub small { border-top: 1px solid #201d3580; padding-top: 10px; margin-top: 13px; }
 
 @media (hover: hover) and (pointer: fine) {
@@ -119,7 +127,15 @@
   from { opacity: 0; transform: translateY(8px); }
 }
 
-.bio h3 { font-size: clamp(40px, 6vw, 90px); line-height: .95; letter-spacing: -.075em; max-width: 4em; margin: 15px 0; }
+.bio h3 {
+  font-size: clamp(40px, 6vw, 90px);
+  font-weight: var(--mqds-weight-bold);
+  line-height: 1.05;
+  letter-spacing: var(--mqds-letter-spacing);
+  max-width: 11ch;
+  overflow-wrap: anywhere;
+  margin: 15px 0;
+}
 .bio button { border-bottom: 1px solid; background: transparent; padding: 5px 0; font-weight: 650; }
 .mentor-request {
   background-image: linear-gradient(currentColor, currentColor);
@@ -275,7 +291,6 @@ dialog:not(.brand-intro)[data-closing]::backdrop { animation: modal-shade-out .1
   .gallery { padding: 22px; min-height: 330px; }
   .strip { margin-top: 54px; }
 }
-@media (max-width: 420px) { .stub strong { font-size: 29px; } }
 @media (max-width: 380px) { .site-nav a { padding-inline: 4px; font-size: .74rem; } }
 @media (prefers-reduced-motion: reduce) {
   .ticket:hover, .ticket:focus-within, .account:hover { transform: none; }

@@ -82,7 +82,7 @@ dialog.mqds-modal.mentor-workspace { width: min(820px, 94vw); }
   margin: 8px 0 5px;
   font-size: clamp(1.15rem, 3vw, 1.5rem);
   line-height: 1.15;
-  letter-spacing: -.025em;
+  letter-spacing: var(--mqds-letter-spacing);
   overflow-wrap: anywhere;
 }
 .triage-detail > p { margin: 0; color: var(--mqds-muted-ink); overflow-wrap: anywhere; }
@@ -166,7 +166,7 @@ dialog.mqds-modal.mentor-workspace { width: min(820px, 94vw); }
   padding: 12px 24px 27px;
   font-size: clamp(33px, 5.1vw, 70px);
   line-height: .98;
-  letter-spacing: -.065em;
+  letter-spacing: var(--mqds-letter-spacing);
   overflow-wrap: anywhere;
 }
 .live-clock {
@@ -186,7 +186,7 @@ dialog.mqds-modal.mentor-workspace { width: min(820px, 94vw); }
   background: radial-gradient(circle, var(--paper) 3px, transparent 3.4px) 0 0 / 13px 8px repeat-x;
   pointer-events: none;
 }
-.live-clock strong { font-size: clamp(44px, 7vw, 82px); line-height: 1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
+.live-clock strong { font-size: clamp(44px, 7vw, 82px); line-height: 1; letter-spacing: var(--mqds-letter-spacing); font-variant-numeric: tabular-nums; }
 .live-clock progress { display: block; width: 100%; height: 8px; accent-color: #59388e; }
 
 .live-chat {
@@ -280,7 +280,7 @@ header[hidden], main[hidden] { display: none; }
 }
 
 .spring-panel { padding: clamp(21px, 6vw, 36px); }
-.spring-panel h2 { margin: 15px 0 9px; font-size: clamp(26px, 6vw, 37px); line-height: 1; letter-spacing: -.05em; }
+.spring-panel h2 { margin: 15px 0 9px; font-size: clamp(26px, 6vw, 37px); line-height: 1; letter-spacing: var(--mqds-letter-spacing); }
 .spring-panel p { margin: 0; line-height: 1.55; }
 .spring-symbol {
   display: grid;
