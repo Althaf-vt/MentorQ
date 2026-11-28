@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import {
-  User as UserIcon,
-  Settings,
   Sliders,
   CheckCircle,
   Camera,
@@ -185,43 +183,80 @@ export const UserSettingsPage: React.FC = () => {
   const watchedSocials = watch('socialLinks')
 
   return (
-    <main className="preview-main font-body pt-8 md:pt-18 pb-20">
-      <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-8">
-        {/* Navigation Sidebar */}
-        <aside className="w-full md:w-56 shrink-0 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[var(--mqds-primary)] flex items-center justify-center text-white shadow-xs">
-              <Settings className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-headline text-sm font-bold text-[var(--mqds-text)]">Settings</p>
-              <p className="text-[10px] font-mono text-[var(--mqds-muted)]">Account &amp; preferences</p>
-            </div>
-          </div>
+    <main className="preview-main user-settings-page font-body">
+      <header className="user-settings-header">
+        <h1>Settings</h1>
+        {user?.role === 'MENTOR' && (
+          <Link to="/mentor/configuration" className="settings-mentor-link">
+            <Sliders aria-hidden="true" />
+            Mentor configuration
+          </Link>
+        )}
+      </header>
+      <div className="user-settings-layout">
+        <div className="settings-identity">
+          {/* Profile Photo Section */}
+          <Card
+            variant="paper"
+            data-mqds={lightTheme}
+          >
+            <h2 className="settings-section-title">
+              Profile Photo
+            </h2>
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="relative group">
+                <Avatar
+                  name={currentUser?.fullName || 'User'}
+                  src={avatarSrc || undefined}
+                  size="lg"
+                />
+                {(isUploading || isDeleting) && (
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
 
-          <nav className="flex flex-row md:flex-col gap-1.5">
-            <span className="px-3.5 py-2 bg-[var(--mqds-hover)] text-[var(--mqds-accent)] rounded-xl font-semibold flex items-center gap-2 text-xs">
-              <UserIcon className="w-4 h-4" />
-              <span>Personal Info</span>
-            </span>
-            {user?.role === 'MENTOR' && (
-              <Link
-                to="/mentor/configuration"
-                className="text-[var(--mqds-muted)] hover:text-[var(--mqds-text)] hover:bg-[var(--mqds-hover)] rounded-xl px-3.5 py-2 flex items-center justify-between text-xs transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4" />
-                  <span>Mentor Config</span>
+              <div className="space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading || isDeleting}
+                    className="flex items-center gap-2 !px-3.5 !py-2 !min-h-0 text-xs"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>{currentUser?.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                  </Button>
+                  {currentUser?.avatarUrl && (
+                    <Button
+                      type="button"
+                      variant="danger-subtle"
+                      onClick={handleAvatarDelete}
+                      disabled={isUploading || isDeleting}
+                      className="flex items-center gap-2 !px-3.5 !py-2 !min-h-0 text-xs"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove</span>
+                    </Button>
+                  )}
                 </div>
-              </Link>
-            )}
-          </nav>
-
-          {/* Quick Profile Summary in sidebar for desktop */}
-          <div className="hidden md:block pt-2">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--mqds-muted)] mb-2 font-semibold">
-              Session Activity
-            </p>
+                <p className="text-[11px] font-mono text-[var(--mqds-muted-ink)]">
+                  JPG, PNG or WEBP. Maximum file size 5 MB.
+                </p>
+              </div>
+            </div>
+          </Card>
+          <section aria-labelledby="settings-activity-title">
+            <h2 id="settings-activity-title" className="mb-2 font-bold">Session Activity</h2>
             <dl className="student-profile-summary">
               <div>
                 <dt>{user?.role === 'MENTOR' ? 'Guided' : 'Sessions'}</dt>
@@ -232,11 +267,10 @@ export const UserSettingsPage: React.FC = () => {
                 <dd>{totalMinutes}m</dd>
               </div>
             </dl>
-          </div>
-        </aside>
+          </section>
+        </div>
 
-        {/* Settings Forms & Appearance */}
-        <section className="flex-1 space-y-6">
+        <div className="settings-editing">
           {success && (
             <div className="bg-[var(--mqds-hover)] border border-[var(--mqds-border-subtle)] text-[var(--mqds-accent)] rounded-xl p-4 flex items-center gap-3 shadow-xs">
               <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -306,85 +340,6 @@ export const UserSettingsPage: React.FC = () => {
                   </span>
                 </div>
               </button>
-            </div>
-          </Card>
-
-          {/* Profile Photo Section */}
-          <Card
-            variant="paper"
-            data-mqds={lightTheme}
-            className="p-6 border border-[var(--mqds-paper-border)] shadow-xs space-y-4"
-          >
-            <h2 className="font-headline text-sm font-bold text-[var(--mqds-ink)] border-b border-[var(--mqds-border-subtle)] pb-3">
-              Profile Photo
-            </h2>
-            <div className="flex items-center gap-6">
-              <div className="relative group">
-                <Avatar
-                  name={currentUser?.fullName || 'User'}
-                  src={avatarSrc || undefined}
-                  size="lg"
-                />
-                {(isUploading || isDeleting) && (
-                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 text-white animate-spin" />
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading || isDeleting}
-                    className="flex items-center gap-2 !px-3.5 !py-2 !min-h-0 text-xs"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>{currentUser?.avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
-                  </Button>
-                  {currentUser?.avatarUrl && (
-                    <Button
-                      type="button"
-                      variant="danger-subtle"
-                      onClick={handleAvatarDelete}
-                      disabled={isUploading || isDeleting}
-                      className="flex items-center gap-2 !px-3.5 !py-2 !min-h-0 text-xs"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Remove</span>
-                    </Button>
-                  )}
-                </div>
-                <p className="text-[11px] font-mono text-[var(--mqds-muted-ink)]">
-                  JPG, PNG or WEBP. Maximum file size 5 MB.
-                </p>
-              </div>
-            </div>
-
-            {/* Mobile / Tablet Activity Tiles */}
-            <div className="md:hidden pt-4 border-t border-[var(--mqds-border-subtle)]">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--mqds-muted-ink)] mb-2 font-semibold">
-                Session Activity
-              </p>
-              <dl className="student-profile-summary">
-                <div>
-                  <dt>{user?.role === 'MENTOR' ? 'Guided' : 'Sessions'}</dt>
-                  <dd>{completedCount}</dd>
-                </div>
-                <div>
-                  <dt>{user?.role === 'MENTOR' ? 'Mentored' : 'Learned'}</dt>
-                  <dd>{totalMinutes}m</dd>
-                </div>
-              </dl>
             </div>
           </Card>
 
@@ -489,7 +444,7 @@ export const UserSettingsPage: React.FC = () => {
               </div>
             )}
           </form>
-        </section>
+        </div>
       </div>
     </main>
   )
